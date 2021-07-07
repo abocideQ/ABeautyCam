@@ -1,10 +1,10 @@
 #ifndef FFMPEGTEST_AUDIOCODEC_H
 #define FFMPEGTEST_AUDIOCODEC_H
 
-#include "BaseCodec.h"
+#include "BaseDecode.h"
 #include "AudioRender.h"
 
-class AudioCodec : public BaseCodec {
+class AudioDecode : public BaseDecode {
 public:
     void setRender(AudioRender *render);
 

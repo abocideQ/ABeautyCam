@@ -1,29 +1,29 @@
-#include "AudioCodec.h"
+#include "AudioDecode.h"
 
 extern "C" {
 
-void AudioCodec::setRender(AudioRender *render) {
+void AudioDecode::setRender(AudioRender *render) {
     m_Render = render;
 }
 
-void AudioCodec::onInit(char *url) {
-    BaseCodec::onInit(url, AVMEDIA_TYPE_AUDIO);
+void AudioDecode::onInit(char *url) {
+    BaseDecode::onInit(url, AVMEDIA_TYPE_AUDIO);
 }
 
-void AudioCodec::onResume() {
-    BaseCodec::onResume();
+void AudioDecode::onResume() {
+    BaseDecode::onResume();
 }
 
-void AudioCodec::onPause() {
-    BaseCodec::onPause();
+void AudioDecode::onPause() {
+    BaseDecode::onPause();
 }
 
-void AudioCodec::onStop() {
-    BaseCodec::onStop();
+void AudioDecode::onStop() {
+    BaseDecode::onStop();
 }
 
-void AudioCodec::onRelease() {
-    BaseCodec::onRelease();
+void AudioDecode::onRelease() {
+    BaseDecode::onRelease();
     if (m_AudioOutBuffer) {
         free(m_AudioOutBuffer);
         m_AudioOutBuffer = nullptr;
@@ -34,7 +34,7 @@ void AudioCodec::onRelease() {
     }
 }
 
-void AudioCodec::codecHandler(AVFrame *frame) {
+void AudioDecode::codecHandler(AVFrame *frame) {
     if (m_SwrContext == nullptr) {
         //音频采样工具Context初始化
         m_SwrContext = swr_alloc();

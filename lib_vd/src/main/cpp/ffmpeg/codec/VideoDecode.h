@@ -1,10 +1,10 @@
 #ifndef FFMPEGTEST_VIDEOCODEC_H
 #define FFMPEGTEST_VIDEOCODEC_H
 
-#include "BaseCodec.h"
+#include "BaseDecode.h"
 #include "VideoRender.h"
 
-class VideoCodec : public BaseCodec {
+class VideoDecode : public BaseDecode {
 
 public:
     void setRender(VideoRender *render);

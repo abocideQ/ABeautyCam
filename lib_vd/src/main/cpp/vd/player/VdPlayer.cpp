@@ -8,67 +8,67 @@ void VdPlayer::onSource(char *source) {
     if (m_VideoRender == nullptr) {
         m_VideoRender = new VideoRender();
     }
-    if (m_VideoCodec == nullptr) {
-        m_VideoCodec = new VideoCodec();
+    if (m_VideoDecode == nullptr) {
+        m_VideoDecode = new VideoDecode();
     }
-    m_VideoCodec->setRender(m_VideoRender);
-    m_VideoCodec->onInit(source);
+    m_VideoDecode->setRender(m_VideoRender);
+    m_VideoDecode->onInit(source);
     //audio
     if (m_AudioRender == nullptr) {
         m_AudioRender = new AudioRender();
     }
-    if (m_AudioCodec == nullptr) {
-        m_AudioCodec = new AudioCodec();
+    if (m_AudioDecode == nullptr) {
+        m_AudioDecode = new AudioDecode();
     }
     m_AudioRender->onAudioCreate();
-    m_AudioCodec->setRender(m_AudioRender);
-    m_AudioCodec->onInit(source);
+    m_AudioDecode->setRender(m_AudioRender);
+    m_AudioDecode->onInit(source);
 }
 
 void VdPlayer::onSeekTo(int percent) {
-    if (m_VideoCodec != nullptr && m_VideoRender != nullptr) {
-        m_VideoCodec->onSeekTo(percent);
+    if (m_VideoDecode != nullptr && m_VideoRender != nullptr) {
+        m_VideoDecode->onSeekTo(percent);
     }
-    if (m_AudioCodec != nullptr && m_AudioRender != nullptr) {
-        m_AudioCodec->onSeekTo(percent);
+    if (m_AudioDecode != nullptr && m_AudioRender != nullptr) {
+        m_AudioDecode->onSeekTo(percent);
     }
 }
 
 void VdPlayer::onPlay() {
-    if (m_VideoCodec != nullptr && m_VideoRender != nullptr) {
-        m_VideoCodec->onResume();
+    if (m_VideoDecode != nullptr && m_VideoRender != nullptr) {
+        m_VideoDecode->onResume();
         m_VideoRender->onResume();
     }
-    if (m_AudioCodec != nullptr && m_AudioRender != nullptr) {
-        m_AudioCodec->onResume();
+    if (m_AudioDecode != nullptr && m_AudioRender != nullptr) {
+        m_AudioDecode->onResume();
         m_AudioRender->onResume();
     }
 }
 
 void VdPlayer::onPause() {
-    if (m_VideoCodec != nullptr && m_VideoRender != nullptr) {
-        m_VideoCodec->onPause();
+    if (m_VideoDecode != nullptr && m_VideoRender != nullptr) {
+        m_VideoDecode->onPause();
         m_VideoRender->onPause();
     }
-    if (m_AudioCodec != nullptr && m_AudioRender != nullptr) {
-        m_AudioCodec->onPause();
+    if (m_AudioDecode != nullptr && m_AudioRender != nullptr) {
+        m_AudioDecode->onPause();
         m_AudioRender->onPause();
     }
 }
 
 void VdPlayer::onStop() {
-    if (m_VideoCodec != nullptr) {
-        m_VideoCodec->onStop();
-        m_VideoCodec->onRelease();
-        m_VideoCodec = nullptr;
+    if (m_VideoDecode != nullptr) {
+        m_VideoDecode->onStop();
+        m_VideoDecode->onRelease();
+        m_VideoDecode = nullptr;
     }
     if (m_VideoRender != nullptr) {
         m_VideoRender->onStop();
     }
-    if (m_AudioCodec != nullptr) {
-        m_AudioCodec->onStop();
-        m_AudioCodec->onRelease();
-        m_AudioCodec = nullptr;
+    if (m_AudioDecode != nullptr) {
+        m_AudioDecode->onStop();
+        m_AudioDecode->onRelease();
+        m_AudioDecode = nullptr;
     }
     if (m_AudioRender != nullptr) {
         m_AudioRender->onStop();

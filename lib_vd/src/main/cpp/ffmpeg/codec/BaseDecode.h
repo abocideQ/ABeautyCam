@@ -30,7 +30,7 @@ static long long GetSysCurrentTime() {
     return curTime;
 }
 
-class BaseCodec {
+class BaseDecode {
 public:
     void onInit(char *url, AVMediaType mediaType);
 
@@ -78,7 +78,7 @@ protected:
     static std::mutex m_Mutex;
 private:
 
-    static void codecRunAsy(BaseCodec *ptr);
+    static void codecRunAsy(BaseDecode *ptr);
 
     void codecCreate();
 

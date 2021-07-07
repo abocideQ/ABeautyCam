@@ -1,30 +1,30 @@
-#include "BaseCodec.h"
+#include "BaseDecode.h"
 
 extern "C" {
-std::mutex BaseCodec::m_Mutex;
-void BaseCodec::onInit(char *url, AVMediaType mediaType) {
+std::mutex BaseDecode::m_Mutex;
+void BaseDecode::onInit(char *url, AVMediaType mediaType) {
     onStop();
     m_Url = url;
     m_MediaType = mediaType;
     m_Thread = new std::thread(codecRunAsy, this);
 }
 
-void BaseCodec::onSeekTo(int percent) {
+void BaseDecode::onSeekTo(int percent) {
     std::lock_guard<std::mutex> lock(m_Mutex);
     m_SeekPosition = percent;
 }
 
-void BaseCodec::onResume() {
+void BaseDecode::onResume() {
     std::lock_guard<std::mutex> lock(m_Mutex);
     m_Status = STATE_RESUME;
 }
 
-void BaseCodec::onPause() {
+void BaseDecode::onPause() {
     std::lock_guard<std::mutex> lock(m_Mutex);
     m_Status = STATE_PAUSE;
 }
 
-void BaseCodec::onStop() {
+void BaseDecode::onStop() {
     if (m_Thread) {
         std::unique_lock<std::mutex> lock(m_Mutex);
         m_Status = STATE_STOP;
@@ -35,7 +35,7 @@ void BaseCodec::onStop() {
     }
 }
 
-void BaseCodec::onRelease() {
+void BaseDecode::onRelease() {
     if (m_AVFormatContext != nullptr) {
         avformat_close_input(&m_AVFormatContext);
         avformat_free_context(m_AVFormatContext);
@@ -57,12 +57,12 @@ void BaseCodec::onRelease() {
     }
 }
 
-void BaseCodec::codecRunAsy(BaseCodec *ptr) {
+void BaseDecode::codecRunAsy(BaseDecode *ptr) {
     ptr->codecCreate();
     ptr->codecLoop();
 }
 
-void BaseCodec::codecCreate() {
+void BaseDecode::codecCreate() {
     //FormatContext初始化
     if (m_AVFormatContext == nullptr) m_AVFormatContext = avformat_alloc_context();
 
@@ -123,7 +123,7 @@ void BaseCodec::codecCreate() {
     m_Frame = av_frame_alloc();
 }
 
-void BaseCodec::codecLoop() {
+void BaseDecode::codecLoop() {
     {
         std::unique_lock<std::mutex> lock(m_Mutex);
         m_Status = STATE_RESUME;
@@ -175,7 +175,7 @@ void BaseCodec::codecLoop() {
     }
 }
 
-void BaseCodec::synchronization() {
+void BaseDecode::synchronization() {
     std::unique_lock<std::mutex> lock(m_Mutex);
     long curFrameTime = 0l;
     if (m_Frame->pkt_dts != AV_NOPTS_VALUE) {

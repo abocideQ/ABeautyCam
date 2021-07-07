@@ -1,8 +1,8 @@
 #ifndef FFMPEGTEST_SIMPLEPLAYER_H
 #define FFMPEGTEST_SIMPLEPLAYER_H
 
-#include "VideoCodec.h"
-#include "AudioCodec.h"
+#include "VideoDecode.h"
+#include "AudioDecode.h"
 
 class VdPlayer {
 public:
@@ -29,11 +29,11 @@ public:
 protected:
     VideoRender *m_VideoRender = nullptr;
 
-    VideoCodec *m_VideoCodec = nullptr;
+    VideoDecode *m_VideoDecode = nullptr;
 
     AudioRender *m_AudioRender = nullptr;
 
-    AudioCodec *m_AudioCodec = nullptr;
+    AudioDecode *m_AudioDecode = nullptr;
 
 private:
     static VdPlayer *m_Player;

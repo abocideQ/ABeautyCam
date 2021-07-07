@@ -1,29 +1,29 @@
-#include "VideoCodec.h"
+#include "VideoDecode.h"
 
 extern "C" {
 
-void VideoCodec::setRender(VideoRender *render) {
+void VideoDecode::setRender(VideoRender *render) {
     m_Render = render;
 }
 
-void VideoCodec::onInit(char *url) {
-    BaseCodec::onInit(url, AVMEDIA_TYPE_VIDEO);
+void VideoDecode::onInit(char *url) {
+    BaseDecode::onInit(url, AVMEDIA_TYPE_VIDEO);
 }
 
-void VideoCodec::onResume() {
-    BaseCodec::onResume();
+void VideoDecode::onResume() {
+    BaseDecode::onResume();
 }
 
-void VideoCodec::onPause() {
-    BaseCodec::onPause();
+void VideoDecode::onPause() {
+    BaseDecode::onPause();
 }
 
-void VideoCodec::onStop() {
-    BaseCodec::onStop();
+void VideoDecode::onStop() {
+    BaseDecode::onStop();
 }
 
-void VideoCodec::onRelease() {
-    BaseCodec::onRelease();
+void VideoDecode::onRelease() {
+    BaseDecode::onRelease();
     if (m_SwsContext != nullptr) {
         sws_freeContext(m_SwsContext);
         m_SwsContext = nullptr;
@@ -38,7 +38,7 @@ void VideoCodec::onRelease() {
     }
 }
 
-void VideoCodec::codecHandler(AVFrame *frame) {
+void VideoDecode::codecHandler(AVFrame *frame) {
     PixImage *image = nullptr;
     int width = frame->width;
     int height = frame->height;

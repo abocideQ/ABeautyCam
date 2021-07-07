@@ -233,7 +233,6 @@ void VideoRender::onDrawFrame() {
     view = glm::lookAt(glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f),
                        glm::vec3(0.0f, 1.0f, 0.0f));
     view = glm::rotate(view, glm::radians(m_Rotation), glm::vec3(0.0f, 0.0f, 1.0f));
-    LOGCATE("aasdasdasdasd  %f", m_Rotation);
     glm::mat4 model = glm::mat4(1.0f);
     if (m_Rotation > 90.0f) {
         //前置摄像头
