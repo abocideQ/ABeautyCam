@@ -35,4 +35,7 @@ dependencies {
     implementation "$kotlin_core"
     implementation "$appcompat"
     implementation "$material"
+    implementation "$glide"
+    implementation 'androidx.constraintlayout:constraintlayout:2.0.1'
+    annotationProcessor "$glideAnnotaiton"
 }

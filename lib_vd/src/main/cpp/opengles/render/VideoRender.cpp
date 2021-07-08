@@ -138,7 +138,7 @@ void VideoRender::onDrawFrame() {
     if (m_Program_Fbo_YUV420P == GL_NONE) return;
     if (m_Program_Fbo_NV21 == GL_NONE) return;
     if (m_Program_Fbo_RGB == GL_NONE) return;
-    if (m_Image == nullptr) return;
+    if (m_Image == nullptr)return;
     if (m_Image->width == 0) return;
     if (m_Image->height == 0) return;
     if (m_Image->format == 0) return;

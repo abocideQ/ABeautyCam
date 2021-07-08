@@ -25,6 +25,10 @@ class CameraUse(context: Context) {
         mCameraWrap.openCamera(mCameraWrap.facing, null)
     }
 
+    fun stop() {
+        mCameraWrap.stopCamera()
+    }
+
     fun close() {
         mCameraSizes = null
         mSurface = null

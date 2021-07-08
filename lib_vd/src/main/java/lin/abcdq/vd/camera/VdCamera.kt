@@ -5,6 +5,7 @@ import android.graphics.ImageFormat
 import android.opengl.GLSurfaceView
 import android.os.Build
 import android.util.Log
+import android.util.Size
 import androidx.annotation.RequiresApi
 import lin.abcdq.vd.camera.wrap.CameraWrap
 import lin.abcdq.vd.camera.wrap.CameraWrapCall
@@ -17,31 +18,47 @@ class VdCamera(context: Context, format: Int) : GLSurfaceView.Renderer {
     private var mFormat = format
     private var mCameraUse: CameraUse? = null
 
-    init {
-        mCameraUse = CameraUse(context)
-        System.loadLibrary("vd_make")
-    }
-
     fun setSurface(surface: GLSurfaceView) {
         surface.setEGLContextClientVersion(3)
         surface.setRenderer(this)
     }
 
     fun onSwitch() {
-        if (mCameraUse?.facing() == CameraWrap.CAMERA_FRONT) {
+        mCameraUse?.switch()
+        if (mCameraUse?.facing() == CameraWrap.CAMERA_BACK) {
             native_vdCameraRender_onRotate(90.0f)
         } else {
             native_vdCameraRender_onRotate(270.0f)
         }
-        mCameraUse?.switch()
     }
 
     fun onBuffer(): ByteArray {
         return native_vdCameraRender_onBuffer()
     }
 
+    fun onOpen() {
+        mCameraUse?.open()
+    }
+
+    fun onStop() {
+        mCameraUse?.stop()
+    }
+
     fun onRelease() {
+        mCameraUse?.close()
         native_vdCameraRender_onRelease()
+    }
+
+    fun onSize(size: Size) {
+        mCameraUse?.resize(size)
+    }
+
+    fun onSize(): Size? {
+        return mCameraUse?.getPreviewSize()
+    }
+
+    fun onSizes(): Array<Size>? {
+        return mCameraUse?.getPreviewSizes()
     }
 
     override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
@@ -60,6 +77,7 @@ class VdCamera(context: Context, format: Int) : GLSurfaceView.Renderer {
         mCameraUse?.open()
         mCameraUse?.setCall(object : CameraWrapCall {
             override fun onPreview(byteArray: ByteArray, width: Int, height: Int) {
+                Log.e("asdasdasd", "asdasd  $width   $height")
                 native_vdCameraRender_onBuffer(mFormat, width, height, byteArray)
             }
 
@@ -79,6 +97,11 @@ class VdCamera(context: Context, format: Int) : GLSurfaceView.Renderer {
 
     override fun onDrawFrame(gl: GL10?) {
         native_vdCameraRender_onDrawFrame()
+    }
+
+    init {
+        mCameraUse = CameraUse(context)
+        System.loadLibrary("vd_make")
     }
 
     private external fun native_vdCameraRender_onBuffer(ft: Int, w: Int, h: Int, bytes: ByteArray)
