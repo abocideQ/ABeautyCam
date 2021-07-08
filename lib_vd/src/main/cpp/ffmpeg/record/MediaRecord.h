@@ -14,6 +14,7 @@ extern "C" {
 
 #include "PixImage.h"
 #include "PixAudio.h"
+#include <queue>
 #include <thread>
 #include <mutex>
 
@@ -21,16 +22,16 @@ extern "C" {
 class MediaRecord {
 
 protected:
-    AVFormatContext *m_AVFormatContext
+    AVFormatContext *m_AVFormatContext;
     AVOutputFormat *m_AVOutputFormat = nullptr;
     AVCodec *m_AudioCodec = nullptr;
     AVCodec *m_VideoCodec = nullptr;
     //队列
     typedef PixImage VideoFrame;
-    std: queen < VideoFrame * > m_VideoQueen;
-    std: queen < AudioFrame * > m_VideoQueen;
+    std::queue<VideoFrame *> m_VideoQueue;
+    std::queue<AudioFrame *> m_AudioQueue;
     //线程
-    std::thread m_Thread = nullptr;
+    std::thread *m_Thread = nullptr;
 private:
     char *m_OutUrl = nullptr;
 };
