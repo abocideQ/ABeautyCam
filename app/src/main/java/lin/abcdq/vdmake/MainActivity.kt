@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.RecyclerView
@@ -101,9 +102,15 @@ class MainActivity : AppCompatActivity(), GridLayoutBinder {
                 }
                 3 -> {
                     textView.text = "工具籍"
+                    holder.itemView.setOnClickListener {
+                        Toast.makeText(this, "你再点试试看？", Toast.LENGTH_SHORT).show()
+                    }
                 }
                 4 -> {
                     textView.text = "关于"
+                    holder.itemView.setOnClickListener {
+                        Toast.makeText(this, "你再点试试看？", Toast.LENGTH_SHORT).show()
+                    }
                 }
             }
         }

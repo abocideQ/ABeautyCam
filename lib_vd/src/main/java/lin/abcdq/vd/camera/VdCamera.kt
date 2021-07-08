@@ -77,7 +77,6 @@ class VdCamera(context: Context, format: Int) : GLSurfaceView.Renderer {
         mCameraUse?.open()
         mCameraUse?.setCall(object : CameraWrapCall {
             override fun onPreview(byteArray: ByteArray, width: Int, height: Int) {
-                Log.e("asdasdasd", "asdasd  $width   $height")
                 native_vdCameraRender_onBuffer(mFormat, width, height, byteArray)
             }
 

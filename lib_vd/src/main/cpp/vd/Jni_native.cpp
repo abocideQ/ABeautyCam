@@ -98,6 +98,8 @@ void native_vdCameraRender_onDrawFrame(JNIEnv *env, jobject *obj) {
 void native_vdCameraRender_onRelease(JNIEnv *env, jobject *obj) {
     VdCameraRender::instance()->onRelease();
 }
+//============Record
+
 
 const char *JNI_Class_Player[] = {
         "lin/abcdq/vd/player/VdPlayer"

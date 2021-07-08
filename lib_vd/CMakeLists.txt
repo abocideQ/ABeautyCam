@@ -5,6 +5,7 @@ include_directories(
         src/main/cpp/ffmpeg/include
         src/main/cpp/ffmpeg/utils
         src/main/cpp/ffmpeg/codec
+        src/main/cpp/ffmpeg/record
         src/main/cpp/opengles/include/glm
         src/main/cpp/opengles/utils
         src/main/cpp/opengles/render
@@ -51,6 +52,7 @@ file(GLOB lib_mine
         src/main/cpp/ffmpeg/*.cpp
         src/main/cpp/ffmpeg/utils/*.cpp
         src/main/cpp/ffmpeg/codec/*.cpp
+        src/main/cpp/ffmpeg/record/*.cpp
         src/main/cpp/opengles/*.cpp
         src/main/cpp/opengles/utils/*.cpp
         src/main/cpp/opengles/render/*.cpp

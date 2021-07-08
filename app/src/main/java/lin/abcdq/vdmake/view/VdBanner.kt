@@ -64,7 +64,7 @@ class VdBanner : FrameLayout {
                 Glide.with(context).load("${mList[holder.adapterPosition]}").centerCrop()
                     .into(imageView)
                 imageView.setOnClickListener {
-                    Toast.makeText(context, "???", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "你再点试试看？", Toast.LENGTH_SHORT).show()
                 }
             }
 
