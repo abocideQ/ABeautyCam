@@ -1,5 +1,5 @@
-#ifndef FFMPEGTEST_PIXIMAGE_H
-#define FFMPEGTEST_PIXIMAGE_H
+#ifndef VDMAKE_PIXIMAGE_H
+#define VDMAKE_PIXIMAGE_H
 
 #include "Log.h"
 
@@ -33,6 +33,15 @@ typedef struct _tag_pixImage {
         size = 0;
     }
 } PixImage;
+class VideoFrame {
+public:
+    VideoFrame() {
+        image = new PixImage();
+    }
+
+public:
+    PixImage *image = nullptr;
+};
 class PixImageUtils {
 public:
     static PixImage *
@@ -259,4 +268,4 @@ public:
 }
 
 
-#endif //FFMPEGTEST_PIXIMAGE_H
+#endif //VDMAKE_PIXIMAGE_H

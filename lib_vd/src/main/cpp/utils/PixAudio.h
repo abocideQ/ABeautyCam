@@ -1,5 +1,5 @@
-#ifndef FFMPEGTEST_PIXAUDIO_H
-#define FFMPEGTEST_PIXAUDIO_H
+#ifndef VDMAKE_PIXAUDIO_H
+#define VDMAKE_PIXAUDIO_H
 
 #include <malloc.h>
 #include <memory.h>
@@ -14,7 +14,7 @@ public:
             this->data = static_cast<uint8_t *>(malloc(this->dataSize));
             memcpy(this->data, data, dataSize);
         }
-    }
+
 
     ~AudioFrame() {
         if (hardCopy && this->data)
@@ -27,4 +27,4 @@ public:
     bool hardCopy = true;
 };
 
-#endif //FFMPEGTEST_PIXAUDIO_H
+#endif //VDMAKE_PIXAUDIO_H

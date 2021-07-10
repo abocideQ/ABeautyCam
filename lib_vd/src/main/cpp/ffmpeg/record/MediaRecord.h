@@ -14,26 +14,77 @@ extern "C" {
 
 #include "PixImage.h"
 #include "PixAudio.h"
+#include <unistd.h>
 #include <queue>
 #include <thread>
 #include <mutex>
 
+struct MediaConfig {
+    //video
+    int width;
+    int height;
+    long vBitRate;
+    int fps;
+    //audio
+    int aBitRate = 96000;
+    int aSampleRate;
+    int aChannel;
+    int aFormat;
+};
+
+class AVOutputStream {
+public:
+    AVCodecContext *m_CodecCtx = nullptr;
+    AVStream *m_Stream = nullptr;
+    AVFrame *m_Frame = nullptr;
+    AVFrame *m_TmpFrame = nullptr;
+    SwsContext *m_SwsCtx = nullptr;
+    SwrContext *m_SwrCtx = nullptr;
+    volatile int64_t m_NextPts = 0;
+    volatile int m_EncodeEnd = 0;
+    int m_SamplesCount = 0;
+};
 
 class MediaRecord {
+public:
+    void onSource(char *urlOut, MediaConfig config);
+
+    void onPrepare();
+
+    void onBufferVideo(VideoFrame *input);
+
+    void onBufferAudio(AudioFrame *input);
+
+    void onRelease();
 
 protected:
-    AVFormatContext *m_AVFormatContext;
+
+    int initStream(AVCodec *avCodec, AVCodecID avCodecId, AVOutputStream *avOStream);
+
+    int initCodec(AVCodecContext *codecCtx, AVCodec *avCodec, AVCodecID avCodecId,
+                  AVOutputStream *avOStream);
+
+    int codeVideoFrame(AVOutputStream *stream);
+
+    int codeAudioFrame(AVOutputStream *stream);
+
+    AVFormatContext *m_AVFormatContext = nullptr;
     AVOutputFormat *m_AVOutputFormat = nullptr;
     AVCodec *m_AudioCodec = nullptr;
     AVCodec *m_VideoCodec = nullptr;
+    AVOutputStream m_VideoStream;
+    AVOutputStream m_AudioStream;
     //队列
-    typedef PixImage VideoFrame;
     std::queue<VideoFrame *> m_VideoQueue;
     std::queue<AudioFrame *> m_AudioQueue;
     //线程
     std::thread *m_Thread = nullptr;
+    bool m_Interrupt = false;
 private:
-    char *m_OutUrl = nullptr;
+    char *m_UrlOut = nullptr;
+    MediaConfig m_Config;
+
+    static void onRunAsy(MediaRecord *p);
 };
 
 #endif //VDMAKE_MEDIARECORD_H

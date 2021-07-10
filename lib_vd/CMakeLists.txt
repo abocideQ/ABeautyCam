@@ -13,6 +13,7 @@ include_directories(
         src/main/cpp/opensles/render
         src/main/cpp/vd/player
         src/main/cpp/vd/camera
+        src/main/cpp/vd/record
 )
 
 add_library(avformat SHARED IMPORTED)
@@ -61,6 +62,7 @@ file(GLOB lib_mine
         src/main/cpp/vd/*.cpp
         src/main/cpp/vd/player/*.cpp
         src/main/cpp/vd/camera/*.cpp
+        src/main/cpp/vd/record/*.cpp
         )
 
 add_library(vd_make

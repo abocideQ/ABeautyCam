@@ -1,5 +1,5 @@
-#ifndef FFMPEGTEST_VIDEOCODEC_H
-#define FFMPEGTEST_VIDEOCODEC_H
+#ifndef VDMAKE_VIDEOCODEC_H
+#define VDMAKE_VIDEOCODEC_H
 
 #include "BaseDecode.h"
 #include "VideoRender.h"
@@ -35,4 +35,4 @@ private:
 };
 
 
-#endif //FFMPEGTEST_VIDEOCODEC_H
+#endif //VDMAKE_VIDEOCODEC_H

@@ -1,6 +1,7 @@
 #include <jni.h>
 #include "VdPlayer.h"
 #include "VdCameraRender.h"
+#include "VdRecord.h"
 
 extern "C" {
 #include <libavcodec/version.h>
@@ -99,13 +100,44 @@ void native_vdCameraRender_onRelease(JNIEnv *env, jobject *obj) {
     VdCameraRender::instance()->onRelease();
 }
 //============Record
+void
+native_vdRecord_onSource(JNIEnv *env, jobject *obj, jstring *urlOut, jint w, jint h, jlong vBRate,
+                         jint fps) {
+    char *p = (char *) env->GetStringUTFChars(urlOut, 0);
+    VdRecord::instance().onConfig(p, w, h, vBRate, fps);
+}
 
+void native_vdRecord_onStart(JNIEnv *env, jobject *obj) {
+    VdRecord::instance().onStart();
+}
+
+void native_vdRecord_onStop(JNIEnv *env, jobject *obj) {
+    VdRecord::instance().onStop();
+}
+
+void native_vdRecord_onBufferVideo(JNIEnv *env, jobject *obj, jint format, jint w, jint h,
+                                   jbyteArray *data) {
+    int length = env->GetArrayLength(data);
+    uint8_t *buffer = new uint8_t[length];
+    env->GetByteArrayRegion(data, 0, length, reinterpret_cast<jbyte *>(buffer));
+    VdRecord::instance().onBufferVideo(format, w, h, buffer);
+}
+
+void native_vdRecord_onBufferAudio(JNIEnv *env, jobject *obj, jbyteArray *data) {
+    int length = env->GetArrayLength(data);
+    uint8_t *buffer = new uint8_t[length];
+    env->GetByteArrayRegion(data, 0, length, reinterpret_cast<jbyte *>(buffer));
+    VdRecord::instance().onBufferAudio(length, buffer);
+}
 
 const char *JNI_Class_Player[] = {
         "lin/abcdq/vd/player/VdPlayer"
 };
 const char *JNI_Class_Camera[] = {
         "lin/abcdq/vd/camera/VdCamera"
+};
+const char *JNI_Class_Record[] = {
+        "lin/abcdq/vd/record/VdRecord"
 };
 JNINativeMethod JNI_Methods_Player[] = {
         //Player
@@ -123,11 +155,18 @@ JNINativeMethod JNI_Methods_Player[] = {
 JNINativeMethod JNI_Methods_Camera[] = {
         {"native_vdCameraRender_onBuffer",         "(III[B)V", (void *) native_vdCameraRender_onBuffer},
         {"native_vdCameraRender_onBuffer",         "()[B",     (void *) native_vdCameraRender_onBuffer},
-        {"native_vdCameraRender_onRotate",         "(F)V",      (void *) native_vdCameraRender_onRotate},
+        {"native_vdCameraRender_onRotate",         "(F)V",     (void *) native_vdCameraRender_onRotate},
         {"native_vdCameraRender_onSurfaceCreated", "()V",      (void *) native_vdCameraRender_onSurfaceCreated},
         {"native_vdCameraRender_onSurfaceChanged", "(II)V",    (void *) native_vdCameraRender_onSurfaceChanged},
         {"native_vdCameraRender_onDrawFrame",      "()V",      (void *) native_vdCameraRender_onDrawFrame},
         {"native_vdCameraRender_onRelease",        "()V",      (void *) native_vdCameraRender_onRelease}
+};
+JNINativeMethod JNI_Methods_Camera[] = {
+        {"native_vdRecord_onSource",      "(Ljava/lang/String;IILI)V", (void *) native_vdRecord_onSource},
+        {"native_vdRecord_onStart",       "()V",                       (void *) native_vdRecord_onStart},
+        {"native_vdRecord_onStop",        "()V",                       (void *) native_vdRecord_onStop},
+        {"native_vdRecord_onBufferVideo", "(III[B)V",                  (void *) native_vdRecord_onBufferVideo},
+        {"native_vdRecord_onBufferAudio", "([B)V",                     (void *) native_vdRecord_onBufferAudio},
 };
 #define JNI_LENGTH(n) (sizeof(n) / sizeof(n[0]))
 jint JNI_OnLoad(JavaVM *vm, void *reserved) {
@@ -145,4 +184,5 @@ jint JNI_OnLoad(JavaVM *vm, void *reserved) {
     }
     return JNI_VERSION_1_6;
 }
+
 };

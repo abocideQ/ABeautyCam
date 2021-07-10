@@ -3,20 +3,15 @@ package lin.abcdq.vdmake
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Intent
-import android.graphics.Camera
 import android.opengl.GLSurfaceView
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.util.Log
-import android.util.Size
 import android.view.MotionEvent
-import android.view.View
-import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
-import com.bumptech.glide.Glide
+import androidx.appcompat.app.AppCompatActivity
 import lin.abcdq.vd.camera.VdCamera
+import lin.abcdq.vd.record.VdRecord
 import lin.abcdq.vdmake.utils.VdUIHelper
 
 class CameraActivity : AppCompatActivity() {
@@ -38,6 +33,7 @@ class CameraActivity : AppCompatActivity() {
     private lateinit var mGlSurface: GLSurfaceView
     private lateinit var mCamera: VdCamera
     private var mInit = false
+    private lateinit var mRecord: VdRecord
 
     @SuppressLint("ClickableViewAccessibility")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -96,12 +92,15 @@ class CameraActivity : AppCompatActivity() {
         mShotView.setOnTouchListener { _, event ->
             when (event?.action) {
                 MotionEvent.ACTION_DOWN -> {
+                    mRecord.onStart()
                     mShotView.setImageResource(R.drawable.camera_shotting)
                 }
                 MotionEvent.ACTION_UP -> {
+                    mRecord.onStop()
                     mShotView.setImageResource(R.drawable.camera_shotted)
                 }
                 MotionEvent.ACTION_CANCEL -> {
+                    mRecord.onStop()
                     mShotView.setImageResource(R.drawable.camera_shotted)
                 }
             }
@@ -115,6 +114,11 @@ class CameraActivity : AppCompatActivity() {
         mCamera = VdCamera(this, 1)
         mCamera.setSurface(mGlSurface)
         resize()
+        val out = obbDir.absolutePath + "/Record/"
+        val size = mCamera.onSize() ?: return
+        val fps = 30
+        val rate = (size.width * size.height * fps * 0.3).toLong()
+        mRecord.onSource(out, size.width, size.height, rate, fps)
     }
 
     @SuppressLint("SetTextI18n")

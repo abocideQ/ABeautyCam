@@ -1,5 +1,5 @@
-#ifndef FFMPEGTEST_SIMPLEPLAYER_H
-#define FFMPEGTEST_SIMPLEPLAYER_H
+#ifndef VDMAKE_SIMPLEPLAYER_H
+#define VDMAKE_SIMPLEPLAYER_H
 
 #include "VideoDecode.h"
 #include "AudioDecode.h"
@@ -41,4 +41,4 @@ private:
 };
 
 
-#endif //FFMPEGTEST_SIMPLEPLAYER_H
+#endif //VDMAKE_SIMPLEPLAYER_H

@@ -1,5 +1,5 @@
-#ifndef FFMPEGTEST_AUDIOCODEC_H
-#define FFMPEGTEST_AUDIOCODEC_H
+#ifndef VDMAKE_AUDIOCODEC_H
+#define VDMAKE_AUDIOCODEC_H
 
 #include "BaseDecode.h"
 #include "AudioRender.h"
@@ -32,4 +32,4 @@ private:
 };
 
 
-#endif //FFMPEGTEST_AUDIOCODEC_H
+#endif //VDMAKE_AUDIOCODEC_H

@@ -1,5 +1,5 @@
-#ifndef FFMPEGTEST_BASECODEC_H
-#define FFMPEGTEST_BASECODEC_H
+#ifndef VDMAKE_BASECODEC_H
+#define VDMAKE_BASECODEC_H
 
 extern "C" {
 #include "libavformat/avformat.h"
@@ -90,4 +90,4 @@ private:
 };
 
 
-#endif //FFMPEGTEST_BASECODEC_H
+#endif //VDMAKE_BASECODEC_H

@@ -1,5 +1,5 @@
-#ifndef FFMPEGTEST_AUDIORENDER_H
-#define FFMPEGTEST_AUDIORENDER_H
+#ifndef VDMAKE_AUDIORENDER_H
+#define VDMAKE_AUDIORENDER_H
 
 #include "BaseSL.h"
 #include "PixAudio.h"
@@ -36,4 +36,4 @@ private:
 };
 
 
-#endif //FFMPEGTEST_AUDIORENDER_H
+#endif //VDMAKE_AUDIORENDER_H

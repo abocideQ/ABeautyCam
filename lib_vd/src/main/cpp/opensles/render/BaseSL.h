@@ -1,5 +1,5 @@
-#ifndef FFMPEGTEST_BASESL_H
-#define FFMPEGTEST_BASESL_H
+#ifndef VDMAKE_BASESL_H
+#define VDMAKE_BASESL_H
 
 #include <SLES/OpenSLES.h>
 #include <SLES/OpenSLES_Android.h>
@@ -39,4 +39,4 @@ private:
     void handlerCallBack(SLAndroidSimpleBufferQueueItf bufferQueue);
 };
 
-#endif //FFMPEGTEST_BASESL_H
+#endif //VDMAKE_BASESL_H

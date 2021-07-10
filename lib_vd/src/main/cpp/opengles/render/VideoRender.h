@@ -1,5 +1,5 @@
-#ifndef FFMPEGTEST_VIDEORENDER_H
-#define FFMPEGTEST_VIDEORENDER_H
+#ifndef VDMAKE_VIDEORENDER_H
+#define VDMAKE_VIDEORENDER_H
 
 #include "../glm/glm.hpp"
 #include "../glm/gtc/matrix_transform.hpp"
@@ -38,6 +38,17 @@ public:
     void onRelease();
 
 protected:
+    //回调函数 -> Record
+    typedef void (*OnRenderFrameCallback)(void *, PixImage *);
+
+    OnRenderFrameCallback m_RenderFrameCallback = nullptr;
+    void *m_CallbackContext = nullptr;
+
+    void SetRenderCallback(void *ctx, OnRenderFrameCallback callback) {
+        m_CallbackContext = ctx;
+        m_RenderFrameCallback = callback;
+    }
+
     //数据
     PixImage *m_Image = nullptr;
     int m_Width_display = 0;
@@ -66,4 +77,4 @@ protected:
 };
 
 
-#endif //FFMPEGTEST_VIDEORENDER_H
+#endif //VDMAKE_VIDEORENDER_H
