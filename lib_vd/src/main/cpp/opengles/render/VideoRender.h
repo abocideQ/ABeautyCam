@@ -38,7 +38,7 @@ public:
     void onRelease();
 
 protected:
-    //回调函数 -> Record
+//    回调函数 -> Record
     typedef void (*OnRenderFrameCallback)(void *, PixImage *);
 
     OnRenderFrameCallback m_RenderFrameCallback = nullptr;

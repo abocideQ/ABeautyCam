@@ -14,7 +14,7 @@ public:
             this->data = static_cast<uint8_t *>(malloc(this->dataSize));
             memcpy(this->data, data, dataSize);
         }
-
+    }
 
     ~AudioFrame() {
         if (hardCopy && this->data)

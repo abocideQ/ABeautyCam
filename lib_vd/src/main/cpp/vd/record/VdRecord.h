@@ -16,13 +16,13 @@ public:
 
     void onStop();
 
-    static VdRecord instance();
+    static VdRecord *instance();
 
 protected:
-    MediaRecord *m_MediaRecord
+    MediaRecord *m_MediaRecord;
 
 private:
-    static VdRecord *m_Sample
+    static VdRecord *m_Sample;
 };
 
 

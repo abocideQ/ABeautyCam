@@ -4,15 +4,15 @@ extern "C" {
 
 void VdRecord::onConfig(char *urlOut, int width, int height, long vBitRate, int fps) {
     m_MediaRecord = new MediaRecord();
-    MediaConfig config = new MediaConfig();
-    config.width = width;
-    config.height = height;
-    config.vBitRate = vBitRate;
-    config.fps = fps;
-    config.aSampleRate = DEFAULT_SAMPLE_RATE;
-    config.aChannel = AV_CH_LAYOUT_STEREO;
-    config.aFormat = AV_SAMPLE_FMT_S16;
-    m_MediaRecord->onSource(urlOut, config);
+    MediaConfig *config = new MediaConfig();
+    config->width = width;
+    config->height = height;
+    config->vBitRate = vBitRate;
+    config->fps = fps;
+    config->aSampleRate = 44100;
+    config->aChannel = AV_CH_LAYOUT_STEREO;
+    config->aFormat = AV_SAMPLE_FMT_S16;
+    m_MediaRecord->onSource(urlOut, *config);
 }
 
 void VdRecord::onStart() {
@@ -24,7 +24,7 @@ void VdRecord::onStop() {
 
 void VdRecord::onBufferVideo(int format, int width, int height, uint8_t *data) {
     PixImage *image;
-    image->format = format
+    image->format = format;
     image->width = width;
     image->height = height;
     image->plane[0] = data;
@@ -49,11 +49,11 @@ void VdRecord::onBufferAudio(int size, uint8_t *data) {
     m_MediaRecord->onBufferAudio(frame);
 }
 
-VdRecord VdRecord::m_Sample;
-VdRecord VdRecord::instance() {
+VdRecord *VdRecord::m_Sample;
+VdRecord *VdRecord::instance() {
     if (m_Sample == nullptr) {
         m_Sample = new VdRecord();
     }
-    return m_Sample();
+    return m_Sample;
 }
 }

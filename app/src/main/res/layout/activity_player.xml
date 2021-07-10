@@ -9,6 +9,6 @@
     <LinearLayout
         android:id="@+id/ll_container"
         android:layout_width="match_parent"
-        android:layout_height="500dp"
+        android:layout_height="300dp"
         android:orientation="vertical" />
 </RelativeLayout>
