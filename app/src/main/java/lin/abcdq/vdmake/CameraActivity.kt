@@ -3,9 +3,13 @@ package lin.abcdq.vdmake
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.Matrix
+import android.media.Image
 import android.opengl.GLSurfaceView
 import android.os.Bundle
 import android.view.MotionEvent
+import android.view.View
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -13,6 +17,8 @@ import androidx.appcompat.app.AppCompatActivity
 import lin.abcdq.vd.camera.VdCamera
 import lin.abcdq.vd.record.VdRecord
 import lin.abcdq.vdmake.utils.VdUIHelper
+import java.io.File
+import java.nio.ByteBuffer
 
 class CameraActivity : AppCompatActivity() {
 
@@ -89,6 +95,9 @@ class CameraActivity : AppCompatActivity() {
         mFaceView.setOnClickListener {
             mCamera.onSwitch()
         }
+        mShotView.setOnClickListener {
+
+        }
         mShotView.setOnTouchListener { _, event ->
             when (event?.action) {
                 MotionEvent.ACTION_DOWN -> {
@@ -96,6 +105,7 @@ class CameraActivity : AppCompatActivity() {
                     mShotView.setImageResource(R.drawable.camera_shotting)
                 }
                 MotionEvent.ACTION_UP -> {
+                    capturePicture()
                     mRecord.onStop()
                     mShotView.setImageResource(R.drawable.camera_shotted)
                 }
@@ -114,10 +124,13 @@ class CameraActivity : AppCompatActivity() {
         mCamera = VdCamera(this, 1)
         mCamera.setSurface(mGlSurface)
         resize()
-        val out = obbDir.absolutePath + "/Record/"
+        var out = obbDir.absolutePath + "/Record"
+        if (!File(out).exists()) File(out).mkdirs()
+        out = "$out/test.mp4"
         val size = mCamera.onSize() ?: return
         val fps = 30
         val rate = (size.width * size.height * fps * 0.3).toLong()
+        mRecord = VdRecord()
         mRecord.onSource(out, size.width, size.height, rate, fps)
     }
 
@@ -132,5 +145,24 @@ class CameraActivity : AppCompatActivity() {
         mContainer.layoutParams = layout
         mRatioView = findViewById(R.id.tv_ratio)
         mRatioView.text = "${size.width}:${size.height}"
+    }
+
+    private fun capturePicture() {
+        val buf = ByteBuffer.wrap(mCamera.onBuffer() ?: return)
+        var bitmap = Bitmap.createBitmap(
+            mCamera.onSize()?.width ?: 1,
+            mCamera.onSize()?.height ?: 1,
+            Bitmap.Config.ARGB_8888
+        )
+        bitmap.copyPixelsFromBuffer(buf)
+        val matrix = Matrix()
+        matrix.postRotate(90f)
+        bitmap =
+            Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
+        runOnUiThread {
+            val imageView: ImageView = findViewById(R.id.iv_capture)
+            imageView.visibility = View.VISIBLE
+            imageView.setImageBitmap(bitmap)
+        }
     }
 }

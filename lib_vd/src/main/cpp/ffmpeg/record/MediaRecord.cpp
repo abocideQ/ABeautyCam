@@ -34,8 +34,7 @@ void MediaRecord::onPrepare() {
     if (!(m_AVOutputFormat->flags & AVFMT_NOFILE)) {
         result = avio_open(&m_AVFormatContext->pb, m_UrlOut, AVIO_FLAG_WRITE);
         if (result < 0) {
-            LOGCATE("MediaRecorder::onPrepare Could not open '%s': %s", m_UrlOut,
-                    av_err2str(result));
+            LOGCATE("MediaRecorder::onPrepare Cant open '%s': %s", m_UrlOut, av_err2str(result));
             result = -1;
             return;
         }
@@ -43,8 +42,7 @@ void MediaRecord::onPrepare() {
     // Write the stream header, if any
     result = avformat_write_header(m_AVFormatContext, nullptr);
     if (result < 0) {
-        LOGCATE("MediaRecorder::onPrepare Error occurred when opening output file: %s",
-                av_err2str(result));
+        LOGCATE("MediaRecorder::onPrepare avformat_write_header error: %s", av_err2str(result));
         result = -1;
         return;
     }
@@ -56,9 +54,6 @@ void MediaRecord::onPrepare() {
 void MediaRecord::onBufferVideo(VideoFrame *input) {
     if (m_Interrupt) return;
     VideoFrame *frame = new VideoFrame();
-//    frame->image->width = input->image->width;
-//    frame->image->height = input->image->height;
-//    frame->image->format = input->image->format;
     frame->image = PixImageUtils::pix_image_get(input->image->format, input->image->width,
                                                 input->image->height,
                                                 input->image->pLineSize, input->image->plane);
@@ -113,27 +108,27 @@ void MediaRecord::onRelease() {
     }
 }
 
-int MediaRecord::initStream(AVCodec *avCodec, AVCodecID avCodecId, AVOutputStream *avOStream) {
+int MediaRecord::initStream(AVCodec *avCodec, AVCodecID avCodecId, AVOutputStream *avStream) {
     //Codec init
     avCodec = const_cast<AVCodec *>(avcodec_find_decoder(avCodecId));
-    if (!m_VideoCodec) {
+    if (!avCodec) {
         LOGCATE("MediaRecorder::initStream avcodec_find_decoder error videocodec");
         return -1;
     }
     //Stream init
-    avOStream->m_Stream = avformat_new_stream(m_AVFormatContext, avCodec);
-    if (!avOStream->m_Stream) {
-        LOGCATE("MediaRecorder::initStream avformat_new_stream error avOStream");
+    avStream->m_Stream = avformat_new_stream(m_AVFormatContext, NULL);
+    if (!avStream->m_Stream) {
+        LOGCATE("MediaRecorder::initStream avformat_new_stream error avStream");
         return -1;
     }
-    avOStream->m_Stream->id = m_AVFormatContext->nb_streams - 1;
+    avStream->m_Stream->id = m_AVFormatContext->nb_streams - 1;
     //Codec Context init
     AVCodecContext *codecCtx = avcodec_alloc_context3(avCodec);
     if (!codecCtx) {
         LOGCATE("MediaRecorder::initStream Could not alloc an encoding context");
         return -1;
     }
-    avOStream->m_CodecCtx = codecCtx;
+    avStream->m_CodecCtx = codecCtx;
     //info init
     if (avCodec->type == AVMEDIA_TYPE_AUDIO) {
         codecCtx->sample_fmt = avCodec->sample_fmts ? avCodec->sample_fmts[0] : AV_SAMPLE_FMT_FLTP;
@@ -162,11 +157,11 @@ int MediaRecord::initStream(AVCodec *avCodec, AVCodecID avCodecId, AVOutputStrea
         codecCtx->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
     }
     //codec init
-    return initCodec(codecCtx, m_AudioCodec, m_AVOutputFormat->audio_codec, &m_AudioStream);
+    return initCodec(codecCtx, avCodec, avCodecId, avStream);
 }
 
 int MediaRecord::initCodec(AVCodecContext *codecCtx, AVCodec *avCodec, AVCodecID avCodecId,
-                           AVOutputStream *avOStream) {
+                           AVOutputStream *avStream) {
     int result = avcodec_open2(codecCtx, avCodec, nullptr);
     if (result < 0) {
         LOGCATE("MediaRecorder::initCodec Could not open  codec: %s", av_err2str(result));
@@ -174,6 +169,7 @@ int MediaRecord::initCodec(AVCodecContext *codecCtx, AVCodec *avCodec, AVCodecID
     }
     //frame init
     if (avCodec->type == AVMEDIA_TYPE_VIDEO) {
+        //alloc video
         AVFrame *avFrame = av_frame_alloc();
         if (!avFrame) return -1;
         avFrame->format = codecCtx->pix_fmt;
@@ -184,14 +180,14 @@ int MediaRecord::initCodec(AVCodecContext *codecCtx, AVCodec *avCodec, AVCodecID
             LOGCATE("MediaRecorder::initCodec av_frame_get_buffer error");
             return -1;
         }
-        avOStream->m_Frame = avFrame;
-        avOStream->m_TmpFrame = av_frame_alloc();
-        if (!avOStream->m_Frame) {
+        avStream->m_Frame = avFrame;
+        avStream->m_TmpFrame = av_frame_alloc();
+        if (!avStream->m_Frame) {
             LOGCATE("MediaRecorder::initCodec av_frame_alloc video error");
             return -1;
         }
         //copy the stream parameters to the muxer
-        result = avcodec_parameters_from_context(avOStream->m_Stream->codecpar, codecCtx);
+        result = avcodec_parameters_from_context(avStream->m_Stream->codecpar, codecCtx);
         if (result < 0) {
             LOGCATE("MediaRecorder::initCodec avcodec_parameters_from_context video error");
             return -1;
@@ -219,28 +215,28 @@ int MediaRecord::initCodec(AVCodecContext *codecCtx, AVCodec *avCodec, AVCodecID
                 return -1;
             }
         }
-        avOStream->m_TmpFrame = av_frame_alloc();
+        avStream->m_TmpFrame = av_frame_alloc();
         //copy the stream parameters to the muxer
-        result = avcodec_parameters_from_context(avOStream->m_Stream->codecpar, codecCtx);
+        result = avcodec_parameters_from_context(avStream->m_Stream->codecpar, codecCtx);
         if (result < 0) {
             LOGCATE("MediaRecorder::initCodec avcodec_parameters_from_context audio error");
             return -1;
         }
         //create resampler context
-        avOStream->m_SwrCtx = swr_alloc();
-        if (!avOStream->m_SwrCtx) {
+        avStream->m_SwrCtx = swr_alloc();
+        if (!avStream->m_SwrCtx) {
             LOGCATE("MediaRecorder::initCodec Could not allocate resampler context");
             return -1;
         }
         //set options
-        av_opt_set_int(avOStream->m_SwrCtx, "in_channel_count", codecCtx->channels, 0);
-        av_opt_set_int(avOStream->m_SwrCtx, "in_sample_rate", codecCtx->sample_rate, 0);
-        av_opt_set_sample_fmt(avOStream->m_SwrCtx, "in_sample_fmt", AV_SAMPLE_FMT_S16, 0);
-        av_opt_set_int(avOStream->m_SwrCtx, "out_channel_count", codecCtx->channels, 0);
-        av_opt_set_int(avOStream->m_SwrCtx, "out_sample_rate", codecCtx->sample_rate, 0);
-        av_opt_set_sample_fmt(avOStream->m_SwrCtx, "out_sample_fmt", codecCtx->sample_fmt, 0);
+        av_opt_set_int(avStream->m_SwrCtx, "in_channel_count", codecCtx->channels, 0);
+        av_opt_set_int(avStream->m_SwrCtx, "in_sample_rate", codecCtx->sample_rate, 0);
+        av_opt_set_sample_fmt(avStream->m_SwrCtx, "in_sample_fmt", AV_SAMPLE_FMT_S16, 0);
+        av_opt_set_int(avStream->m_SwrCtx, "out_channel_count", codecCtx->channels, 0);
+        av_opt_set_int(avStream->m_SwrCtx, "out_sample_rate", codecCtx->sample_rate, 0);
+        av_opt_set_sample_fmt(avStream->m_SwrCtx, "out_sample_fmt", codecCtx->sample_fmt, 0);
         //initialize the resampling context
-        if ((result = swr_init(avOStream->m_SwrCtx)) < 0) {
+        if ((result = swr_init(avStream->m_SwrCtx)) < 0) {
             LOGCATE("MediaRecorder::initCodec Failed to initialize the resampling context");
             return -1;
         }
@@ -250,23 +246,22 @@ int MediaRecord::initCodec(AVCodecContext *codecCtx, AVCodec *avCodec, AVCodecID
 
 int MediaRecord::codeVideoFrame(AVOutputStream *stream) {
     int result = 0;
-    AVPacket *packet = av_packet_alloc();
-    AVFrame *frame = av_frame_alloc();
     while (m_VideoQueue.empty() && !m_Interrupt) {
         usleep(10 * 1000);
     }
-    frame = stream->m_TmpFrame;
-    VideoFrame *videoFrame = m_VideoQueue.front();
+    AVPacket *packet = av_packet_alloc();
+    AVFrame *frame = stream->m_TmpFrame;
+    VideoFrame *queueFrame = m_VideoQueue.front();
     m_VideoQueue.pop();
-    if (videoFrame) {
-        frame->data[0] = videoFrame->image->plane[0];
-        frame->data[1] = videoFrame->image->plane[1];
-        frame->data[2] = videoFrame->image->plane[2];
-        frame->linesize[0] = videoFrame->image->pLineSize[0];
-        frame->linesize[1] = videoFrame->image->pLineSize[1];
-        frame->linesize[2] = videoFrame->image->pLineSize[2];
-        frame->width = videoFrame->image->width;
-        frame->height = videoFrame->image->height;
+    if (queueFrame) {
+        frame->data[0] = queueFrame->image->plane[0];
+        frame->data[1] = queueFrame->image->plane[1];
+        frame->data[2] = queueFrame->image->plane[2];
+        frame->linesize[0] = queueFrame->image->pLineSize[0];
+        frame->linesize[1] = queueFrame->image->pLineSize[1];
+        frame->linesize[2] = queueFrame->image->pLineSize[2];
+        frame->width = queueFrame->image->width;
+        frame->height = queueFrame->image->height;
     }
     if ((m_VideoQueue.empty() && m_Interrupt) || stream->m_EncodeEnd) frame = nullptr;
     if (frame) {
@@ -274,26 +269,29 @@ int MediaRecord::codeVideoFrame(AVOutputStream *stream) {
             result = 1;
             goto EXIT;
         }
-        if (videoFrame->image->format != IMAGE_FORMAT_YUV420P) {
+        if (queueFrame->image->format != IMAGE_FORMAT_YUV420P &&
+            queueFrame->image->format != IMAGE_FORMAT_NV21 &&
+            queueFrame->image->format != IMAGE_FORMAT_NV12 &&
+            queueFrame->image->format != IMAGE_FORMAT_RGBA) {
+            AVPixelFormat ftm = AV_PIX_FMT_RGBA;
+            switch (queueFrame->image->format) {
+                case IMAGE_FORMAT_RGBA:
+                    ftm = AV_PIX_FMT_RGBA;
+                    break;
+                case IMAGE_FORMAT_NV21:
+                    ftm = AV_PIX_FMT_NV21;
+                    break;
+                case IMAGE_FORMAT_NV12:
+                    ftm = AV_PIX_FMT_NV12;
+                    break;
+                case IMAGE_FORMAT_YUV420P:
+                    ftm = AV_PIX_FMT_YUV420P;
+                    break;
+                default:
+                    ftm = AV_PIX_FMT_RGBA;
+                    break;
+            }
             if (!stream->m_SwsCtx) {
-                AVPixelFormat ftm = AV_PIX_FMT_YUV420P;
-                switch (videoFrame->image->format) {
-                    case IMAGE_FORMAT_RGBA:
-                        ftm = AV_PIX_FMT_RGBA;
-                        break;
-                    case IMAGE_FORMAT_NV21:
-                        ftm = AV_PIX_FMT_NV21;
-                        break;
-                    case IMAGE_FORMAT_NV12:
-                        ftm = AV_PIX_FMT_NV12;
-                        break;
-                    case IMAGE_FORMAT_YUV420P:
-                        ftm = AV_PIX_FMT_YUV420P;
-                        break;
-                    default:
-                        ftm = AV_PIX_FMT_RGBA;
-                        break;
-                }
                 stream->m_SwsCtx = sws_getContext(stream->m_CodecCtx->width,
                                                   stream->m_CodecCtx->height,
                                                   ftm,
@@ -301,18 +299,18 @@ int MediaRecord::codeVideoFrame(AVOutputStream *stream) {
                                                   stream->m_CodecCtx->height,
                                                   stream->m_CodecCtx->pix_fmt,
                                                   SWS_FAST_BILINEAR, nullptr, nullptr, nullptr);
-                if (!stream->m_SwsCtx) {
-                    LOGCATE("MediaRecorder::sws_getContext Could not initialize the conversion context\n");
-                    result = 1;
-                    goto EXIT;
-                }
+            }
+            if (!stream->m_SwsCtx) {
+                LOGCATE("MediaRecorder::sws_getContext Could not initialize the conversion context\n");
+                result = 1;
+                goto EXIT;
             }
             sws_scale(stream->m_SwsCtx, (const uint8_t *const *) frame->data,
                       frame->linesize, 0, stream->m_CodecCtx->height, stream->m_Frame->data,
                       stream->m_Frame->linesize);
+            frame = stream->m_Frame;
         }
-        stream->m_Frame->pts = stream->m_NextPts++;
-        frame = stream->m_Frame;
+        frame->pts = stream->m_NextPts++;
         //code frame
         result = avcodec_send_frame(stream->m_CodecCtx, frame);
         if (result == AVERROR_EOF) {
@@ -346,8 +344,10 @@ int MediaRecord::codeVideoFrame(AVOutputStream *stream) {
         }
     }
     EXIT:
-    PixImageUtils::pix_image_free(videoFrame->image);
-    if (videoFrame) delete videoFrame;
+    if (queueFrame) {
+        PixImageUtils::pix_image_free(queueFrame->image);
+        if (queueFrame) delete queueFrame;
+    }
     return result;
 }
 
@@ -432,21 +432,21 @@ int MediaRecord::codeAudioFrame(AVOutputStream *stream) {
 }
 
 void MediaRecord::onRunAsy(MediaRecord *p) {
-    AVOutputStream *vOs = &p->m_VideoStream;
-    AVOutputStream *aOs = &p->m_AudioStream;
-    while (!vOs->m_EncodeEnd || !aOs->m_EncodeEnd) {
-        double videoTimestamp = vOs->m_NextPts * av_q2d(vOs->m_CodecCtx->time_base);
-        double audioTimestamp = aOs->m_NextPts * av_q2d(aOs->m_CodecCtx->time_base);
-        if (!vOs->m_EncodeEnd && (aOs->m_EncodeEnd ||
-                                  av_compare_ts(vOs->m_NextPts, vOs->m_CodecCtx->time_base,
-                                                aOs->m_NextPts, aOs->m_CodecCtx->time_base) <=
-                                  0)) {
-            //视频和音频时间戳对齐，人对于声音比较敏感，防止出现视频声音播放结束画面还没结束的情况
-            if (audioTimestamp <= videoTimestamp && aOs->m_EncodeEnd) vOs->m_EncodeEnd = 1;
-            vOs->m_EncodeEnd = p->codeVideoFrame(vOs);
-        } else {
-            aOs->m_EncodeEnd = p->codeAudioFrame(aOs);
-        }
+    AVOutputStream *vStream = &p->m_VideoStream;
+    AVOutputStream *aStream = &p->m_AudioStream;
+    while (!vStream->m_EncodeEnd || !aStream->m_EncodeEnd) {
+//        double videoTimestamp = vStream->m_NextPts * av_q2d(vStream->m_CodecCtx->time_base);
+//        double audioTimestamp = aStream->m_NextPts * av_q2d(aStream->m_CodecCtx->time_base);
+//        if (!vStream->m_EncodeEnd && (aStream->m_EncodeEnd ||
+//                                  av_compare_ts(vStream->m_NextPts, vStream->m_CodecCtx->time_base,
+//                                                aStream->m_NextPts, aStream->m_CodecCtx->time_base) <=
+//                                  0)) {
+//            //视频和音频时间戳对齐，人对于声音比较敏感，防止出现视频声音播放结束画面还没结束的情况
+//            if (audioTimestamp <= videoTimestamp && aStream->m_EncodeEnd) vStream->m_EncodeEnd = 1;
+        vStream->m_EncodeEnd = p->codeVideoFrame(vStream);
+//        } else {
+//            aStream->m_EncodeEnd = p->codeAudioFrame(aStream);
+//        }
     }
 }
 

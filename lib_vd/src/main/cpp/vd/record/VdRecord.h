@@ -2,6 +2,7 @@
 #define VDMAKE_VDRECORD_H
 
 #include "MediaRecord.h"
+#include "VdCameraRender.h"
 
 class VdRecord {
 public:
@@ -20,6 +21,10 @@ public:
 
 protected:
     MediaRecord *m_MediaRecord;
+
+    VideoRender *m_Render;
+
+    static void onFrameBufferCall(void *ctx, PixImage *image);
 
 private:
     static VdRecord *m_Sample;

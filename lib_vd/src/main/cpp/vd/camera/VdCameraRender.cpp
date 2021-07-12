@@ -53,4 +53,10 @@ VdCameraRender *VdCameraRender::instance() {
     }
     return m_Sample;
 }
+
+VideoRender *VdCameraRender::render() {
+    return m_Render;
 }
+}
+
+

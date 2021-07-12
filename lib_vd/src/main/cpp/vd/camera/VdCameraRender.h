@@ -23,6 +23,8 @@ public:
 
     static VdCameraRender *instance();
 
+    static VideoRender *render();
+
 private:
     static VdCameraRender *m_Sample;
     static VideoRender *m_Render;

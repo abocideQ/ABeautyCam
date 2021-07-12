@@ -212,8 +212,7 @@ void VideoRender::onDrawFrame() {
         glUniform1i(textureRGB, 0);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (const void *) 0);
     }
-    glReadPixels(0, 0, m_Image->width, m_Image->height, GL_RGBA, GL_UNSIGNED_BYTE, m_data);
-    m_dataSize = m_Image->width * m_Image->height * 4;
+    onFrameBufferUpdate();
     glBindVertexArray(0);
     glBindTexture(GL_TEXTURE_2D, 0);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -298,6 +297,24 @@ void VideoRender::onRelease() {
     if (m_Image) {
         std::lock_guard<std::mutex> lock(m_Mutex);//加锁
         PixImageUtils::pix_image_free(m_Image);
+    }
+}
+
+void VideoRender::onFrameBufferUpdate() {
+    if (m_data == nullptr) {
+        m_data = new uint8_t[m_Image->width * m_Image->height * 4];
+        m_dataSize = m_Image->width * m_Image->height * 4;
+    }
+    glReadPixels(0, 0, m_Image->width, m_Image->height, GL_RGBA, GL_UNSIGNED_BYTE, m_data);
+    if (!m_data) return;
+    if (m_RenderFrameCallback) {
+        PixImage *image = new PixImage();
+        image->format = IMAGE_FORMAT_RGBA;
+        image->width = m_Image->height;
+        image->height = m_Image->width;
+        image->pLineSize[0] = m_Image->width * 4;
+        image->plane[0] = m_data;
+        m_RenderFrameCallback(m_CallbackContext, image);
     }
 }
 }

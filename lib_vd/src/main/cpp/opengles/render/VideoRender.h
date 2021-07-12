@@ -11,6 +11,8 @@
 #include <thread>
 #include <mutex>
 
+typedef void (*OnRenderFrameCallback)(void *, PixImage *); // 回调函数 -> Record
+
 class VideoRender {
 
 public:
@@ -37,9 +39,7 @@ public:
 
     void onRelease();
 
-protected:
-//    回调函数 -> Record
-    typedef void (*OnRenderFrameCallback)(void *, PixImage *);
+    void onFrameBufferUpdate();
 
     OnRenderFrameCallback m_RenderFrameCallback = nullptr;
     void *m_CallbackContext = nullptr;
@@ -49,6 +49,7 @@ protected:
         m_RenderFrameCallback = callback;
     }
 
+protected:
     //数据
     PixImage *m_Image = nullptr;
     int m_Width_display = 0;

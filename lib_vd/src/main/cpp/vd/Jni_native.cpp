@@ -70,13 +70,17 @@ void native_vdCameraRender_onBuffer(JNIEnv *env, jobject *obj, jint format, jint
     VdCameraRender::instance()->onBuffer(format, width, height, buffer);
 }
 
-jbyteArray native_vdCameraRender_OnBuffer(JNIEnv *env, jobject obj) {
+jbyteArray native_vdCameraRender_onBufferCapture(JNIEnv *env, jobject obj) {
+    LOGCATE("sdsdsdsd 111111111111100000");
     uint8_t *buffer = VdCameraRender::instance()->onBuffer();
     int length = VdCameraRender::instance()->onBufferSize();
+    LOGCATE("sdsdsdsd 1111111111111");
     if (buffer == nullptr) return nullptr;
     if (length == 0) return nullptr;
     jbyteArray data = env->NewByteArray(length);
+    LOGCATE("sdsdsdsd 1111111111111222222222222");
     env->SetByteArrayRegion(data, 0, length, reinterpret_cast<jbyte *>(buffer));
+    LOGCATE("sdsdsdsd 111111111111122222222222233333333333");
     return data;
 }
 
@@ -154,7 +158,7 @@ JNINativeMethod JNI_Methods_Player[] = {
 };
 JNINativeMethod JNI_Methods_Camera[] = {
         {"native_vdCameraRender_onBuffer",         "(III[B)V", (void *) native_vdCameraRender_onBuffer},
-        {"native_vdCameraRender_onBuffer",         "()[B",     (void *) native_vdCameraRender_onBuffer},
+        {"native_vdCameraRender_onBufferCapture",  "()[B",     (void *) native_vdCameraRender_onBufferCapture},
         {"native_vdCameraRender_onRotate",         "(F)V",     (void *) native_vdCameraRender_onRotate},
         {"native_vdCameraRender_onSurfaceCreated", "()V",      (void *) native_vdCameraRender_onSurfaceCreated},
         {"native_vdCameraRender_onSurfaceChanged", "(II)V",    (void *) native_vdCameraRender_onSurfaceChanged},
@@ -162,7 +166,7 @@ JNINativeMethod JNI_Methods_Camera[] = {
         {"native_vdCameraRender_onRelease",        "()V",      (void *) native_vdCameraRender_onRelease}
 };
 JNINativeMethod JNI_Methods_Record[] = {
-        {"native_vdRecord_onSource",      "(Ljava/lang/String;IILI)V", (void *) native_vdRecord_onSource},
+        {"native_vdRecord_onSource",      "(Ljava/lang/String;IIJI)V", (void *) native_vdRecord_onSource},
         {"native_vdRecord_onStart",       "()V",                       (void *) native_vdRecord_onStart},
         {"native_vdRecord_onStop",        "()V",                       (void *) native_vdRecord_onStop},
         {"native_vdRecord_onBufferVideo", "(III[B)V",                  (void *) native_vdRecord_onBufferVideo},

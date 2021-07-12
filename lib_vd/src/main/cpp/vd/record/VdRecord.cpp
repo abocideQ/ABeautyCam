@@ -17,8 +17,11 @@ void VdRecord::onConfig(char *urlOut, int width, int height, long vBitRate, int 
 
 void VdRecord::onStart() {
     m_MediaRecord->onPrepare();
+    VdCameraRender::instance()->render()->SetRenderCallback(this, onFrameBufferCall);
 }
+
 void VdRecord::onStop() {
+    VdCameraRender::instance()->render()->SetRenderCallback(nullptr, nullptr);
     m_MediaRecord->onRelease();
 }
 
@@ -48,6 +51,16 @@ void VdRecord::onBufferAudio(int size, uint8_t *data) {
     AudioFrame *frame = new AudioFrame(data, size, false);
     m_MediaRecord->onBufferAudio(frame);
 }
+
+void VdRecord::onFrameBufferCall(void *ctx, PixImage *image) {
+    VdRecord *vdRecord = static_cast<VdRecord *>(ctx);
+    if (vdRecord->m_MediaRecord) {
+        VideoFrame *frame = new VideoFrame();
+        frame->image = image;
+        vdRecord->onBufferVideo(image->format, image->width, image->height, *image->plane);
+    }
+}
+
 
 VdRecord *VdRecord::m_Sample;
 VdRecord *VdRecord::instance() {
