@@ -101,13 +101,21 @@ class CameraActivity : AppCompatActivity() {
         mShotView.setOnTouchListener { _, event ->
             when (event?.action) {
                 MotionEvent.ACTION_DOWN -> {
+                    var out = obbDir.absolutePath + "/Record"
+                    if (!File(out).exists()) File(out).mkdirs()
+                    out = "$out/teTing.mp4"
+                    val size = mCamera.onSize() ?: return@setOnTouchListener false
+                    val fps = 30
+                    val rate = (size.width * size.height * fps * 0.3).toLong()
+                    mRecord = VdRecord()
+                    mRecord.onSource(out, size.width, size.height, rate, fps)
                     mRecord.onStart()
                     mShotView.setImageResource(R.drawable.camera_shotting)
                 }
                 MotionEvent.ACTION_UP -> {
-                    capturePicture()
                     mRecord.onStop()
                     mShotView.setImageResource(R.drawable.camera_shotted)
+                    capturePicture()
                 }
                 MotionEvent.ACTION_CANCEL -> {
                     mRecord.onStop()
@@ -124,14 +132,6 @@ class CameraActivity : AppCompatActivity() {
         mCamera = VdCamera(this, 1)
         mCamera.setSurface(mGlSurface)
         resize()
-        var out = obbDir.absolutePath + "/Record"
-        if (!File(out).exists()) File(out).mkdirs()
-        out = "$out/test.mp4"
-        val size = mCamera.onSize() ?: return
-        val fps = 30
-        val rate = (size.width * size.height * fps * 0.3).toLong()
-        mRecord = VdRecord()
-        mRecord.onSource(out, size.width, size.height, rate, fps)
     }
 
     @SuppressLint("SetTextI18n")

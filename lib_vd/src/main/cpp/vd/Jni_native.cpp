@@ -71,16 +71,12 @@ void native_vdCameraRender_onBuffer(JNIEnv *env, jobject *obj, jint format, jint
 }
 
 jbyteArray native_vdCameraRender_onBufferCapture(JNIEnv *env, jobject obj) {
-    LOGCATE("sdsdsdsd 111111111111100000");
     uint8_t *buffer = VdCameraRender::instance()->onBuffer();
     int length = VdCameraRender::instance()->onBufferSize();
-    LOGCATE("sdsdsdsd 1111111111111");
     if (buffer == nullptr) return nullptr;
     if (length == 0) return nullptr;
     jbyteArray data = env->NewByteArray(length);
-    LOGCATE("sdsdsdsd 1111111111111222222222222");
     env->SetByteArrayRegion(data, 0, length, reinterpret_cast<jbyte *>(buffer));
-    LOGCATE("sdsdsdsd 111111111111122222222222233333333333");
     return data;
 }
 

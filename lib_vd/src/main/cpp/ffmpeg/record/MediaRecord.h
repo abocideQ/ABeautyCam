@@ -59,14 +59,15 @@ public:
 
 protected:
 
-    int initStream(AVCodec *avCodec, AVCodecID avCodecId, AVOutputStream *avOStream);
+    int initStream(AVFormatContext *fmtCtx, AVOutputStream *stream);
 
-    int initCodec(AVCodecContext *codecCtx, AVCodec *avCodec, AVCodecID avCodecId,
-                  AVOutputStream *avOStream);
+    int initCodec(AVCodecID codecId, AVCodec *codec, AVOutputStream *stream);
 
-    int codeVideoFrame(AVOutputStream *stream);
+    int codeVFrame(AVOutputStream *stream);
 
-    int codeAudioFrame(AVOutputStream *stream);
+    int codeAFrame(AVOutputStream *stream);
+
+    void release();
 
     AVFormatContext *m_AVFormatContext = nullptr;
     AVOutputFormat *m_AVOutputFormat = nullptr;
