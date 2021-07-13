@@ -268,7 +268,7 @@ int MediaRecord::codeVFrame(AVOutputStream *stream) {
                 goto EXIT;
             }
         }
-        sws_scale(stream->m_SwsCtx, (const uint8_t *const *) frame->data,
+        sws_scale(stream->m_SwsCtx, frame->data,
                   frame->linesize, 0, stream->m_CodecCtx->height, stream->m_Frame->data,
                   stream->m_Frame->linesize);
         stream->m_Frame->pts = stream->m_NextPts++;
