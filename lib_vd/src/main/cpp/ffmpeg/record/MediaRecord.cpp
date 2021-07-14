@@ -276,7 +276,6 @@ int MediaRecord::codeVFrame(AVOutputStream *stream) {
         stream->m_Frame->pts = stream->m_NextPts++;
         frame = stream->m_Frame;
         //code frame
-        LOGCATE("MediaRecorder::video frame pts=%ld, size=%d", frame->pts, frame->pkt_size);
         result = avcodec_send_frame(stream->m_CodecCtx, frame);
         if (result == AVERROR_EOF) {
             LOGCATE("MediaRecorder::avcodec_send_frame video EOF ret=%s", av_err2str(result));
@@ -288,13 +287,12 @@ int MediaRecord::codeVFrame(AVOutputStream *stream) {
         while (!result) {
             result = avcodec_receive_packet(stream->m_CodecCtx, packet);
             if (result == AVERROR(EAGAIN) || result == AVERROR_EOF) {
-                LOGCATE("MediaRecorder::avcodec_receive_packet AVERROR ret=%s", av_err2str(result));
+//                LOGCATE("MediaRecorder::avcodec_receive_packet AVERROR ret=%s", av_err2str(result));
                 goto EXIT;
             } else if (result < 0) {
                 LOGCATE("MediaRecorder::avcodec_receive_packet error ret=%s", av_err2str(result));
                 goto EXIT;
             }
-            LOGCATE("MediaRecorder::video packet pts=%ld, size=%d", packet->pts, packet->size);
             //Write the compressed frame to the media file
             av_packet_rescale_ts(packet, stream->m_CodecCtx->time_base,
                                  stream->m_Stream->time_base);
