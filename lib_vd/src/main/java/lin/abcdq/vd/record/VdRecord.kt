@@ -28,6 +28,10 @@ class VdRecord {
         native_vdRecord_onBufferVideo(format, w, h, data)
     }
 
+    fun onGetBufferVideo(): ByteArray {
+        return native_vdRecord_onGetBufferVideo()
+    }
+
     fun onBufferAudio(data: ByteArray) {
         native_vdRecord_onBufferAudio(data)
     }
@@ -49,6 +53,8 @@ class VdRecord {
     private external fun native_vdRecord_onStop()
 
     private external fun native_vdRecord_onBufferVideo(format: Int, w: Int, h: Int, data: ByteArray)
+
+    private external fun native_vdRecord_onGetBufferVideo(): ByteArray
 
     private external fun native_vdRecord_onBufferAudio(data: ByteArray)
 

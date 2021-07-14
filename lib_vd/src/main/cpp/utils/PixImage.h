@@ -195,9 +195,9 @@ public:
             image->pSize[0] = width * height;
             image->pSize[1] = width * height / 4;
             image->pSize[2] = width * height / 4;
-            image->pLineSize[0] = 0;
-            image->pLineSize[1] = 0;
-            image->pLineSize[2] = 0;
+            image->pLineSize[0] = width;
+            image->pLineSize[1] = width / 2;
+            image->pLineSize[2] = width / 2;
             image->size = size;
         } else if (image->format == IMAGE_FORMAT_NV21) {
             int size = width * height * 3 / 2;
@@ -211,8 +211,8 @@ public:
             image->pSize[0] = width * height;
             image->pSize[1] = width * height / 2;
             image->pSize[2] = 0;
-            image->pLineSize[0] = 0;
-            image->pLineSize[1] = 0;
+            image->pLineSize[0] = width;
+            image->pLineSize[1] = width;
             image->pLineSize[2] = 0;
             image->size = size;
         } else if (image->format == IMAGE_FORMAT_NV12) {
@@ -227,8 +227,8 @@ public:
             image->pSize[0] = width * height;
             image->pSize[1] = width * height / 2;
             image->pSize[2] = 0;
-            image->pLineSize[0] = 0;
-            image->pLineSize[1] = 0;
+            image->pLineSize[0] = width;
+            image->pLineSize[1] = width;
             image->pLineSize[2] = 0;
             image->size = size;
         } else if (image->format == IMAGE_FORMAT_RGBA) {
@@ -241,7 +241,7 @@ public:
             image->pSize[0] = width * height * 4;
             image->pSize[1] = 0;
             image->pSize[2] = 0;
-            image->pLineSize[0] = 0;
+            image->pLineSize[0] = width * 4;
             image->pLineSize[1] = 0;
             image->pLineSize[2] = 0;
             image->size = size;

@@ -80,6 +80,7 @@ protected:
     std::queue<AudioFrame *> m_AudioQueue;
     //线程
     std::thread *m_Thread = nullptr;
+    mutable std::mutex m_Mutex;
     bool m_Interrupt = false;
 private:
     char *m_UrlOut = nullptr;

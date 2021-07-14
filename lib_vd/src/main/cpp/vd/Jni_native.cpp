@@ -162,11 +162,11 @@ JNINativeMethod JNI_Methods_Camera[] = {
         {"native_vdCameraRender_onRelease",        "()V",      (void *) native_vdCameraRender_onRelease}
 };
 JNINativeMethod JNI_Methods_Record[] = {
-        {"native_vdRecord_onSource",      "(Ljava/lang/String;IIJI)V", (void *) native_vdRecord_onSource},
-        {"native_vdRecord_onStart",       "()V",                       (void *) native_vdRecord_onStart},
-        {"native_vdRecord_onStop",        "()V",                       (void *) native_vdRecord_onStop},
-        {"native_vdRecord_onBufferVideo", "(III[B)V",                  (void *) native_vdRecord_onBufferVideo},
-        {"native_vdRecord_onBufferAudio", "([B)V",                     (void *) native_vdRecord_onBufferAudio},
+        {"native_vdRecord_onSource",         "(Ljava/lang/String;IIJI)V", (void *) native_vdRecord_onSource},
+        {"native_vdRecord_onStart",          "()V",                       (void *) native_vdRecord_onStart},
+        {"native_vdRecord_onStop",           "()V",                       (void *) native_vdRecord_onStop},
+        {"native_vdRecord_onBufferVideo",    "(III[B)V",                  (void *) native_vdRecord_onBufferVideo},
+        {"native_vdRecord_onBufferAudio",    "([B)V",                     (void *) native_vdRecord_onBufferAudio},
 };
 #define JNI_LENGTH(n) (sizeof(n) / sizeof(n[0]))
 jint JNI_OnLoad(JavaVM *vm, void *reserved) {
