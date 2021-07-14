@@ -11,7 +11,7 @@
 #include <thread>
 #include <mutex>
 
-typedef void (*OnRenderFrameCallback)(void *, PixImage *); // 回调函数 -> Record
+typedef void (*OnRenderFrameCallback)(void *, int , int , int , uint8_t *); // 回调函数 -> Record
 
 class VideoRender {
 

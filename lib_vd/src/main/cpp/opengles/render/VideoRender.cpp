@@ -302,17 +302,13 @@ void VideoRender::onRelease() {
 
 void VideoRender::onFrameBufferUpdate() {
     if (m_RenderFrameCallback && m_CallbackContext) {
-        if (!m_data) m_data = new uint8_t[m_Image->width * m_Image->height * 4];
-        m_dataSize = m_Image->width * m_Image->height * 4;
-        glReadPixels(0, 0, m_Image->width, m_Image->height, GL_RGBA, GL_UNSIGNED_BYTE, m_data);
-        PixImage *image = new PixImage();
-        image->format = IMAGE_FORMAT_RGBA;
-        image->width = m_Image->width;
-        image->height = m_Image->height;
-        image->pLineSize[0] = m_Image->width * 4;
-        image->plane[0] = m_data;
+        int width = m_Image->width;
+        int height = m_Image->height;
+        if (!m_data) m_data = new uint8_t[width * height * 4];
+        m_dataSize = width * height * 4;
+        glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, m_data);
         if (!m_RenderFrameCallback || !m_CallbackContext) return;
-        m_RenderFrameCallback(m_CallbackContext, image);
+        m_RenderFrameCallback(m_CallbackContext, IMAGE_FORMAT_RGBA, width, height, m_data);
     }
 }
 }

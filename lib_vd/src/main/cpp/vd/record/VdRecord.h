@@ -24,7 +24,7 @@ protected:
 
     VideoRender *m_Render;
 
-    static void onFrameBufferCall(void *ctx, PixImage *image);
+    static void onFrameBufferCall(void *ctx, int format, int width, int height, uint8_t *data);
 
 private:
     static VdRecord *m_Sample;

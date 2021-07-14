@@ -105,7 +105,7 @@ class CameraActivity : AppCompatActivity() {
                     if (!File(out).exists()) File(out).mkdirs()
                     out = "$out/teTing.mp4"
                     val size = mCamera.onSize() ?: return@setOnTouchListener false
-                    val fps = 20
+                    val fps = 50
                     val rate = (size.width * size.height * fps * 0.3).toLong()
                     mRecord = VdRecord()
                     mRecord.onSource(out, size.width, size.height, rate, fps)

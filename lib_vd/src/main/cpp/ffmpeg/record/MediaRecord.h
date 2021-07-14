@@ -51,7 +51,7 @@ public:
 
     void onPrepare();
 
-    void onBufferVideo(VideoFrame *input);
+    void onBufferVideo(int format, int width, int height, uint8_t *data);
 
     void onBufferAudio(AudioFrame *input);
 

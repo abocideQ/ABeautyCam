@@ -5,6 +5,10 @@ extern "C" {
 void MediaRecord::onSource(char *urlOut, MediaConfig config) {
     m_UrlOut = urlOut;
     m_Config = config;
+    int width = m_Config.width;
+    int height = m_Config.height;
+    m_Config.width = height;
+    m_Config.height = width;
 }
 
 void MediaRecord::onPrepare() {
@@ -72,9 +76,16 @@ void MediaRecord::onPrepare() {
     av_dump_format(m_AVFormatContext, 0, m_UrlOut, 1);
 }
 
-void MediaRecord::onBufferVideo(VideoFrame *input) {
+void MediaRecord::onBufferVideo(int format, int width, int height, uint8_t *data) {
     if (m_Interrupt) return;
-    m_VideoQueue.push(input);
+    if (data == nullptr) return;
+    VideoFrame *frame = new VideoFrame();
+    frame->image = PixImageUtils::pix_image_get(format, height, width, data);
+    int w = height;
+    int h = width;
+//    frame->image->width = h;
+//    frame->image->height = w;
+    m_VideoQueue.push(frame);
 }
 
 void MediaRecord::onBufferAudio(AudioFrame *input) {

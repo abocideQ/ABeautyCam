@@ -26,9 +26,7 @@ void VdRecord::onStop() {
 }
 
 void VdRecord::onBufferVideo(int format, int width, int height, uint8_t *data) {
-    VideoFrame *frame = new VideoFrame();
-    frame->image = PixImageUtils::pix_image_get(format, width, height, data);
-    m_MediaRecord->onBufferVideo(frame);
+    m_MediaRecord->onBufferVideo(format, width, height, data);
 }
 
 void VdRecord::onBufferAudio(int size, uint8_t *data) {
@@ -36,10 +34,10 @@ void VdRecord::onBufferAudio(int size, uint8_t *data) {
     m_MediaRecord->onBufferAudio(frame);
 }
 
-void VdRecord::onFrameBufferCall(void *ctx, PixImage *image) {
+void VdRecord::onFrameBufferCall(void *ctx, int format, int width, int height, uint8_t *data) {
     VdRecord *vdRecord = static_cast<VdRecord *>(ctx);
     if (vdRecord->m_MediaRecord) {
-        vdRecord->onBufferVideo(image->format, image->width, image->height, *image->plane);
+        vdRecord->onBufferVideo(format, width, height, data);
     }
 }
 
