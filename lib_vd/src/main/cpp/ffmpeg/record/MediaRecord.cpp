@@ -416,37 +416,36 @@ int MediaRecord::codeAFrame(AVOutputStream *stream) {
 }
 
 void MediaRecord::release() {
-//    while (!m_VideoQueue.empty()) {
-//        VideoFrame *frame = m_VideoQueue.front();
-//        m_VideoQueue.pop();
-//        PixImageUtils::pix_image_free(frame->image);
-//        delete frame;
-//    }
-//    while (!m_AudioQueue.empty()) {
-//        AudioFrame *frame = m_AudioQueue.front();
-//        m_AudioQueue.pop();
-//        delete frame;
-//    }
-
+    while (!m_VideoQueue.empty()) {
+        VideoFrame *frame = m_VideoQueue.front();
+        m_VideoQueue.pop();
+        PixImageUtils::pix_image_free(frame->image);
+        delete frame;
+    }
+    while (!m_AudioQueue.empty()) {
+        AudioFrame *frame = m_AudioQueue.front();
+        m_AudioQueue.pop();
+        delete frame;
+    }
     //Close each codec
-//    avcodec_free_context(&m_VideoStream.m_CodecCtx);
-//    av_frame_free(&m_VideoStream.m_Frame);
-//    sws_freeContext(m_VideoStream.m_SwsCtx);
-//    if (!m_VideoStream.m_TmpFrame) {
-//        av_free(m_VideoStream.m_TmpFrame);
-//        m_VideoStream.m_TmpFrame = nullptr;
-//    }
-//    avcodec_free_context(&m_AudioStream.m_CodecCtx);
-//    av_frame_free(&m_AudioStream.m_Frame);
-//    swr_free(&m_AudioStream.m_SwrCtx);
-//    if (!m_AudioStream.m_TmpFrame) {
-//        av_free(m_AudioStream.m_TmpFrame);
-//        m_AudioStream.m_TmpFrame = nullptr;
-//    }
-//    if (!(m_AVOutputFormat->flags & AVFMT_NOFILE)) {
-//        avio_closep(&m_AVFormatContext->pb);
-//    }
-//    avformat_free_context(m_AVFormatContext);
+    avcodec_free_context(&m_VideoStream.m_CodecCtx);
+    av_frame_free(&m_VideoStream.m_Frame);
+    sws_freeContext(m_VideoStream.m_SwsCtx);
+    if (!m_VideoStream.m_TmpFrame) {
+        av_free(m_VideoStream.m_TmpFrame);
+        m_VideoStream.m_TmpFrame = nullptr;
+    }
+    avcodec_free_context(&m_AudioStream.m_CodecCtx);
+    av_frame_free(&m_AudioStream.m_Frame);
+    swr_free(&m_AudioStream.m_SwrCtx);
+    if (!m_AudioStream.m_TmpFrame) {
+        av_free(m_AudioStream.m_TmpFrame);
+        m_AudioStream.m_TmpFrame = nullptr;
+    }
+    if (!(m_AVOutputFormat->flags & AVFMT_NOFILE)) {
+        avio_closep(&m_AVFormatContext->pb);
+    }
+    avformat_free_context(m_AVFormatContext);
 }
 
 void MediaRecord::onRunAsy(MediaRecord *p) {
