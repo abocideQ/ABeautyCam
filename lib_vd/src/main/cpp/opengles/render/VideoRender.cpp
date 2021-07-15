@@ -314,16 +314,19 @@ void VideoRender::onRelease() {
 }
 
 void VideoRender::onFrameBufferUpdate() {
-    if (m_RenderFrameCallback && m_CallbackContext) {
-        int width = m_Image->width;
-        int height = m_Image->height;
-        if (!m_data) m_data = new uint8_t[width * height * 4];
-        m_dataSize = width * height * 4;
-        if (m_CameraData) {
-            glReadPixels(0, 0, height, width, GL_RGBA, GL_UNSIGNED_BYTE, m_data);
+    std::lock_guard<std::mutex> lock(m_Mutex);//加锁
+    int width = m_Image->width;
+    int height = m_Image->height;
+    if (!m_data) m_data = new uint8_t[width * height * 4];
+    m_dataSize = width * height * 4;
+    if (m_CameraData) {
+        glReadPixels(0, 0, height, width, GL_RGBA, GL_UNSIGNED_BYTE, m_data);
+        if (m_RenderFrameCallback && m_CallbackContext) {
             m_RenderFrameCallback(m_CallbackContext, IMAGE_FORMAT_RGBA, height, width, m_data);
-        } else {
-            glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, m_data);
+        }
+    } else {
+        glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, m_data);
+        if (m_RenderFrameCallback && m_CallbackContext) {
             m_RenderFrameCallback(m_CallbackContext, IMAGE_FORMAT_RGBA, width, height, m_data);
         }
     }
