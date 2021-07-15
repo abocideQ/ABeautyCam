@@ -11,7 +11,7 @@ public:
 
     int onBufferSize();
 
-    void onRotate(float rotate);
+    void onRotate(float rot, bool modelRot);
 
     void onSurfaceCreated();
 

@@ -79,12 +79,11 @@ void MediaRecord::onPrepare() {
 void MediaRecord::onBufferVideo(int format, int width, int height, uint8_t *data) {
     if (m_Interrupt) return;
     if (data == nullptr) return;
-    VideoFrame *frame = new VideoFrame();
-    frame->image = PixImageUtils::pix_image_get(format, height, width, data);
     int w = height;
     int h = width;
-//    frame->image->width = h;
-//    frame->image->height = w;
+    VideoFrame *frame = new VideoFrame();
+    frame->image = PixImageUtils::pix_image_get(format, width, height, data);
+    std::lock_guard<std::mutex> lock(m_Mutex);
     m_VideoQueue.push(frame);
 }
 
@@ -228,6 +227,7 @@ int MediaRecord::codeVFrame(AVOutputStream *stream) {
     while (m_VideoQueue.empty() && !m_Interrupt) {
         usleep(10 * 1000);
     }
+    std::unique_lock<std::mutex> lock(m_Mutex);
     int result = 0;
     AVPacket *packet = av_packet_alloc();
     AVFrame *frame = stream->m_TmpFrame;
@@ -246,6 +246,7 @@ int MediaRecord::codeVFrame(AVOutputStream *stream) {
     if ((m_VideoQueue.empty() && m_Interrupt == true)) {
         frame = nullptr;
     }
+    lock.unlock();
     if (frame) {
         if (!stream->m_SwsCtx) {
             AVPixelFormat ftm = AV_PIX_FMT_RGBA;

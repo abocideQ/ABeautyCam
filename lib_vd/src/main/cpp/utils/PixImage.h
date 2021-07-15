@@ -145,7 +145,7 @@ public:
         } else if (image->format == IMAGE_FORMAT_RGBA) {
             int size = width * height * 4;
             y = new uint8_t[width * height * 4];
-            if (width != lineSize[0]) {
+            if (width * 4 != lineSize[0]) {
                 int i = 0;
                 for (; i < height; i++) {
                     memcpy(y + width * i * 4, data[0] + lineSize[0] * i, width * 4);

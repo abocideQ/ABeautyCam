@@ -21,14 +21,15 @@ class VdCamera(context: Context, format: Int) : GLSurfaceView.Renderer {
     fun setSurface(surface: GLSurfaceView) {
         surface.setEGLContextClientVersion(3)
         surface.setRenderer(this)
+        surface.renderMode = GLSurfaceView.RENDERMODE_CONTINUOUSLY
     }
 
     fun onSwitch() {
         mCameraUse?.switch()
         if (mCameraUse?.facing() == CameraWrap.CAMERA_BACK) {
-            native_vdCameraRender_onRotate(90.0f)
+            native_vdCameraRender_onRotate(-90.0f, true)
         } else {
-            native_vdCameraRender_onRotate(270.0f)
+            native_vdCameraRender_onRotate(90.0f, false)
         }
     }
 
@@ -84,9 +85,9 @@ class VdCamera(context: Context, format: Int) : GLSurfaceView.Renderer {
             }
         })
         if (mCameraUse?.facing() == CameraWrap.CAMERA_BACK) {
-            native_vdCameraRender_onRotate(90.0f)
+            native_vdCameraRender_onRotate(-90.0f, true)
         } else {
-            native_vdCameraRender_onRotate(270.0f)
+            native_vdCameraRender_onRotate(90.0f, false)
         }
     }
 
@@ -105,7 +106,7 @@ class VdCamera(context: Context, format: Int) : GLSurfaceView.Renderer {
 
     private external fun native_vdCameraRender_onBuffer(ft: Int, w: Int, h: Int, bytes: ByteArray)
     private external fun native_vdCameraRender_onBufferCapture(): ByteArray?
-    private external fun native_vdCameraRender_onRotate(rotate: Float)
+    private external fun native_vdCameraRender_onRotate(rotate: Float, modelRot: Boolean)
     private external fun native_vdCameraRender_onRelease()
     private external fun native_vdCameraRender_onSurfaceCreated()
     private external fun native_vdCameraRender_onSurfaceChanged(w: Int, h: Int)

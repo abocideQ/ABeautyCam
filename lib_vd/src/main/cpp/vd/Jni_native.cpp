@@ -80,8 +80,8 @@ jbyteArray native_vdCameraRender_onBufferCapture(JNIEnv *env, jobject obj) {
     return data;
 }
 
-void native_vdCameraRender_onRotate(JNIEnv *env, jobject *obj, jfloat rotate) {
-    VdCameraRender::instance()->onRotate(rotate);
+void native_vdCameraRender_onRotate(JNIEnv *env, jobject *obj, jfloat rot, jboolean modelRot) {
+    VdCameraRender::instance()->onRotate(rot, modelRot);
 }
 
 void native_vdCameraRender_onSurfaceCreated(JNIEnv *env, jobject *obj) {
@@ -99,6 +99,7 @@ void native_vdCameraRender_onDrawFrame(JNIEnv *env, jobject *obj) {
 void native_vdCameraRender_onRelease(JNIEnv *env, jobject *obj) {
     VdCameraRender::instance()->onRelease();
 }
+
 //============Record
 void
 native_vdRecord_onSource(JNIEnv *env, jobject *obj, jstring urlOut, jint w, jint h, jlong vBRate,
@@ -155,20 +156,21 @@ JNINativeMethod JNI_Methods_Player[] = {
 JNINativeMethod JNI_Methods_Camera[] = {
         {"native_vdCameraRender_onBuffer",         "(III[B)V", (void *) native_vdCameraRender_onBuffer},
         {"native_vdCameraRender_onBufferCapture",  "()[B",     (void *) native_vdCameraRender_onBufferCapture},
-        {"native_vdCameraRender_onRotate",         "(F)V",     (void *) native_vdCameraRender_onRotate},
+        {"native_vdCameraRender_onRotate",         "(FZ)V",     (void *) native_vdCameraRender_onRotate},
         {"native_vdCameraRender_onSurfaceCreated", "()V",      (void *) native_vdCameraRender_onSurfaceCreated},
         {"native_vdCameraRender_onSurfaceChanged", "(II)V",    (void *) native_vdCameraRender_onSurfaceChanged},
         {"native_vdCameraRender_onDrawFrame",      "()V",      (void *) native_vdCameraRender_onDrawFrame},
         {"native_vdCameraRender_onRelease",        "()V",      (void *) native_vdCameraRender_onRelease}
 };
 JNINativeMethod JNI_Methods_Record[] = {
-        {"native_vdRecord_onSource",         "(Ljava/lang/String;IIJI)V", (void *) native_vdRecord_onSource},
-        {"native_vdRecord_onStart",          "()V",                       (void *) native_vdRecord_onStart},
-        {"native_vdRecord_onStop",           "()V",                       (void *) native_vdRecord_onStop},
-        {"native_vdRecord_onBufferVideo",    "(III[B)V",                  (void *) native_vdRecord_onBufferVideo},
-        {"native_vdRecord_onBufferAudio",    "([B)V",                     (void *) native_vdRecord_onBufferAudio},
+        {"native_vdRecord_onSource",      "(Ljava/lang/String;IIJI)V", (void *) native_vdRecord_onSource},
+        {"native_vdRecord_onStart",       "()V",                       (void *) native_vdRecord_onStart},
+        {"native_vdRecord_onStop",        "()V",                       (void *) native_vdRecord_onStop},
+        {"native_vdRecord_onBufferVideo", "(III[B)V",                  (void *) native_vdRecord_onBufferVideo},
+        {"native_vdRecord_onBufferAudio", "([B)V",                     (void *) native_vdRecord_onBufferAudio},
 };
 #define JNI_LENGTH(n) (sizeof(n) / sizeof(n[0]))
+
 jint JNI_OnLoad(JavaVM *vm, void *reserved) {
     JNIEnv *env = NULL;
     if (vm->GetEnv((void **) &env, JNI_VERSION_1_6) != JNI_OK) {

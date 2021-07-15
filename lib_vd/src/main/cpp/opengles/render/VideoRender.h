@@ -11,7 +11,7 @@
 #include <thread>
 #include <mutex>
 
-typedef void (*OnRenderFrameCallback)(void *, int , int , int , uint8_t *); // 回调函数 -> Record
+typedef void (*OnRenderFrameCallback)(void *, int, int, int, uint8_t *); // 回调函数 -> Record
 
 class VideoRender {
 
@@ -23,11 +23,15 @@ public:
 
     int onBufferSize();
 
-    void onRotate(float rotate);
+    void onCamera(bool camera);
+
+    void onRotate(float viewRot, int modelRot);
 
     void onSurfaceCreated();
 
     void onSurfaceChanged(int w, int h);
+
+    void onMatrix(const char *gl_name, float viewRot, float modelRot);
 
     void onDrawFrame();
 
@@ -56,7 +60,9 @@ protected:
     int m_Height_display = 0;
     uint8_t *m_data = nullptr;
     int m_dataSize = 0;
-    float m_Rotation = 0.0f;
+    float m_ViewRot = 0.0f;
+    float m_ModelRot = 0.0f;
+    bool m_CameraData = false;
 
     //VBO
     GLuint m_VBO[4];

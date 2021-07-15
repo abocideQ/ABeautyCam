@@ -13,11 +13,16 @@ void VdCameraRender::onBuffer(int format, int w, int h, uint8_t *data) {
     m_Render->onBuffer(image);
 }
 
-void VdCameraRender::onRotate(float rotate) {
-    m_Render->onRotate(rotate);
+void VdCameraRender::onRotate(float rot, bool modelRot) {
+    if (modelRot) {
+        m_Render->onRotate(rot, 0.0f);
+    } else {
+        m_Render->onRotate(rot, 180.0f);
+    }
 }
 
 void VdCameraRender::onSurfaceCreated() {
+    m_Render->onCamera(true);
     m_Render->onSurfaceCreated();
 }
 

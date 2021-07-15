@@ -27,7 +27,7 @@ const int Location_Indices[] = {
 
 void VideoRender::onBuffer(PixImage *image) {
     if (image == nullptr || image->plane[0] == nullptr) return;
-    std::lock_guard<std::mutex> lock(m_Mutex);//加锁
+    std::unique_lock<std::mutex> lock(m_Mutex);//加锁
     PixImageUtils::pix_image_free(m_Image);
     m_Image = image;
 }
@@ -40,8 +40,14 @@ int VideoRender::onBufferSize() {
     return m_dataSize;
 }
 
-void VideoRender::onRotate(float rotate) {
-    m_Rotation = rotate;
+void VideoRender::onCamera(bool camera) {
+    m_CameraData = camera;
+}
+
+void VideoRender::onRotate(float viewRot, int modelRot) {
+    m_ViewRot = viewRot;
+    m_ModelRot = modelRot;
+    m_Image = nullptr;
 }
 
 void VideoRender::onSurfaceCreated() {
@@ -133,6 +139,20 @@ void VideoRender::onSurfaceChanged(int width, int height) {
     m_Height_display = height;
 }
 
+void VideoRender::onMatrix(const char *gl_name, float viewRot, float modelRot) {
+    glm::mat4 projection = glm::ortho(-1.0f, 1.0f, -1.0f, 1.0f, 0.0f, 1.0f);
+    glm::mat4 view = glm::mat4(1.0f);
+    view = glm::lookAt(glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f),
+                       glm::vec3(0.0f, 1.0f, 0.0f));
+    view = glm::rotate(view, glm::radians(viewRot), glm::vec3(0.0f, 0.0f, 1.0f));
+    glm::mat4 model = glm::mat4(1.0f);
+    model = glm::rotate(model, glm::radians(modelRot), glm::vec3(0.0f, 1.0f, 0.0f));
+    glm::mat4 mat4Matrix = glm::mat4(1.0f);
+    mat4Matrix = projection * view * model;
+    unsigned int vMatrix = glGetUniformLocation(m_Program, gl_name);
+    glUniformMatrix4fv(vMatrix, 1, GL_FALSE, glm::value_ptr(mat4Matrix));
+}
+
 void VideoRender::onDrawFrame() {
     if (m_Program == GL_NONE) return;
     if (m_Program_Fbo_YUV420P == GL_NONE) return;
@@ -168,10 +188,17 @@ void VideoRender::onDrawFrame() {
     }
     lock.unlock();
     //offscreen
-    glBindTexture(GL_TEXTURE_2D, m_Texture_Fbo[0]);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, m_Image->width, m_Image->height, 0, GL_RGBA,
-                 GL_UNSIGNED_BYTE, nullptr);
-    glViewport(0, 0, m_Image->width, m_Image->height);
+    if (m_CameraData) {
+        glBindTexture(GL_TEXTURE_2D, m_Texture_Fbo[0]);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, m_Image->height, m_Image->width, 0, GL_RGBA,
+                     GL_UNSIGNED_BYTE, nullptr);
+        glViewport(0, 0, m_Image->height, m_Image->width);
+    } else {
+        glBindTexture(GL_TEXTURE_2D, m_Texture_Fbo[0]);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, m_Image->width, m_Image->height, 0, GL_RGBA,
+                     GL_UNSIGNED_BYTE, nullptr);
+        glViewport(0, 0, m_Image->width, m_Image->height);
+    }
     if (m_Image->format == IMAGE_FORMAT_YUV420P) {
         glBindFramebuffer(GL_FRAMEBUFFER, m_Fbo[0]);
         glUseProgram(m_Program_Fbo_YUV420P);
@@ -188,7 +215,6 @@ void VideoRender::onDrawFrame() {
         glUniform1i(textureY, 0);
         glUniform1i(textureU, 1);
         glUniform1i(textureV, 2);
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (const void *) 0);
     } else if (m_Image->format == IMAGE_FORMAT_NV21 || m_Image->format == IMAGE_FORMAT_NV12) {
         glBindFramebuffer(GL_FRAMEBUFFER, m_Fbo[0]);
         glUseProgram(m_Program_Fbo_NV21);
@@ -201,7 +227,6 @@ void VideoRender::onDrawFrame() {
         GLint textureVU = glGetUniformLocation(m_Program_Fbo_NV21, "s_textureVU");
         glUniform1i(textureY, 0);
         glUniform1i(textureVU, 1);
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (const void *) 0);
     } else {
         glBindFramebuffer(GL_FRAMEBUFFER, m_Fbo[0]);
         glUseProgram(m_Program_Fbo_RGB);
@@ -210,8 +235,10 @@ void VideoRender::onDrawFrame() {
         glBindTexture(GL_TEXTURE_2D, m_Texture[0]);
         GLint textureRGB = glGetUniformLocation(m_Program_Fbo_RGB, "s_textureRGB");
         glUniform1i(textureRGB, 0);
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (const void *) 0);
     }
+//    onMatrix("vMatrix", 0.0f, 0.0f);
+    onMatrix("vMatrix", m_ViewRot, m_ModelRot);
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (const void *) 0);
     onFrameBufferUpdate();
     glBindVertexArray(0);
     glBindTexture(GL_TEXTURE_2D, 0);
@@ -226,22 +253,8 @@ void VideoRender::onDrawFrame() {
     glBindTexture(GL_TEXTURE_2D, m_Texture_Fbo[0]);
     GLint textureMap = glGetUniformLocation(m_Program, "s_TextureMap");
     glUniform1i(textureMap, 0);
-
-    glm::mat4 projection = glm::ortho(-1.0f, 1.0f, -1.0f, 1.0f, 0.0f, 1.0f);
-    glm::mat4 view = glm::mat4(1.0f);
-    view = glm::lookAt(glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f),
-                       glm::vec3(0.0f, 1.0f, 0.0f));
-    view = glm::rotate(view, glm::radians(m_Rotation), glm::vec3(0.0f, 0.0f, 1.0f));
-    glm::mat4 model = glm::mat4(1.0f);
-    if (m_Rotation > 90.0f) {
-        //前置摄像头
-        model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-    }
-    glm::mat4 mat4Matrix = glm::mat4(1.0f);
-    mat4Matrix = projection * view * model;
-    unsigned int vMatrix = glGetUniformLocation(m_Program, "vMatrix");
-    glUniformMatrix4fv(vMatrix, 1, GL_FALSE, glm::value_ptr(mat4Matrix));
-
+    onMatrix("vMatrix", 0.0f, 0.0f);
+//    onMatrix("vMatrix", m_ViewRot, m_ModelRot);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (const void *) 0);
 }
 
@@ -306,10 +319,13 @@ void VideoRender::onFrameBufferUpdate() {
         int height = m_Image->height;
         if (!m_data) m_data = new uint8_t[width * height * 4];
         m_dataSize = width * height * 4;
-        glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, m_data);
-        if (!m_RenderFrameCallback || !m_CallbackContext) return;
-        m_RenderFrameCallback(m_CallbackContext, IMAGE_FORMAT_RGBA, width, height, m_data);
+        if (m_CameraData) {
+            glReadPixels(0, 0, height, width, GL_RGBA, GL_UNSIGNED_BYTE, m_data);
+            m_RenderFrameCallback(m_CallbackContext, IMAGE_FORMAT_RGBA, height, width, m_data);
+        } else {
+            glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, m_data);
+            m_RenderFrameCallback(m_CallbackContext, IMAGE_FORMAT_RGBA, width, height, m_data);
+        }
     }
 }
 }
-

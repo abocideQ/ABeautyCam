@@ -34,7 +34,7 @@ const char *ShaderVertex_FBO =
                 out vec2 fiTexCoord;
                 uniform mat4 vMatrix;
                 void main() {
-                    gl_Position = viPosition;
+                    gl_Position = viPosition * vMatrix;
                     fiTexCoord = viTexCoord;
                 }
         );
