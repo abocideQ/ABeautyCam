@@ -90,6 +90,7 @@ void MediaRecord::onBufferVideo(int format, int width, int height, uint8_t *data
 void MediaRecord::onBufferAudio(AudioFrame *input) {
     if (m_Interrupt) return;
     AudioFrame *frame = new AudioFrame(input->data, input->dataSize);
+    std::lock_guard<std::mutex> lock(m_Mutex);
     m_AudioQueue.push(frame);
 }
 
@@ -283,19 +284,29 @@ int MediaRecord::codeVFrame(AVOutputStream *stream) {
             }
         }
         if ((result = av_frame_make_writable(stream->m_Frame)) < 0) {
+            LOGCATE("MediaRecorder::av_frame_make_writable video ret=%s", av_err2str(result));
             result = 0;
             goto EXIT;
         }
-        sws_scale(stream->m_SwsCtx, frame->data, frame->linesize,
-                  0, stream->m_CodecCtx->height,
-                  stream->m_Frame->data, stream->m_Frame->linesize);
+        result = sws_scale(stream->m_SwsCtx, frame->data, frame->linesize,
+                           0, stream->m_CodecCtx->height,
+                           stream->m_Frame->data, stream->m_Frame->linesize);
+        if (result < 0) {
+            LOGCATE("MediaRecorder::sws_scale video ret=%s", av_err2str(result));
+            result = 0;
+            goto EXIT;
+        }
+        if ((result = av_frame_make_writable(stream->m_Frame)) < 0) {
+            result = 0;
+            goto EXIT;
+        }
         stream->m_Frame->pts = stream->m_NextPts++;
         frame = stream->m_Frame;
         //code frame
         result = avcodec_send_frame(stream->m_CodecCtx, frame);
         if (result == AVERROR_EOF) {
             LOGCATE("MediaRecorder::avcodec_send_frame video EOF ret=%s", av_err2str(result));
-            result = 0;
+            result = 1;
             goto EXIT;
         } else if (result < 0) {
             LOGCATE("MediaRecorder::avcodec_send_frame video error ret=%s", av_err2str(result));
@@ -335,43 +346,47 @@ int MediaRecord::codeVFrame(AVOutputStream *stream) {
 }
 
 int MediaRecord::codeAFrame(AVOutputStream *stream) {
-    int result = 0;
-    AVPacket *packet = av_packet_alloc();
-    AVFrame *frame = av_frame_alloc();
     while (m_AudioQueue.empty() && !m_Interrupt) {
         usleep(10 * 1000);
     }
+    std::unique_lock<std::mutex> lock(m_Mutex);
+    int result = 0;
+    AVPacket *packet = av_packet_alloc();
+    AVFrame *frame = av_frame_alloc();
     frame = stream->m_TmpFrame;
-    AudioFrame *audioFrame = m_AudioQueue.front();
+    AudioFrame *aFrame = m_AudioQueue.front();
     m_AudioQueue.pop();
-    if (audioFrame) {
-        frame->data[0] = audioFrame->data;
-        frame->nb_samples = audioFrame->dataSize / 4;
+    if (aFrame) {
+        frame->data[0] = aFrame->data;
+        frame->nb_samples = aFrame->dataSize / 4;
         frame->pts = stream->m_NextPts;
         stream->m_NextPts += frame->nb_samples;
     }
-    if ((m_AudioQueue.empty() && m_Interrupt) || stream->m_EncodeEnd) frame = nullptr;
+    if ((m_AudioQueue.empty() && m_Interrupt) || stream->m_EncodeEnd) {
+        frame = nullptr;
+        result = 1;
+        goto EXIT;
+    }
+    lock.unlock();
     if (frame) {
+        //get dst_nb_samples AND re_sample
         int dst_nb_samples = av_rescale_rnd(
                 swr_get_delay(stream->m_SwrCtx, stream->m_CodecCtx->sample_rate) +
-                frame->nb_samples, stream->m_CodecCtx->sample_rate,
+                frame->nb_samples,
+                stream->m_CodecCtx->sample_rate,
                 stream->m_CodecCtx->sample_rate,
                 AV_ROUND_UP);
         av_assert0(dst_nb_samples == frame->nb_samples);
-        //when we pass a frame to the encoder, it may keep a reference to it internally make sure we do not overwrite it here
-        result = av_frame_make_writable(stream->m_Frame);
-        if (result < 0) {
-            LOGCATE("MediaRecorder::av_frame_make_writable error");
-            result = 1;
+        if ((result = av_frame_make_writable(stream->m_Frame)) < 0) {
+            LOGCATE("MediaRecorder::av_frame_make_writable audio error");
+            result = 0;
             goto EXIT;
         }
-        // convert to destination format
-        result = swr_convert(stream->m_SwrCtx,
-                             stream->m_Frame->data, dst_nb_samples,
+        result = swr_convert(stream->m_SwrCtx, stream->m_Frame->data, dst_nb_samples,
                              (const uint8_t **) frame->data, frame->nb_samples);
         if (result < 0) {
-            LOGCATE("MediaRecorder::swr_convert error");
-            result = 1;
+            LOGCATE("MediaRecorder::swr_convert audio error");
+            result = 0;
             goto EXIT;
         }
         frame = stream->m_Frame;
@@ -395,8 +410,7 @@ int MediaRecord::codeAFrame(AVOutputStream *stream) {
                 result = 0;
                 goto EXIT;
             } else if (result < 0) {
-                LOGCATE("MediaRecorder::avcodec_receive_packet audio ret=%s",
-                        av_err2str(result));
+                LOGCATE("MediaRecorder::avcodec_receive_packet audio ret=%s", av_err2str(result));
                 result = 0;
                 goto EXIT;
             }
@@ -405,15 +419,16 @@ int MediaRecord::codeAFrame(AVOutputStream *stream) {
             packet->stream_index = stream->m_Stream->index;
             result = av_interleaved_write_frame(m_AVFormatContext, packet);
             if (result < 0) {
-                LOGCATE("MediaRecorder::av_interleaved_write_frame error: %s",
-                        av_err2str(result));
+                LOGCATE("MediaRecorder::av_interleaved_write_frame error: %s", av_err2str(result));
                 result = 0;
                 goto EXIT;
             }
         }
     }
     EXIT:
-    if (audioFrame) delete audioFrame;
+    if (aFrame) {
+        delete aFrame;
+    }
     return result;
 }
 
@@ -457,7 +472,7 @@ void MediaRecord::onRunAsy(MediaRecord *p) {
         double vStamp = vStream->m_NextPts * av_q2d(vStream->m_CodecCtx->time_base);
         double aStamp = aStream->m_NextPts * av_q2d(aStream->m_CodecCtx->time_base);
         if (av_compare_ts(vStream->m_NextPts, vStream->m_CodecCtx->time_base,
-                          aStream->m_NextPts, aStream->m_CodecCtx->time_base) <= 0)) {
+                          aStream->m_NextPts, aStream->m_CodecCtx->time_base) <= 0) {
             //视频和音频时间戳对齐，人对于声音比较敏感，防止出现视频声音播放结束画面还没结束的情况
             if (aStamp <= vStamp && aStream->m_EncodeEnd) {
                 vStream->m_EncodeEnd = 1;
@@ -465,7 +480,7 @@ void MediaRecord::onRunAsy(MediaRecord *p) {
             }
             vStream->m_EncodeEnd = p->codeVFrame(vStream);
         } else {
-            aStream->m_EncodeEnd = p->codeAudioFrame(aStream);
+            aStream->m_EncodeEnd = p->codeAFrame(aStream);
         }
     }
 }

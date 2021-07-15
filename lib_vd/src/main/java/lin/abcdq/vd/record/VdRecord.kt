@@ -4,6 +4,8 @@ class VdRecord {
 
     private var recording = false
 
+    private val mARecord = ARecord()
+
     fun onSource(
         outUrl: String,
         w: Int,
@@ -12,15 +14,22 @@ class VdRecord {
         fps: Int
     ) {
         native_vdRecord_onSource(outUrl, w, h, vBitRate, fps)
+        mARecord.setCall(object : ARecord.AudioRecordCall {
+            override fun onCall(byteArray: ByteArray) {
+                onBufferAudio(byteArray)
+            }
+        })
     }
 
     fun onStart() {
         recording = true
+        mARecord.onRecorder()
         native_vdRecord_onStart()
     }
 
     fun onStop() {
         recording = false
+        mARecord.onStop()
         native_vdRecord_onStop()
     }
 
