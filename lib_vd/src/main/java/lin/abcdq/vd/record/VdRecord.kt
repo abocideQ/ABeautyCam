@@ -23,7 +23,7 @@ class VdRecord {
 
     fun onStart() {
         recording = true
-        mARecord.onRecorder()
+        mARecord.onStart()
         native_vdRecord_onStart()
     }
 

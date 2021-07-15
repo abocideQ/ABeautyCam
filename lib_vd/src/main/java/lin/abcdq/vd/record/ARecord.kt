@@ -22,7 +22,7 @@ internal class ARecord {
         mCall = call
     }
 
-    fun onRecorder() {
+    fun onStart() {
         mThread.execute { loopStart() }
     }
 
