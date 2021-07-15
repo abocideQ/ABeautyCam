@@ -243,8 +243,10 @@ int MediaRecord::codeVFrame(AVOutputStream *stream) {
         frame->width = vFrame->image->width;
         frame->height = vFrame->image->height;
     }
-    if ((m_VideoQueue.empty() && m_Interrupt == true)) {
+    if (m_VideoQueue.empty() && m_Interrupt) {
         frame = nullptr;
+        result = 1;
+        goto EXIT;
     }
     lock.unlock();
     if (frame) {
@@ -276,10 +278,12 @@ int MediaRecord::codeVFrame(AVOutputStream *stream) {
                                               SWS_FAST_BILINEAR, nullptr, nullptr, nullptr);
             if (!stream->m_SwsCtx) {
                 LOGCATE("MediaRecorder::sws_getContext Could not initialize the conversion context\n");
+                result = 0;
                 goto EXIT;
             }
         }
         if ((result = av_frame_make_writable(stream->m_Frame)) < 0) {
+            result = 0;
             goto EXIT;
         }
         sws_scale(stream->m_SwsCtx, frame->data, frame->linesize,
@@ -291,18 +295,22 @@ int MediaRecord::codeVFrame(AVOutputStream *stream) {
         result = avcodec_send_frame(stream->m_CodecCtx, frame);
         if (result == AVERROR_EOF) {
             LOGCATE("MediaRecorder::avcodec_send_frame video EOF ret=%s", av_err2str(result));
-            goto __EXIT;
+            result = 0;
+            goto EXIT;
         } else if (result < 0) {
             LOGCATE("MediaRecorder::avcodec_send_frame video error ret=%s", av_err2str(result));
+            result = 0;
             goto EXIT;
         }
         while (!result) {
             result = avcodec_receive_packet(stream->m_CodecCtx, packet);
             if (result == AVERROR(EAGAIN) || result == AVERROR_EOF) {
 //                LOGCATE("MediaRecorder::avcodec_receive_packet AVERROR ret=%s", av_err2str(result));
+                result = 0;
                 goto EXIT;
             } else if (result < 0) {
                 LOGCATE("MediaRecorder::avcodec_receive_packet error ret=%s", av_err2str(result));
+                result = 0;
                 goto EXIT;
             }
             //Write the compressed frame to the media file
@@ -313,18 +321,12 @@ int MediaRecord::codeVFrame(AVOutputStream *stream) {
             av_packet_unref(packet);
             if (result < 0) {
                 LOGCATE("MediaRecorder::av_interleaved_write_frame error: %s", av_err2str(result));
+                result = 0;
                 goto EXIT;
             }
         }
     }
     EXIT:
-    {
-        result = 0;
-    };
-    __EXIT:
-    {
-        result = 1;
-    };
     if (vFrame) {
         PixImageUtils::pix_image_free(vFrame->image);
         delete vFrame;
@@ -451,19 +453,20 @@ void MediaRecord::release() {
 void MediaRecord::onRunAsy(MediaRecord *p) {
     AVOutputStream *vStream = &p->m_VideoStream;
     AVOutputStream *aStream = &p->m_AudioStream;
-    while (!p->m_Interrupt) {
-//        double videoTimestamp = vStream->m_NextPts * av_q2d(vStream->m_CodecCtx->time_base);
-//        double audioTimestamp = aStream->m_NextPts * av_q2d(aStream->m_CodecCtx->time_base);
-//        if (!vStream->m_EncodeEnd && (aStream->m_EncodeEnd ||
-//                                  av_compare_ts(vStream->m_NextPts, vStream->m_CodecCtx->time_base,
-//                                                aStream->m_NextPts, aStream->m_CodecCtx->time_base) <=
-//                                  0)) {
-//            //视频和音频时间戳对齐，人对于声音比较敏感，防止出现视频声音播放结束画面还没结束的情况
-//            if (audioTimestamp <= videoTimestamp && aStream->m_EncodeEnd) vStream->m_EncodeEnd = 1;
-        vStream->m_EncodeEnd = p->codeVFrame(vStream);
-//        } else {
-//            aStream->m_EncodeEnd = p->codeAudioFrame(aStream);
-//        }
+    while (!vStream->m_EncodeEnd && !aStream->m_EncodeEnd) {
+        double vStamp = vStream->m_NextPts * av_q2d(vStream->m_CodecCtx->time_base);
+        double aStamp = aStream->m_NextPts * av_q2d(aStream->m_CodecCtx->time_base);
+        if (av_compare_ts(vStream->m_NextPts, vStream->m_CodecCtx->time_base,
+                          aStream->m_NextPts, aStream->m_CodecCtx->time_base) <= 0)) {
+            //视频和音频时间戳对齐，人对于声音比较敏感，防止出现视频声音播放结束画面还没结束的情况
+            if (aStamp <= vStamp && aStream->m_EncodeEnd) {
+                vStream->m_EncodeEnd = 1;
+                aStream->m_EncodeEnd = 1;
+            }
+            vStream->m_EncodeEnd = p->codeVFrame(vStream);
+        } else {
+            aStream->m_EncodeEnd = p->codeAudioFrame(aStream);
+        }
     }
 }
 }
