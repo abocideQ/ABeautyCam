@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.10.2)
 
+#=====head file (ffmpeg + opengl + opensl + opencv + my code)
 include_directories(
         src/main/cpp/utils
         src/main/cpp/ffmpeg/include
@@ -11,11 +12,19 @@ include_directories(
         src/main/cpp/opengles/render
         src/main/cpp/opensles/utils
         src/main/cpp/opensles/render
+        src/main/cpp/opencv/include
+        src/main/cpp/opencv/render
         src/main/cpp/vd/player
         src/main/cpp/vd/camera
         src/main/cpp/vd/record
 )
 
+#=====opencv
+add_library(libopencv_java4 SHARED IMPORTED)
+set_target_properties(libopencv_java4 PROPERTIES IMPORTED_LOCATION ${CMAKE_HOME_DIRECTORY}/src/main/cpp/opencv/include/lib/${ANDROID_ABI}/libopencv_java4.so)
+set(lib_opencv libopencv_java4)
+
+#=====ffmpeg
 add_library(avformat SHARED IMPORTED)
 set_target_properties(avformat PROPERTIES IMPORTED_LOCATION ${CMAKE_HOME_DIRECTORY}/src/main/cpp/ffmpeg/include/lib/${ANDROID_ABI}/libavformat.so)
 add_library(avcodec SHARED IMPORTED)
@@ -29,7 +38,6 @@ set_target_properties(swscale PROPERTIES IMPORTED_LOCATION ${CMAKE_HOME_DIRECTOR
 add_library(swresample SHARED IMPORTED)
 set_target_properties(swresample PROPERTIES IMPORTED_LOCATION ${CMAKE_HOME_DIRECTORY}/src/main/cpp/ffmpeg/include/lib/${ANDROID_ABI}/libswresample.so)
 #link_directories(${CMAKE_HOME_DIRECTORY}/src/main/cpp/ffmpeg/include/lib/${ANDROID_ABI})
-
 set(lib_ffmpeg
         avformat
         avcodec
@@ -39,6 +47,7 @@ set(lib_ffmpeg
         swresample
         )
 
+#======opengles etc.
 set(lib_native
         EGL
         GLESv3
@@ -47,6 +56,7 @@ set(lib_native
         android
         )
 
+#======cpp file (ffmpeg + opengl + opensl + opencv + my code)
 file(GLOB lib_mine
         src/main/cpp/*.cpp
         src/main/cpp/utils/*.cpp
@@ -59,6 +69,8 @@ file(GLOB lib_mine
         src/main/cpp/opengles/render/*.cpp
         src/main/cpp/opensles/utils/*.cpp
         src/main/cpp/opensles/render/*.cpp
+        src/main/cpp/opencv/*.cpp
+        src/main/cpp/opencv/render/*.cpp
         src/main/cpp/vd/*.cpp
         src/main/cpp/vd/player/*.cpp
         src/main/cpp/vd/camera/*.cpp
@@ -72,5 +84,6 @@ add_library(vd_make
 
 target_link_libraries(vd_make
         ${lib_ffmpeg}
+        ${lib_opencv}
         ${lib_native}
         )
