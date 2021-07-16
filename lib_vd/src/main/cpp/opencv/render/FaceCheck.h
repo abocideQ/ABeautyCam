@@ -15,13 +15,22 @@ public:
 protected:
     void faceCheck(char *model, std::vector<cv::Rect> faces, cv::Mat image);
 
-    void featuresCheck(char *model, std::vector<cv::Rect> features, cv::Mat image);
+    void eyesCheck(char *model, std::vector<cv::Rect> features, cv::Mat image);
+
+    void noseCheck(char *model, std::vector<cv::Rect> features, cv::Mat image);
+
+    void mouthCheck(char *model, std::vector<cv::Rect> features, cv::Mat image);
 
 private:
     char *face_model = nullptr;
     char *eye_model = nullptr;
     char *nose_model = nullptr;
     char *mouth_model = nullptr;
+
+    cv::CascadeClassifier faceCascade;
+    cv::CascadeClassifier eyesCascade;
+    cv::CascadeClassifier noseCascade;
+    cv::CascadeClassifier mouthCascade;
 };
 
 

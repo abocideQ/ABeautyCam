@@ -20,9 +20,11 @@ include_directories(
 )
 
 #=====opencv
-add_library(libopencv_java4 SHARED IMPORTED)
-set_target_properties(libopencv_java4 PROPERTIES IMPORTED_LOCATION ${CMAKE_HOME_DIRECTORY}/src/main/cpp/opencv/include/lib/${ANDROID_ABI}/libopencv_java4.so)
-set(lib_opencv libopencv_java4)
+add_library(opencv_java4 SHARED IMPORTED)
+set_target_properties(opencv_java4 PROPERTIES IMPORTED_LOCATION ${CMAKE_HOME_DIRECTORY}/src/main/cpp/opencv/include/lib/${ANDROID_ABI}/libopencv_java4.so)
+set(lib_opencv
+        opencv_java4
+        )
 
 #=====ffmpeg
 add_library(avformat SHARED IMPORTED)

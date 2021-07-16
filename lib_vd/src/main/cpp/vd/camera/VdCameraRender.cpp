@@ -1,6 +1,15 @@
 #include "VdCameraRender.h"
 
 extern "C" {
+
+void VdCameraRender::onFaceInit(char *face, char *eye, char *nose, char *mouth) {
+    m_Render->onFaceInit(face, eye, nose, mouth);
+}
+
+void VdCameraRender::onFaceBuffer(int format, int w, int h, uint8_t *data) {
+    m_Render->onFaceBuffer(format, w, h, data);
+}
+
 void VdCameraRender::onBuffer(int format, int w, int h, uint8_t *data) {
     PixImage *image = nullptr;
     if (format == 1) {

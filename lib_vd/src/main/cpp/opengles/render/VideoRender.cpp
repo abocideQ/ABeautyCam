@@ -25,7 +25,12 @@ const int Location_Indices[] = {
         0, 1, 2, 1, 3, 2
 };
 
-void VideoRender::onOriginBuffer(int format, int w, int h, uint8_t *data) {
+void VideoRender::onFaceInit(char *face, char *eye, char *nose, char *mouth) {
+    m_Face = new FaceCheck();
+    m_Face->onModelSource(face, eye, nose, mouth);
+}
+
+void VideoRender::onFaceBuffer(int format, int w, int h, uint8_t *data) {
     if (data == nullptr || format == 0) return;
     std::unique_lock<std::mutex> lock(m_Mutex);//加锁
     PixImageUtils::pix_image_free(m_Image);
@@ -36,7 +41,9 @@ void VideoRender::onOriginBuffer(int format, int w, int h, uint8_t *data) {
     } else {
         m_Image = PixImageUtils::pix_image_get(IMAGE_FORMAT_RGBA, w, h, data);
     }
-
+    if (m_Face != nullptr) {
+        m_Face->onInsertFaces(w, h, data, m_Image);
+    }
 }
 
 void VideoRender::onBuffer(PixImage *image) {
@@ -345,4 +352,5 @@ void VideoRender::onFrameBufferUpdate() {
         }
     }
 }
+
 }

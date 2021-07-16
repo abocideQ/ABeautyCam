@@ -4,8 +4,9 @@
 #include "../glm/glm.hpp"
 #include "../glm/gtc/matrix_transform.hpp"
 #include "../glm/gtc/type_ptr.hpp"
-#include "GLUtils.h"
+#include "FaceCheck.h"
 #include "PixImage.h"
+#include "GLUtils.h"
 #include "Log.h"
 
 #include <thread>
@@ -17,8 +18,12 @@ class VideoRender {
 
 public:
 
-    void onOriginBuffer(int format, int w, int h, uint8_t *data);
+    //face
+    void onFaceInit(char *face, char *eye, char *nose, char *mouth);
 
+    void onFaceBuffer(int format, int w, int h, uint8_t *data);
+
+    //normal
     void onBuffer(PixImage *image);
 
     uint8_t *onBuffer();
@@ -83,6 +88,13 @@ protected:
     static std::mutex m_Mutex;
     //===
     volatile bool m_Interrupt = false;
+
+    //opencv
+    FaceCheck *m_Face = nullptr;
+    char *m_face_model = nullptr;
+    char *m_eye_model = nullptr;
+    char *m_nose_model = nullptr;
+    char *m_mouth_model = nullptr;
 };
 
 
