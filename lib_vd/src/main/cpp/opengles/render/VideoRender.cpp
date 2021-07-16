@@ -25,6 +25,20 @@ const int Location_Indices[] = {
         0, 1, 2, 1, 3, 2
 };
 
+void VideoRender::onOriginBuffer(int format, int w, int h, uint8_t *data) {
+    if (data == nullptr || format == 0) return;
+    std::unique_lock<std::mutex> lock(m_Mutex);//加锁
+    PixImageUtils::pix_image_free(m_Image);
+    if (format == 1) {
+        m_Image = PixImageUtils::pix_image_get(IMAGE_FORMAT_YUV420P, w, h, data);
+    } else if (format == 2) {
+        m_Image = PixImageUtils::pix_image_get(IMAGE_FORMAT_NV21, w, h, data);
+    } else {
+        m_Image = PixImageUtils::pix_image_get(IMAGE_FORMAT_RGBA, w, h, data);
+    }
+
+}
+
 void VideoRender::onBuffer(PixImage *image) {
     if (image == nullptr || image->plane[0] == nullptr) return;
     std::unique_lock<std::mutex> lock(m_Mutex);//加锁

@@ -17,6 +17,8 @@ class VideoRender {
 
 public:
 
+    void onOriginBuffer(int format, int w, int h, uint8_t *data);
+
     void onBuffer(PixImage *image);
 
     uint8_t *onBuffer();

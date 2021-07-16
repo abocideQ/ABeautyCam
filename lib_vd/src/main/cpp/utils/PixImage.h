@@ -2,6 +2,8 @@
 #define VDMAKE_PIXIMAGE_H
 
 #include "Log.h"
+#include "opencv2/opencv.hpp"
+#include <vector>
 
 extern "C" {
 #define IMAGE_FORMAT_RGBA     1
@@ -9,13 +11,17 @@ extern "C" {
 #define IMAGE_FORMAT_NV12     3
 #define IMAGE_FORMAT_YUV420P  4
 typedef struct _tag_pixImage {
+    int format;
     int width;
     int height;
-    int format;
     uint8_t *plane[3];
-    int pSize[3];
     int pLineSize[3];
+    int pSize[3];
     int size;
+    std::vector<cv::Rect> faces;
+    std::vector<cv::Rect> eyes;
+    std::vector<cv::Rect> noses;
+    std::vector<cv::Rect> mouths;
 
     _tag_pixImage() {
         width = 0;
@@ -24,12 +30,12 @@ typedef struct _tag_pixImage {
         plane[0] = nullptr;
         plane[1] = nullptr;
         plane[2] = nullptr;
-        pSize[0] = 0;
-        pSize[1] = 0;
-        pSize[2] = 0;
         pLineSize[0] = 0;
         pLineSize[1] = 0;
         pLineSize[2] = 0;
+        pSize[0] = 0;
+        pSize[1] = 0;
+        pSize[2] = 0;
         size = 0;
     }
 } PixImage;
@@ -262,6 +268,18 @@ public:
         if (nullptr != image->plane[2]) {
             free(image->plane[2]);
             image->plane[2] = nullptr;
+        }
+        if (!image->faces.empty()) {
+            image->faces.clear();
+        }
+        if (!image->eyes.empty()) {
+            image->eyes.clear();
+        }
+        if (!image->noses.empty()) {
+            image->noses.clear();
+        }
+        if (!image->mouths.empty()) {
+            image->mouths.clear();
         }
     }
 };
