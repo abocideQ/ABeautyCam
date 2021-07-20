@@ -33,19 +33,17 @@ void VideoRender::onFace(char *face, char *eye, char *nose, char *mouth) {
         m_Thread_cv = nullptr;
         return;
     }
-    std::unique_lock<std::mutex> lock(m_Mutex_cv);//加锁
     m_Interrupt_cv = 0;
     m_Face = new FaceCheck();
     m_Face->onModelSource(face, eye, nose, mouth);
     m_Thread_cv = new std::thread(onFaceLoop, this);
-    lock.unlock();
 }
 
 void VideoRender::onFaceLoop(VideoRender *p) {
     while (true) {
         if (p == nullptr) return;
         if (p->m_Interrupt_cv == 1 || p->m_Interrupt) return;
-        if (p->m_Image == nullptr || p->m_Image->origin == nullptr) {
+        if (p->m_Face == nullptr || p->m_Image == nullptr || p->m_Image->origin == nullptr) {
             usleep(10 * 50000);
             continue;
         }
@@ -58,8 +56,8 @@ void VideoRender::onFaceLoop(VideoRender *p) {
         p->noses.clear();
         p->mouths.clear();
         p->m_Face->onFaces(w, h, data, p->faces, p->eyes, p->noses, p->mouths);
-        usleep(10 * 50000);
         lock.unlock();
+        usleep(10 * 50000);
     }
 }
 
@@ -201,6 +199,7 @@ void VideoRender::onMatrix(const char *gl_name, float viewRot, float modelRot) {
     view = glm::lookAt(glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f),
                        glm::vec3(0.0f, 1.0f, 0.0f));
     view = glm::rotate(view, glm::radians(viewRot), glm::vec3(0.0f, 0.0f, 1.0f));
+    view = glm::scale(view, glm::vec3(0.0f, 0.0f, 1.0f));
     glm::mat4 model = glm::mat4(1.0f);
     model = glm::rotate(model, glm::radians(modelRot), glm::vec3(0.0f, 1.0f, 0.0f));
     glm::mat4 mat4Matrix = glm::mat4(1.0f);

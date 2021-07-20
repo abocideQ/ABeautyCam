@@ -9,9 +9,9 @@ class FaceCheck {
 public:
     void onModelSource(char *face, char *eye, char *nose, char *mouth);
 
-    void *onFaces(int width, int height, uint8_t *data, std::vector<cv::Rect> &m_faces,
-                  std::vector<cv::Rect> &m_eyes, std::vector<cv::Rect> &m_noses,
-                  std::vector<cv::Rect> &m_mouths);
+    void onFaces(int width, int height, uint8_t *data, std::vector<cv::Rect> &m_faces,
+                 std::vector<cv::Rect> &m_eyes, std::vector<cv::Rect> &m_noses,
+                 std::vector<cv::Rect> &m_mouths);
 
 protected:
     void faceCheck(char *model, std::vector<cv::Rect> &faces, cv::Mat image);

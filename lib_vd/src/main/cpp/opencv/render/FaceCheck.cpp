@@ -8,7 +8,7 @@ void FaceCheck::onModelSource(char *face, char *eye, char *nose, char *mouth) {
     mouth_model = mouth;
 }
 
-void *FaceCheck::onFaces(int width, int height, uint8_t *data, std::vector<cv::Rect> &m_faces,
+void FaceCheck::onFaces(int width, int height, uint8_t *data, std::vector<cv::Rect> &m_faces,
                          std::vector<cv::Rect> &m_eyes, std::vector<cv::Rect> &m_noses,
                          std::vector<cv::Rect> &m_mouths) {
     cv::Mat gray;
@@ -21,12 +21,13 @@ void *FaceCheck::onFaces(int width, int height, uint8_t *data, std::vector<cv::R
     std::vector<cv::Rect> faces;
     faceCheck(face_model, faces, gray);
     if (faces.empty()) {
-        return 0;
+        return;
     }
     m_faces.insert(m_faces.end(), faces.begin(), faces.end());
     //features check
     int i = 0;
-    for (; i < faces.size(); i++) {
+    int size = (int) faces.size();
+    for (; i < size; i++) {
         cv::Rect face = faces[i];
 //        cv::rectangle(src, face, cv::Scalar(255, 0, 0), 2, 4, 0);//矩形绘制
         cv::Mat ROI = gray(cv::Rect(face.x, face.y, face.width, face.height));//特征检测
@@ -62,6 +63,7 @@ void FaceCheck::faceCheck(char *model, std::vector<cv::Rect> &faces, cv::Mat ima
         faceCascade.load(model);
     }
     faceCascade.detectMultiScale(image, faces, 1.1f, 5, 0);
+    LOGCATE("000001???  %d", faces.size());
     return;
 }
 
