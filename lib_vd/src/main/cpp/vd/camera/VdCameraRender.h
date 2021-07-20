@@ -6,9 +6,7 @@
 class VdCameraRender {
 public:
     //face
-    void onFaceInit(char *face, char *eye, char *nose, char *mouth);
-
-    void onFaceBuffer(int format, int w, int h, uint8_t *data);
+    void onFace(char *face, char *eye, char *nose, char *mouth);
 
     //normal
     void onBuffer(int format, int w, int h, uint8_t *data);

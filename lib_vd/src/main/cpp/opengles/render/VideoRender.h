@@ -11,6 +11,8 @@
 
 #include <thread>
 #include <mutex>
+#include <unistd.h>
+
 
 typedef void (*OnRenderFrameCallback)(void *, int, int, int, uint8_t *); // 回调函数 -> Record
 
@@ -19,16 +21,16 @@ class VideoRender {
 public:
 
     //face
-    void onFaceInit(char *face, char *eye, char *nose, char *mouth);
-
-    void onFaceBuffer(int format, int w, int h, uint8_t *data);
+    void onFace(char *face, char *eye, char *nose, char *mouth);
 
     //normal
-    void onBuffer(PixImage *image);
+    void onBuffer(int format, int width, int height, int lineSize[3], uint8_t *data);
 
-    uint8_t *onBuffer();
+    void onBuffer(PixImage *pix);
 
-    int onBufferSize();
+    uint8_t *onFrameBuffer();
+
+    int onFrameBufferSize();
 
     void onCamera(bool camera);
 
@@ -89,12 +91,20 @@ protected:
     //===
     volatile bool m_Interrupt = false;
 
+private:
     //opencv
     FaceCheck *m_Face = nullptr;
-    char *m_face_model = nullptr;
-    char *m_eye_model = nullptr;
-    char *m_nose_model = nullptr;
-    char *m_mouth_model = nullptr;
+    std::vector<cv::Rect> faces;
+    std::vector<cv::Rect> eyes;
+    std::vector<cv::Rect> noses;
+    std::vector<cv::Rect> mouths;
+    //线程
+    std::thread *m_Thread_cv = nullptr;
+    volatile int m_Interrupt_cv = 0;
+    //互斥锁
+    std::mutex m_Mutex_cv;
+
+    static void onFaceLoop(VideoRender *p);
 };
 
 

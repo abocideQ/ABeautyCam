@@ -6,10 +6,10 @@
 #include <vector>
 
 extern "C" {
-#define IMAGE_FORMAT_RGBA     1
-#define IMAGE_FORMAT_NV21     2
+#define IMAGE_FORMAT_RGBA     4
 #define IMAGE_FORMAT_NV12     3
-#define IMAGE_FORMAT_YUV420P  4
+#define IMAGE_FORMAT_NV21     2
+#define IMAGE_FORMAT_YUV420P  1
 typedef struct _tag_pixImage {
     int format;
     int width;
@@ -18,10 +18,7 @@ typedef struct _tag_pixImage {
     int pLineSize[3];
     int pSize[3];
     int size;
-    std::vector<cv::Rect> faces;
-    std::vector<cv::Rect> eyes;
-    std::vector<cv::Rect> noses;
-    std::vector<cv::Rect> mouths;
+    uint8_t *origin;
 
     _tag_pixImage() {
         width = 0;
@@ -51,7 +48,7 @@ public:
 class PixImageUtils {
 public:
     static PixImage *
-    pix_image_get(int format, int width, int height, int lineSize[8], uint8_t *data[8]) {
+    pix_image_get(int format, int width, int height, int lineSize[3], uint8_t *data[3]) {
         PixImage *image = nullptr;
         if (width == 0) return image;
         if (height == 0) return image;
@@ -84,6 +81,10 @@ public:
                 memcpy(u, data[1], width * height / 4);
                 memcpy(v, data[2], width * height / 4);
             }
+            image->origin = new uint8_t[size];
+            memcpy(image->origin, data[0], width * height);
+            memcpy(image->origin + (width * height), data[1], width * height / 4);
+            memcpy(image->origin + (width * height * 5 / 4), data[2], width * height / 4);
             image->plane[0] = y;
             image->plane[1] = u;
             image->plane[2] = v;
@@ -111,6 +112,9 @@ public:
                 memcpy(y, data[0], width * height);
                 memcpy(u, data[1], width * height / 2);
             }
+            image->origin = new uint8_t[size];
+            memcpy(image->origin, data[0], width * height);
+            memcpy(image->origin + (width * height), data[1], width * height / 2);
             image->plane[0] = y;
             image->plane[1] = u;
             image->plane[2] = nullptr;
@@ -138,6 +142,9 @@ public:
                 memcpy(y, data[0], width * height);
                 memcpy(u, data[1], width * height / 2);
             }
+            image->origin = new uint8_t[size];
+            memcpy(image->origin, data[0], width * height);
+            memcpy(image->origin + (width * height), data[1], width * height / 2);
             image->plane[0] = y;
             image->plane[1] = u;
             image->plane[2] = nullptr;
@@ -159,6 +166,8 @@ public:
             } else {
                 memcpy(y, data[0], width * height * 4);
             }
+            image->origin = new uint8_t[size];
+            memcpy(image->origin, data[0], width * height * 4);
             image->plane[0] = y;
             image->plane[1] = nullptr;
             image->plane[2] = nullptr;
@@ -195,6 +204,8 @@ public:
             memcpy(y, data, width * height);
             memcpy(u, data + width * height, width * height / 4);
             memcpy(v, data + width * height + width * height / 4, width * height / 4);
+            image->origin = new uint8_t[size];
+            memcpy(image->origin, data, size);
             image->plane[0] = y;
             image->plane[1] = u;
             image->plane[2] = v;
@@ -211,6 +222,8 @@ public:
             u = new uint8_t[width * height / 2];
             memcpy(y, data, width * height);
             memcpy(u, data + width * height, width * height / 2);
+            image->origin = new uint8_t[size];
+            memcpy(image->origin, data, size);
             image->plane[0] = y;
             image->plane[1] = u;
             image->plane[2] = nullptr;
@@ -227,6 +240,8 @@ public:
             u = new uint8_t[width * height / 2];
             memcpy(y, data, width * height);
             memcpy(u, data + width * height, width * height / 2);
+            image->origin = new uint8_t[size];
+            memcpy(image->origin, data, size);
             image->plane[0] = y;
             image->plane[1] = u;
             image->plane[2] = nullptr;
@@ -241,6 +256,8 @@ public:
             int size = width * height * 4;
             y = new uint8_t[width * height * 4];
             memcpy(y, data, width * height * 4);
+            image->origin = new uint8_t[size];
+            memcpy(image->origin, data, size);
             image->plane[0] = y;
             image->plane[1] = nullptr;
             image->plane[2] = nullptr;
@@ -269,17 +286,9 @@ public:
             free(image->plane[2]);
             image->plane[2] = nullptr;
         }
-        if (!image->faces.empty()) {
-            image->faces.clear();
-        }
-        if (!image->eyes.empty()) {
-            image->eyes.clear();
-        }
-        if (!image->noses.empty()) {
-            image->noses.clear();
-        }
-        if (!image->mouths.empty()) {
-            image->mouths.clear();
+        if (!image->origin) {
+            free(image->origin);
+            image->origin = nullptr;
         }
     }
 };

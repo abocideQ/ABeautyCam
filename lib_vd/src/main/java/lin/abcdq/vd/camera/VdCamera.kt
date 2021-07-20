@@ -14,9 +14,9 @@ import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 
 @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
-class VdCamera(context: Context, format: Int) : GLSurfaceView.Renderer {
+class VdCamera(context: Context) : GLSurfaceView.Renderer {
 
-    private var mFormat = format
+    private var mFormat = 1 //1.YUV420 2.NV21/12 3.RGB
     private var mCameraUse: CameraUse? = null
 
     private var mFaceModel = ""
@@ -84,15 +84,11 @@ class VdCamera(context: Context, format: Int) : GLSurfaceView.Renderer {
         }
         mCameraUse?.open()
         if (mFace) {
-            native_vdCameraRender_onFaceInit(mFaceModel, mEyesModel, mNoseModel, mMouthModel)
+            native_vdCameraRender_onFace(mFaceModel, mEyesModel, mNoseModel, mMouthModel)
         }
         mCameraUse?.setCall(object : CameraWrapCall {
             override fun onPreview(byteArray: ByteArray, width: Int, height: Int) {
-                if (mFace) {
-                    native_vdCameraRender_onFaceBuffer(mFormat, width, height, byteArray)
-                } else {
-                    native_vdCameraRender_onBuffer(mFormat, width, height, byteArray)
-                }
+                native_vdCameraRender_onBuffer(mFormat, width, height, byteArray)
             }
 
             override fun onCapture(byteArray: ByteArray, width: Int, height: Int) {
@@ -119,18 +115,11 @@ class VdCamera(context: Context, format: Int) : GLSurfaceView.Renderer {
         System.loadLibrary("vd_make")
     }
 
-    private external fun native_vdCameraRender_onFaceInit(
+    private external fun native_vdCameraRender_onFace(
         face: String,
         eyes: String,
         nose: String,
         mouth: String
-    )
-
-    private external fun native_vdCameraRender_onFaceBuffer(
-        ft: Int,
-        w: Int,
-        h: Int,
-        bytes: ByteArray
     )
 
     private external fun native_vdCameraRender_onBuffer(ft: Int, w: Int, h: Int, bytes: ByteArray)

@@ -26,7 +26,7 @@ class MainActivity : AppCompatActivity(), GridLayoutBinder {
 
     private val mItemImages = arrayOf(
         "https://gimg2.baidu.com/image_search/src=http%3A%2F%2F5b0988e595225.cdn.sohucs.com%2Fimages%2F20171107%2Fa8c06971a2b14494a86885f2feb2bd46.gif&refer=http%3A%2F%2F5b0988e595225.cdn.sohucs.com&app=2002&size=f9999,10000&q=a80&n=0&g=0n&fmt=jpeg?sec=1628319577&t=4de1c7aff5bf7023878807cc730b7502",
-        "https://gimg2.baidu.com/image_search/src=http%3A%2F%2Fimg0.ph.126.net%2F-dL-anG_WUfZ4RGBUZNjyg%3D%3D%2F798544508930078709.gif&refer=http%3A%2F%2Fimg0.ph.126.net&app=2002&size=f9999,10000&q=a80&n=0&g=0n&fmt=jpeg?sec=1628319599&t=79717a7600683b7229e1c087cb1c2742",
+        "https://gimg2.baidu.com/image_search/src=http%3A%2F%2Fimg1.mydrivers.com%2Fimg%2F20140426%2F27b603cc039e46b7bb445af59c0c7543.gif&refer=http%3A%2F%2Fimg1.mydrivers.com&app=2002&size=f9999,10000&q=a80&n=0&g=0n&fmt=jpeg?sec=1629348220&t=52bd62f0c3d1cea677c3aad3f87167b8",
         "https://gimg2.baidu.com/image_search/src=http%3A%2F%2Fdingyue.nosdn.127.net%2FuOykMLUM1skH%3DZCMuklxKlpFET3QhoBM65xLz9QxHqbzj1541416531260.gif&refer=http%3A%2F%2Fdingyue.nosdn.127.net&app=2002&size=f9999,10000&q=a80&n=0&g=0n&fmt=jpeg?sec=1628318704&t=e47a833b95840ad6cf784e452de805f2",
         "https://gimg2.baidu.com/image_search/src=http%3A%2F%2F5b0988e595225.cdn.sohucs.com%2Fimages%2F20170731%2F410237c29fbe460ea3ad861d4cd9ded7.gif&refer=http%3A%2F%2F5b0988e595225.cdn.sohucs.com&app=2002&size=f9999,10000&q=a80&n=0&g=0n&fmt=jpeg?sec=1628318768&t=83e69fe954df8a22571ba490f70bafc1"
     )

@@ -25,39 +25,74 @@ const int Location_Indices[] = {
         0, 1, 2, 1, 3, 2
 };
 
-void VideoRender::onFaceInit(char *face, char *eye, char *nose, char *mouth) {
+void VideoRender::onFace(char *face, char *eye, char *nose, char *mouth) {
+    if (face == nullptr || eye == nullptr || nose == nullptr || mouth == nullptr) {
+        m_Interrupt_cv = 1;
+        m_Thread_cv->join();
+        delete m_Thread_cv;
+        m_Thread_cv = nullptr;
+        return;
+    }
+    std::unique_lock<std::mutex> lock(m_Mutex_cv);//加锁
+    m_Interrupt_cv = 0;
     m_Face = new FaceCheck();
     m_Face->onModelSource(face, eye, nose, mouth);
+    m_Thread_cv = new std::thread(onFaceLoop, this);
+    lock.unlock();
 }
 
-void VideoRender::onFaceBuffer(int format, int w, int h, uint8_t *data) {
-    if (data == nullptr || format == 0) return;
+void VideoRender::onFaceLoop(VideoRender *p) {
+    while (true) {
+        if (p == nullptr) return;
+        if (p->m_Interrupt_cv == 1 || p->m_Interrupt) return;
+        if (p->m_Image == nullptr || p->m_Image->origin == nullptr) {
+            usleep(10 * 50000);
+            continue;
+        }
+        int w = p->m_Image->width;
+        int h = p->m_Image->height;
+        uint8_t *data = p->m_Image->origin;
+        std::unique_lock<std::mutex> lock(p->m_Mutex_cv);//加锁
+        p->faces.clear();
+        p->eyes.clear();
+        p->noses.clear();
+        p->mouths.clear();
+        p->m_Face->onFaces(w, h, data, p->faces, p->eyes, p->noses, p->mouths);
+        usleep(10 * 50000);
+        lock.unlock();
+    }
+}
+
+void VideoRender::onBuffer(int format, int w, int h, int lineSize[3], uint8_t *data) {
+    if (data == nullptr || format == 0 || w == 0 | h == 0) return;
     std::unique_lock<std::mutex> lock(m_Mutex);//加锁
     PixImageUtils::pix_image_free(m_Image);
     if (format == 1) {
-        m_Image = PixImageUtils::pix_image_get(IMAGE_FORMAT_YUV420P, w, h, data);
-    } else if (format == 2) {
-        m_Image = PixImageUtils::pix_image_get(IMAGE_FORMAT_NV21, w, h, data);
+        format = IMAGE_FORMAT_YUV420P;
+    } else if (format == 2 || format == 3) {
+        format = IMAGE_FORMAT_NV21;
     } else {
-        m_Image = PixImageUtils::pix_image_get(IMAGE_FORMAT_RGBA, w, h, data);
+        format = IMAGE_FORMAT_RGBA;
     }
-    if (m_Face != nullptr) {
-        m_Face->onInsertFaces(w, h, data, m_Image);
+    if (lineSize == nullptr) {
+        m_Image = PixImageUtils::pix_image_get(format, w, h, data);
+    } else {
+        m_Image = PixImageUtils::pix_image_get(format, w, h, lineSize, &data);
     }
 }
 
-void VideoRender::onBuffer(PixImage *image) {
-    if (image == nullptr || image->plane[0] == nullptr) return;
+void VideoRender::onBuffer(PixImage *pix) {
+    if (pix == nullptr || pix->format == 0 || pix->width == 0 | pix->height == 0) return;
     std::unique_lock<std::mutex> lock(m_Mutex);//加锁
     PixImageUtils::pix_image_free(m_Image);
-    m_Image = image;
+    m_Image = pix;
 }
 
-uint8_t *VideoRender::onBuffer() {
+uint8_t *VideoRender::onFrameBuffer() {
     return m_data;
 }
 
-int VideoRender::onBufferSize() {
+int VideoRender::onFrameBufferSize() {
     return m_dataSize;
 }
 
@@ -332,6 +367,7 @@ void VideoRender::onRelease() {
         std::lock_guard<std::mutex> lock(m_Mutex);//加锁
         PixImageUtils::pix_image_free(m_Image);
     }
+    m_Interrupt = true;
 }
 
 void VideoRender::onFrameBufferUpdate() {

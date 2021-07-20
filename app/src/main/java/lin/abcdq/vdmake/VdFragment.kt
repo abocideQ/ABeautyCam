@@ -44,7 +44,7 @@ class VdFragment(position: Int) : Fragment() {
             ViewGroup.LayoutParams.MATCH_PARENT,
             VdUIHelper.dp2Px(500)
         )
-        val camera = VdCamera(context ?: return, 1)
+        val camera = VdCamera(context ?: return)
         camera.setSurface(glSurfaceView)
         glSurfaceView.setOnClickListener {
             camera.onSwitch()

@@ -2,24 +2,12 @@
 
 extern "C" {
 
-void VdCameraRender::onFaceInit(char *face, char *eye, char *nose, char *mouth) {
-    m_Render->onFaceInit(face, eye, nose, mouth);
-}
-
-void VdCameraRender::onFaceBuffer(int format, int w, int h, uint8_t *data) {
-    m_Render->onFaceBuffer(format, w, h, data);
+void VdCameraRender::onFace(char *face, char *eye, char *nose, char *mouth) {
+    m_Render->onFace(face, eye, nose, mouth);
 }
 
 void VdCameraRender::onBuffer(int format, int w, int h, uint8_t *data) {
-    PixImage *image = nullptr;
-    if (format == 1) {
-        image = PixImageUtils::pix_image_get(IMAGE_FORMAT_YUV420P, w, h, data);
-    } else if (format == 2) {
-        image = PixImageUtils::pix_image_get(IMAGE_FORMAT_NV21, w, h, data);
-    } else {
-        image = PixImageUtils::pix_image_get(IMAGE_FORMAT_RGBA, w, h, data);
-    }
-    m_Render->onBuffer(image);
+    m_Render->onBuffer(format, w, h, nullptr, data);
 }
 
 void VdCameraRender::onRotate(float rot, bool modelRot) {
@@ -50,11 +38,11 @@ void VdCameraRender::onRelease() {
 }
 
 uint8_t *VdCameraRender::onBuffer() {
-    return m_Render->onBuffer();
+    return m_Render->onFrameBuffer();
 }
 
 int VdCameraRender::onBufferSize() {
-    return m_Render->onBufferSize();
+    return m_Render->onFrameBufferSize();
 }
 
 VdCameraRender *VdCameraRender::m_Sample;

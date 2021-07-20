@@ -129,7 +129,7 @@ class CameraActivity : AppCompatActivity() {
     private fun initCamera() {
         mGlSurface = GLSurfaceView(this)
         mContainer.addView(mGlSurface)
-        mCamera = VdCamera(this, 1)
+        mCamera = VdCamera(this)
         mCamera.setSurface(mGlSurface)
         resize()
     }
