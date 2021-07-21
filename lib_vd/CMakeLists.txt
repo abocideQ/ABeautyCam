@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.10.2)
 #=====head file (ffmpeg + opengl + opensl + opencv + my code)
 include_directories(
         src/main/cpp/utils
+        src/main/cpp/filter
         src/main/cpp/ffmpeg/include
         src/main/cpp/ffmpeg/utils
         src/main/cpp/ffmpeg/codec
@@ -62,6 +63,7 @@ set(lib_native
 file(GLOB lib_mine
         src/main/cpp/*.cpp
         src/main/cpp/utils/*.cpp
+        src/main/cpp/filter/*.cpp
         src/main/cpp/ffmpeg/*.cpp
         src/main/cpp/ffmpeg/utils/*.cpp
         src/main/cpp/ffmpeg/codec/*.cpp
