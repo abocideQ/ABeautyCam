@@ -8,7 +8,8 @@ H.264/AVC
 H.265/HEVC
 ```
 ```
-Camera2 + Opengl 录制：
+Android 视频录制
+Camera2 + OpenGL + FFmpeg
 
 Camera2提供的高宽 与 实际相反 , 利用fbo -> 旋转(坐标系 + 镜像问题) + 互换高宽 得到正常图像与数据
 
