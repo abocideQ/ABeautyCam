@@ -11,7 +11,7 @@ H.265/HEVC
 Android 视频录制
 Camera2 + OpenGL + FFmpeg
 
-Camera2提供的高宽 与 实际相反 , 利用fbo -> 旋转(坐标系 + 镜像问题) + 互换高宽 得到正常图像与数据
+Camera2提供的高宽 与 实际相反 , 利用 fbo旋转(横竖 + 镜像) + 互换高宽 得到正常图像与数据
 
 矩阵旋转
 matrix = projection * view * model;
@@ -22,6 +22,7 @@ glViewport(0, 0, height, width);
 ```
 ```
 图像处理，卷积核的一些用法(大小必须为奇数：3x3/5x5 , 5x5的核 半径则为2)：
+
 空卷积核
 0   0   0
 0   1   0  x Source Pixel
