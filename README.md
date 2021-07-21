@@ -1,5 +1,5 @@
-视频常用编码格式
 ```
+视频常用编码格式：
 JPEG
 MPEG
 H.263
@@ -8,16 +8,14 @@ H.264/AVC
 H.265/HEVC
 ```
 ```
-Android Camera 录制：
-Camera提供的高宽 与 实际相反
-利用fbo： 旋转(坐标系 + 镜像问题) + 互换高宽 得到正常数据
-matrix = projection * view * model;
+Camera2 + Opengl 录制：
+Camera2提供的高宽 与 实际相反 , 利用fbo -> 旋转(坐标系 + 镜像问题) + 互换高宽 得到正常图像与数据
+matrix = projection * view * model;  //矩阵旋转
 glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, height, width, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
-glViewport(0, 0, height, width);
+glViewport(0, 0, height, width);     //窗口高宽互换
 ```
 ```
-图像处理，卷积核的一些用法(大小必须为奇数：3x3/5x5 , 5x5的核 半径则为2)
-
+图像处理，卷积核的一些用法(大小必须为奇数：3x3/5x5 , 5x5的核 半径则为2)：
 空卷积核
 0   0   0
 0   1   0  x Source Pixel
@@ -48,11 +46,3 @@ Source Pixel: 1 1 1          1 1 1
 高斯模糊 (正态分布的权重)
 
 ```
-人脸五官检测
-
-https://blog.csdn.net/cfan927/article/details/72585587
-
-https://github.com/dengjiaming/YUV2RGBA
-
-高斯
-https://www.cnblogs.com/invisible2/p/9177018.html

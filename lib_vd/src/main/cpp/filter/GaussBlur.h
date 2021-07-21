@@ -18,7 +18,7 @@ protected:
 private:
 
     float m_Radius = 3.0f;
-    float m_Sigma = m_Radius / 3.0f;
+    float m_Sigma = m_Radius / 3;
 
     std::thread m_Thread;
     int m_Interrupt = 0;
