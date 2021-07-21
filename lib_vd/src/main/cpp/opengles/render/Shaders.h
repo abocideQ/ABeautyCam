@@ -108,7 +108,7 @@ const char *ShaderFragment_FBO_RGB =
                     fragColor = texture(s_textureRGB, fiTexCoord);
                 }
         );
-const char *ShaderFragment_FBO_YUV420p_FaceMake =
+const char *ShaderFragment_FBO_YUV420p_Face =
         GL_SHADER_VERSION
         GL_SHADER(
                 precision highp float;
@@ -135,21 +135,42 @@ const char *ShaderFragment_FBO_YUV420p_FaceMake =
                     b = y + 1.770 * u;
                     return vec4(r, g, b, 1.0f);
                 }
-                //高斯
-                const int SHIFT_SIZE = 5;
-                in vec4 blurShiftCoordinates[SHIFT_SIZE];
-                vec4 blurShift(vec2 texCoord) {
-                    // 计算当前坐标的颜色值
-                    vec4 rgbColor = YUV420PtoRGB(texCoord);
-                    vec3 sum = rgbColor.rgb;
-                    for (int i = 0; i < SHIFT_SIZE; i++) {
-                        sum += YUV420PtoRGB(blurShiftCoordinates[i].xy).rgb;
-                        sum += YUV420PtoRGB(blurShiftCoordinates[i].zw).rgb;
+                uniform vec2 fPixelSize;
+                //眼睛
+                uniform vec2 fEyeLeft;
+                uniform vec2 fEyeRight;
+                uniform float fEyeScale;
+                uniform float fEyeRadius;
+                vec2 eyeScale(vec2 texCoord, int eye) {
+                    vec2 result = texCoord;
+                    vec2 current = result * fPixelSize;
+                    if (eye == 1) { //左眼
+                        float distance = distance(current, fEyeLeft);
+                        if (distance < fEyeRadius) {
+                            float gamma = 1.0 - fEyeScale *
+                                                pow(smoothstep(0.0, 1.0, distance / fEyeRadius) -
+                                                    1.0,
+                                                    2.0);
+                            result = fEyeLeft + gamma * (current - fEyeLeft);
+                            result = result / fPixelSize;
+                        }
+                    } else {
+                        float distance = distance(current, fEyeRight);
+                        if (distance < fEyeRadius) {
+                            float gamma = 1.0 - fEyeScale *
+                                                pow(smoothstep(0.0, 1.0, distance / fEyeRadius) -
+                                                    1.0,
+                                                    2.0);
+                            result = fEyeRight + gamma * (current - fEyeRight);
+                            result = result / fPixelSize;
+                        }
                     }
-                    return vec4(sum * 1.0 / float(2 * SHIFT_SIZE + 1), 1.0);
+                    return result;
                 }
                 void main() {
-                    fragColor = blurShift(fiTexCoord);
+                    vec2 newCoord = eyeScale(fiTexCoord, 1);
+                    newCoord = eyeScale(newCoord, 2);
+                    fragColor = YUV420PtoRGB(newCoord);
                 }
         );
 #endif //OPENGLESTEST_CAMERASHADER_H

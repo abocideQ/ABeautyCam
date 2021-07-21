@@ -3,7 +3,7 @@
 extern "C" {
 
 void GaussBlur::onFilter() {
-    m_Thread = new std::thread(loopStart, this);
+//    m_Thread = new std::thread(loopStart, this);
 }
 
 void GaussBlur::loopStart(GaussBlur *gauss) {
@@ -13,10 +13,10 @@ void GaussBlur::loopStart(GaussBlur *gauss) {
 }
 
 void GaussBlur::fillEdge(int x, int y, int w) {
-    int inx = x + i;
-    if (inx < 0 || inx >= w) {
-        return x - i;
-    }
+//    int inx = x + i;
+//    if (inx < 0 || inx >= w) {
+//        return x - i;
+//    }
 }
 }
 

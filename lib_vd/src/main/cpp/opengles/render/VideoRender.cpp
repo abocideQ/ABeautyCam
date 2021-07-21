@@ -44,20 +44,14 @@ void VideoRender::onFaceLoop(VideoRender *p) {
         if (p == nullptr) return;
         if (p->m_Interrupt_cv == 1 || p->m_Interrupt) return;
         if (p->m_Face == nullptr || p->m_Image == nullptr || p->m_Image->origin == nullptr) {
-            usleep(10 * 50000);
+            usleep(10 * 10000);
             continue;
         }
         int w = p->m_Image->width;
         int h = p->m_Image->height;
         uint8_t *data = p->m_Image->origin;
-        std::unique_lock<std::mutex> lock(p->m_Mutex_cv);//加锁
-        p->faces.clear();
-        p->eyes.clear();
-        p->noses.clear();
-        p->mouths.clear();
         p->m_Face->onFaces(w, h, data, p->faces, p->eyes, p->noses, p->mouths);
-        lock.unlock();
-        usleep(10 * 50000);
+        usleep(10 * 10000);
     }
 }
 
@@ -109,10 +103,13 @@ void VideoRender::onSurfaceCreated() {
     m_Program_Fbo_YUV420P = GLUtils::glProgram(ShaderVertex_FBO, ShaderFragment_FBO_YUV420p);
     m_Program_Fbo_NV21 = GLUtils::glProgram(ShaderVertex_FBO, ShaderFragment_FBO_NV21);
     m_Program_Fbo_RGB = GLUtils::glProgram(ShaderVertex_FBO, ShaderFragment_FBO_RGB);
+    m_Program_Fbo_YUV420P_Face = GLUtils::glProgram(ShaderVertex_FBO,
+                                                    ShaderFragment_FBO_YUV420p_Face);
     if (m_Program == GL_NONE) return;
     if (m_Program_Fbo_YUV420P == GL_NONE) return;
     if (m_Program_Fbo_NV21 == GL_NONE) return;
     if (m_Program_Fbo_RGB == GL_NONE) return;
+    if (m_Program_Fbo_YUV420P_Face == GL_NONE) return;
     //vbo
     glGenBuffers(4, m_VBO);
     glBindBuffer(GL_ARRAY_BUFFER, m_VBO[0]);
@@ -199,7 +196,6 @@ void VideoRender::onMatrix(const char *gl_name, float viewRot, float modelRot) {
     view = glm::lookAt(glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f),
                        glm::vec3(0.0f, 1.0f, 0.0f));
     view = glm::rotate(view, glm::radians(viewRot), glm::vec3(0.0f, 0.0f, 1.0f));
-    view = glm::scale(view, glm::vec3(0.0f, 0.0f, 1.0f));
     glm::mat4 model = glm::mat4(1.0f);
     model = glm::rotate(model, glm::radians(modelRot), glm::vec3(0.0f, 1.0f, 0.0f));
     glm::mat4 mat4Matrix = glm::mat4(1.0f);
@@ -213,6 +209,7 @@ void VideoRender::onDrawFrame() {
     if (m_Program_Fbo_YUV420P == GL_NONE) return;
     if (m_Program_Fbo_NV21 == GL_NONE) return;
     if (m_Program_Fbo_RGB == GL_NONE) return;
+    if (m_Program_Fbo_YUV420P_Face == GL_NONE) return;
     if (m_Image == nullptr)return;
     if (m_Image->width == 0) return;
     if (m_Image->height == 0) return;
@@ -254,7 +251,45 @@ void VideoRender::onDrawFrame() {
                      GL_UNSIGNED_BYTE, nullptr);
         glViewport(0, 0, m_Image->width, m_Image->height);
     }
-    if (m_Image->format == IMAGE_FORMAT_YUV420P) {
+    if (m_Face) {
+        if (m_Image->format == IMAGE_FORMAT_YUV420P) {
+            glBindFramebuffer(GL_FRAMEBUFFER, m_Fbo[0]);
+            glUseProgram(m_Program_Fbo_YUV420P_Face);
+            glBindVertexArray(m_VAO_Fbo[0]);
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, m_Texture[0]);
+            glActiveTexture(GL_TEXTURE1);
+            glBindTexture(GL_TEXTURE_2D, m_Texture[1]);
+            glActiveTexture(GL_TEXTURE2);
+            glBindTexture(GL_TEXTURE_2D, m_Texture[2]);
+            GLint textureY = glGetUniformLocation(m_Program_Fbo_YUV420P_Face, "s_textureY");
+            GLint textureU = glGetUniformLocation(m_Program_Fbo_YUV420P_Face, "s_textureU");
+            GLint textureV = glGetUniformLocation(m_Program_Fbo_YUV420P_Face, "s_textureV");
+            glUniform1i(textureY, 0);
+            glUniform1i(textureU, 1);
+            glUniform1i(textureV, 2);
+            if (!faces.empty()) {
+            }
+            if (!eyes.empty()) {
+                GLfloat scale = glGetUniformLocation(m_Program_Fbo_YUV420P_Face, "fEyeScale");
+                glUniform1f(scale, 2.0f);
+                GLfloat radius = glGetUniformLocation(m_Program_Fbo_YUV420P_Face, "fEyeRadius");
+                glUniform1f(radius, 36.0f);
+                GLfloat left = glGetUniformLocation(m_Program_Fbo_YUV420P_Face, "fEyeLeft");
+                glUniform2f(left, eyes[0].x, eyes[0].y);
+                GLfloat right = glGetUniformLocation(m_Program_Fbo_YUV420P_Face, "fEyeRight");
+                glUniform2f(right, eyes[1].x, eyes[1].y);
+            }
+            if (!noses.empty()) {
+
+            }
+            if (!mouths.empty()) {
+
+            }
+            GLfloat size = glGetUniformLocation(m_Program_Fbo_YUV420P_Face, "fPixelSize");
+            glUniform2f(size, m_Image->width, m_Image->height);
+        }
+    } else if (m_Image->format == IMAGE_FORMAT_YUV420P) {
         glBindFramebuffer(GL_FRAMEBUFFER, m_Fbo[0]);
         glUseProgram(m_Program_Fbo_YUV420P);
         glBindVertexArray(m_VAO_Fbo[0]);
@@ -346,6 +381,10 @@ void VideoRender::onRelease() {
     if (m_Program_Fbo_RGB) {
         glDeleteProgram(m_Program_Fbo_RGB);
         m_Program_Fbo_RGB = GL_NONE;
+    }
+    if (m_Program_Fbo_YUV420P_Face) {
+        glDeleteProgram(m_Program_Fbo_YUV420P_Face);
+        m_Program_Fbo_YUV420P_Face = GL_NONE;
     }
     if (m_Texture[0]) {
         glActiveTexture(GL_TEXTURE0);

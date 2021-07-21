@@ -83,6 +83,7 @@ protected:
     GLuint m_Program_Fbo_YUV420P;
     GLuint m_Program_Fbo_NV21;
     GLuint m_Program_Fbo_RGB;
+    GLuint m_Program_Fbo_YUV420P_Face;
     GLuint m_Texture_Fbo[1];
     GLuint m_VAO_Fbo[1];
     GLuint m_Fbo[1];

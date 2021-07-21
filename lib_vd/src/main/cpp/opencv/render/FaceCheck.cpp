@@ -9,8 +9,8 @@ void FaceCheck::onModelSource(char *face, char *eye, char *nose, char *mouth) {
 }
 
 void FaceCheck::onFaces(int width, int height, uint8_t *data, std::vector<cv::Rect> &m_faces,
-                         std::vector<cv::Rect> &m_eyes, std::vector<cv::Rect> &m_noses,
-                         std::vector<cv::Rect> &m_mouths) {
+                        std::vector<cv::Rect> &m_eyes, std::vector<cv::Rect> &m_noses,
+                        std::vector<cv::Rect> &m_mouths) {
     cv::Mat gray;
     cv::Mat src(height + height / 2, width, CV_8UC1, data);//yuv数据
 //    cv::Mat src(height, width, CV_8UC3, data);//rgb数据
@@ -23,6 +23,9 @@ void FaceCheck::onFaces(int width, int height, uint8_t *data, std::vector<cv::Re
     if (faces.empty()) {
         return;
     }
+    m_faces.clear();
+    m_noses.clear();
+    m_mouths.clear();
     m_faces.insert(m_faces.end(), faces.begin(), faces.end());
     //features check
     int i = 0;
@@ -33,8 +36,9 @@ void FaceCheck::onFaces(int width, int height, uint8_t *data, std::vector<cv::Re
         cv::Mat ROI = gray(cv::Rect(face.x, face.y, face.width, face.height));//特征检测
         //eyes
         std::vector<cv::Rect> eyes;
-        eyesCheck(eye_model, eyes, ROI);
+        eyesCheck(eye_model, eyes, gray);
         if (!eyes.empty()) {
+            m_eyes.clear();
             m_eyes.insert(m_eyes.end(), eyes.begin(), eyes.end());
         }
         //nose
@@ -62,8 +66,7 @@ void FaceCheck::faceCheck(char *model, std::vector<cv::Rect> &faces, cv::Mat ima
     if (faceCascade.empty()) {
         faceCascade.load(model);
     }
-    faceCascade.detectMultiScale(image, faces, 1.1f, 5, 0);
-    LOGCATE("000001???  %d", faces.size());
+    faceCascade.detectMultiScale(image, faces, 1.1f, 2, 0, cv::Size(50, 50));
     return;
 }
 
@@ -75,7 +78,7 @@ void FaceCheck::eyesCheck(char *model, std::vector<cv::Rect> &features, cv::Mat 
     if (eyesCascade.empty()) {
         eyesCascade.load(model);
     }
-    eyesCascade.detectMultiScale(image, features, 1.20f, 3, 0, cv::Size(30, 30));
+    eyesCascade.detectMultiScale(image, features, 1.15f, 2, 0, cv::Size(30, 30));
 }
 
 void FaceCheck::noseCheck(char *model, std::vector<cv::Rect> &features, cv::Mat image) {
@@ -86,7 +89,7 @@ void FaceCheck::noseCheck(char *model, std::vector<cv::Rect> &features, cv::Mat 
     if (noseCascade.empty()) {
         noseCascade.load(model);
     }
-    noseCascade.detectMultiScale(image, features, 1.20f, 3, 0, cv::Size(30, 30), cv::Size());
+    noseCascade.detectMultiScale(image, features, 1.15f, 2, 0, cv::Size(30, 30));
 }
 
 void FaceCheck::mouthCheck(char *model, std::vector<cv::Rect> &features, cv::Mat image) {
@@ -97,7 +100,7 @@ void FaceCheck::mouthCheck(char *model, std::vector<cv::Rect> &features, cv::Mat
     if (mouthCascade.empty()) {
         mouthCascade.load(model);
     }
-    mouthCascade.detectMultiScale(image, features, 1.20f, 3, 0, cv::Size(30, 30), cv::Size());
+    mouthCascade.detectMultiScale(image, features, 1.15f, 2, 0, cv::Size(30, 30));
 }
 }
 
