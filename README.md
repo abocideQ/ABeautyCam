@@ -77,3 +77,4 @@ double xxxClass::onGauss1D(int x) {
     return A * exp(B);
 }
 ```
+https://www.cnblogs.com/cpuimage/p/8995600.html
