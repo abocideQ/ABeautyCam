@@ -58,11 +58,11 @@ Source Pixel: 1 1 1          1 1 1
 高斯模糊 = 权重矩阵 x Source Pixel
 ```
 高斯函数(正态分布的密度函数), 一维：
-![Image text](https://github.com/ABCDQ123/vdMake/blob/main/lib_camera/image/circle.gif)
+![Image text](https://github.com/ABCDQ123/VdMake/blob/main/lib_vd/image/gauss1d_origin.png)
 μ是x的均值，σ是x的方差。计算平均值时，中心点为原点，所以μ=0。
-![Image text](https://github.com/ABCDQ123/vdMake/blob/main/lib_camera/image/circle.gif)
+![Image text](https://github.com/ABCDQ123/VdMake/blob/main/lib_vd/image/gauss1d.png)
 根据一维高斯函数，可以推导得到二维高斯函数：
-![Image text](https://github.com/ABCDQ123/vdMake/blob/main/lib_camera/image/circle.gif)
+![Image text](https://github.com/ABCDQ123/VdMake/blob/main/lib_vd/image/gauss2d.png)
 一维高斯函数 sqrt：平方根 exp：e的x次幂
 ```
 double xxxClass::onGauss1D(int x) {
