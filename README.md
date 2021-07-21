@@ -1,4 +1,4 @@
-##### 视频常用编码格式：
+#### 视频常用编码格式：
 ```
 JPEG
 MPEG
@@ -7,7 +7,7 @@ MPEG-4
 H.264/AVC
 H.265/HEVC
 ```
-##### Android 视频录制 : Camera2 OpenGL FFmpeg
+#### Android 视频录制 : Camera2 OpenGL FFmpeg
 ```
 Camera2提供的高宽 与 实际相反 , 利用 fbo旋转(横竖 + 镜像) + 互换高宽 得到正常图像与数据
 
@@ -19,7 +19,7 @@ glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, height, width, 0, GL_RGBA, GL_UNSIGNED_B
 glViewport(0, 0, height, width); 
 ```
 
-##### 图像处理，卷积核的一些用法(大小必须为奇数：3x3/5x5 , 5x5的核 半径则为2)：
+#### 图像处理，卷积核的一些用法(大小必须为奇数：3x3/5x5 , 5x5的核 半径则为2)：
 ```
 空卷积核
 0   0   0
@@ -49,7 +49,7 @@ Source Pixel: 1 1 1          1 1 1
 因此，加权平均更合理，距离越近的点权重越大，距离越远的点权重越小。
 ```
 
-##### 高斯模糊 (正态分布的权重)
+#### 高斯模糊 (正态分布的权重)
 ```
 矩阵半径：R
 标准差σ：Sigma（卷积矩阵半径的1/3为宜）
