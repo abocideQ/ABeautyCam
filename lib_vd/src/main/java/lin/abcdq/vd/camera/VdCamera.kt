@@ -139,7 +139,7 @@ class VdCamera(context: Context) : GLSurfaceView.Renderer {
     private fun copyModel2Local(context: Context) {
         mFace = true
         CAO.copyAssetsDirToSDCard(context, "opencv", context.obbDir.absolutePath)
-        mFaceModel = context.obbDir.absolutePath + "/opencv/haarcascade_frontalface_default.xml"
+        mFaceModel = context.obbDir.absolutePath + "/opencv/haarcascade_frontalface_alt.xml"
         mEyesModel = context.obbDir.absolutePath + "/opencv/haarcascade_eye.xml"
         mNoseModel = context.obbDir.absolutePath + "/opencv/haarcascade_mcs_nose.xml"
         mMouthModel = context.obbDir.absolutePath + "/opencv/haarcascade_mcs_mouth.xml"

@@ -44,14 +44,14 @@ void VideoRender::onFaceLoop(VideoRender *p) {
         if (p == nullptr) return;
         if (p->m_Interrupt_cv == 1 || p->m_Interrupt) return;
         if (p->m_Face == nullptr || p->m_Image == nullptr || p->m_Image->origin == nullptr) {
-            usleep(10 * 10000);
+            usleep(10 * 1000);
             continue;
         }
         int w = p->m_Image->width;
         int h = p->m_Image->height;
         uint8_t *data = p->m_Image->origin;
         p->m_Face->onFaces(w, h, data, p->faces, p->eyes, p->noses, p->mouths);
-        usleep(10 * 10000);
+        usleep(10 * 1000);
     }
 }
 
@@ -95,6 +95,7 @@ void VideoRender::onCamera(bool camera) {
 void VideoRender::onRotate(float viewRot, int modelRot) {
     m_ViewRot = viewRot;
     m_ModelRot = modelRot;
+    std::lock_guard<std::mutex> lock(m_Mutex);//加锁
     m_Image = nullptr;
 }
 
@@ -410,6 +411,8 @@ void VideoRender::onRelease() {
 
 void VideoRender::onFrameBufferUpdate() {
     std::lock_guard<std::mutex> lock(m_Mutex);//加锁
+    if (!m_Image) return;
+    if (!m_Image->format) return;
     int width = m_Image->width;
     int height = m_Image->height;
     if (!m_data) m_data = new uint8_t[width * height * 4];
