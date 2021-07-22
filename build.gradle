@@ -6,6 +6,9 @@ allprojects {
     repositories {
         google()
         mavenCentral()
+        flatDir {
+            dirs project(':lib_vd').file('libs')
+        }
     }
 }
 buildscript {

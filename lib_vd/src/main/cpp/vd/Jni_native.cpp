@@ -63,17 +63,17 @@ void native_vdPlayer_onDrawFrame(JNIEnv *env, jobject *obj) {
 }
 //============CameraRender
 void
-native_vdCameraRender_onFace(JNIEnv *env, jobject *obj, jstring face_model, jstring eyes_model,
-                             jstring nose_model, jstring mouth_model) {
+native_vdCameraRender_onFaceCV(JNIEnv *env, jobject *obj, jstring face_model, jstring eyes_model,
+                               jstring nose_model, jstring mouth_model) {
     if (face_model == nullptr) {
-        VdCameraRender::instance()->onFace(nullptr, nullptr, nullptr, nullptr);
+        VdCameraRender::instance()->onFaceCV(nullptr, nullptr, nullptr, nullptr);
         return;
     }
     char *face = (char *) env->GetStringUTFChars(face_model, 0);
     char *eyes = (char *) env->GetStringUTFChars(eyes_model, 0);
     char *nose = (char *) env->GetStringUTFChars(nose_model, 0);
     char *mouth = (char *) env->GetStringUTFChars(mouth_model, 0);
-    VdCameraRender::instance()->onFace(face, eyes, nose, mouth);
+    VdCameraRender::instance()->onFaceCV(face, eyes, nose, mouth);
 }
 
 void native_vdCameraRender_onBuffer(JNIEnv *env, jobject *obj, jint format, jint width, jint height,
@@ -82,6 +82,19 @@ void native_vdCameraRender_onBuffer(JNIEnv *env, jobject *obj, jint format, jint
     uint8_t *buffer = new uint8_t[length];
     env->GetByteArrayRegion(data, 0, length, reinterpret_cast<jbyte *>(buffer));
     VdCameraRender::instance()->onBuffer(format, width, height, buffer);
+}
+
+void native_vdCameraRender_onBufferFacePlus(JNIEnv *env, jobject *obj, jint format, jint width,
+                                            jint height, jbyteArray data,
+                                            jint faceX, jint faceY,
+                                            jint faceW, jint faceH,
+                                            jint eyeLX, jint eyeLY,
+                                            jint eyeRX, jint eyeRY) {
+    int length = env->GetArrayLength(data);
+    uint8_t *buffer = new uint8_t[length];
+    env->GetByteArrayRegion(data, 0, length, reinterpret_cast<jbyte *>(buffer));
+    VdCameraRender::instance()->onBufferFacePlus(format, width, height, buffer, faceX, faceY, faceW,
+                                                 faceH, eyeLX, eyeLY, eyeRX, eyeRY);
 }
 
 jbyteArray native_vdCameraRender_onBufferCapture(JNIEnv *env, jobject obj) {
@@ -168,8 +181,9 @@ JNINativeMethod JNI_Methods_Player[] = {
         {"native_vdPlayer_onDrawFrame",      "()V",                   (void *) native_vdPlayer_onDrawFrame},
 };
 JNINativeMethod JNI_Methods_Camera[] = {
-        {"native_vdCameraRender_onFace",           "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V", (void *) native_vdCameraRender_onFace},
+        {"native_vdCameraRender_onFaceCV",         "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V", (void *) native_vdCameraRender_onFaceCV},
         {"native_vdCameraRender_onBuffer",         "(III[B)V",                                                                    (void *) native_vdCameraRender_onBuffer},
+        {"native_vdCameraRender_onBufferFacePlus", "(III[BIIIIIIII)V",                                                            (void *) native_vdCameraRender_onBufferFacePlus},
         {"native_vdCameraRender_onBufferCapture",  "()[B",                                                                        (void *) native_vdCameraRender_onBufferCapture},
         {"native_vdCameraRender_onRotate",         "(FZ)V",                                                                       (void *) native_vdCameraRender_onRotate},
         {"native_vdCameraRender_onSurfaceCreated", "()V",                                                                         (void *) native_vdCameraRender_onSurfaceCreated},

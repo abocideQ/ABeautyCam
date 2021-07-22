@@ -5,11 +5,17 @@
 
 class VdCameraRender {
 public:
-    //face
-    void onFace(char *face, char *eye, char *nose, char *mouth);
+    //face opencv
+    void onFaceCV(char *face, char *eye, char *nose, char *mouth);
 
     //normal
     void onBuffer(int format, int w, int h, uint8_t *data);
+
+    void onBufferFacePlus(int format, int w, int h, uint8_t *data,
+                          int faceX, int faceY,
+                          int faceW, int faceH,
+                          int eyeLX, int eyeLY,
+                          int eyeRX, int eyeRY);
 
     uint8_t *onBuffer();
 

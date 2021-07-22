@@ -44,4 +44,7 @@ dependencies {
     implementation "$kotlin_core"
     implementation "$appcompat"
     implementation "$material"
+
+    implementation(name: 'sdk', ext: 'aar')
+    implementation(name: 'licensemanager', ext: 'aar')
 }

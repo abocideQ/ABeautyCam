@@ -21,10 +21,16 @@ class VideoRender {
 public:
 
     //face
-    void onFace(char *face, char *eye, char *nose, char *mouth);
+    void onFaceCV(char *face, char *eye, char *nose, char *mouth);
 
     //normal
     void onBuffer(int format, int width, int height, int lineSize[3], uint8_t *data);
+
+    void onBufferFacePlus(int format, int width, int height, int lineSize[3], uint8_t *data,
+                          int faceX, int faceY,
+                          int faceW, int faceH,
+                          int eyeLX, int eyeLY,
+                          int eyeRX, int eyeRY);
 
     void onBuffer(PixImage *pix);
 
@@ -93,6 +99,8 @@ protected:
     volatile bool m_Interrupt = false;
 
 private:
+    //cv or face++
+    int m_Face_Position = 0; //1 cv 2 face++
     //opencv
     FaceCheck *m_Face = nullptr;
     std::vector<cv::Rect> faces;
@@ -101,11 +109,11 @@ private:
     std::vector<cv::Rect> mouths;
     //线程
     std::thread *m_Thread_cv = nullptr;
-    volatile int m_Interrupt_cv = 0;
+    volatile int m_Interrupt_cv = 1;
     //互斥锁
     std::mutex m_Mutex_cv;
 
-    static void onFaceLoop(VideoRender *p);
+    static void onFaceCVLoop(VideoRender *p);
 };
 
 

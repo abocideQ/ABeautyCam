@@ -25,7 +25,7 @@ const int Location_Indices[] = {
         0, 1, 2, 1, 3, 2
 };
 
-void VideoRender::onFace(char *face, char *eye, char *nose, char *mouth) {
+void VideoRender::onFaceCV(char *face, char *eye, char *nose, char *mouth) {
     if (face == nullptr || eye == nullptr || nose == nullptr || mouth == nullptr) {
         m_Interrupt_cv = 1;
         m_Thread_cv->join();
@@ -36,10 +36,10 @@ void VideoRender::onFace(char *face, char *eye, char *nose, char *mouth) {
     m_Interrupt_cv = 0;
     m_Face = new FaceCheck();
     m_Face->onModelSource(face, eye, nose, mouth);
-    m_Thread_cv = new std::thread(onFaceLoop, this);
+    m_Thread_cv = new std::thread(onFaceCVLoop, this);
 }
 
-void VideoRender::onFaceLoop(VideoRender *p) {
+void VideoRender::onFaceCVLoop(VideoRender *p) {
     while (true) {
         if (p == nullptr) return;
         if (p->m_Interrupt_cv == 1 || p->m_Interrupt) return;
@@ -71,6 +71,36 @@ void VideoRender::onBuffer(int format, int w, int h, int lineSize[3], uint8_t *d
     } else {
         m_Image = PixImageUtils::pix_image_get(format, w, h, lineSize, &data);
     }
+}
+void
+VideoRender::onBufferFacePlus(int format, int w, int h, int lineSize[3], uint8_t *data,
+                              int faceX, int faceY,
+                              int faceW, int faceH,
+                              int eyeLX, int eyeLY,
+                              int eyeRX, int eyeRY) {
+    if (data == nullptr || format == 0 || w == 0 | h == 0) return;
+    std::unique_lock<std::mutex> lock(m_Mutex);//加锁
+    PixImageUtils::pix_image_free(m_Image);
+    if (format == 1) {
+        format = IMAGE_FORMAT_YUV420P;
+    } else if (format == 2 || format == 3) {
+        format = IMAGE_FORMAT_NV21;
+    } else {
+        format = IMAGE_FORMAT_RGBA;
+    }
+    if (lineSize == nullptr) {
+        m_Image = PixImageUtils::pix_image_get(format, w, h, data);
+    } else {
+        m_Image = PixImageUtils::pix_image_get(format, w, h, lineSize, &data);
+    }
+    faces.clear();
+    eyes.clear();
+    cv::Rect face(faceX, faceY, faceW, faceH);
+    cv::Rect eyeL(eyeLX, eyeLY, 20, 20);
+    cv::Rect eyeR(eyeRX, eyeRY, 20, 20);
+    faces.push_back(face);
+    eyes.push_back(eyeL);
+    eyes.push_back(eyeR);
 }
 
 void VideoRender::onBuffer(PixImage *pix) {
@@ -255,7 +285,7 @@ void VideoRender::onDrawFrame() {
                      GL_UNSIGNED_BYTE, nullptr);
         glViewport(0, 0, width, height);
     }
-    if (m_Face) {
+    if (m_Face_Position == 1 || m_Face_Position == 2) {
         if (format == IMAGE_FORMAT_YUV420P) {
             glBindFramebuffer(GL_FRAMEBUFFER, m_Fbo[0]);
             glUseProgram(m_Program_Fbo_YUV420P_Face);
@@ -278,13 +308,20 @@ void VideoRender::onDrawFrame() {
                 GLfloat scale = glGetUniformLocation(m_Program_Fbo_YUV420P_Face, "fEyeScale");
                 glUniform1f(scale, 2.0f);
                 GLfloat radius = glGetUniformLocation(m_Program_Fbo_YUV420P_Face, "fEyeRadius");
-                glUniform1f(radius, eyes[0].height / 2);
-                GLfloat left = glGetUniformLocation(m_Program_Fbo_YUV420P_Face, "fEyeLeft");
-                glUniform2f(left, eyes[0].x + eyes[0].width / 2,
-                            eyes[0].y + (eyes[0].height / 2));
-                GLfloat right = glGetUniformLocation(m_Program_Fbo_YUV420P_Face, "fEyeRight");
-                glUniform2f(right, eyes[1].x + (eyes[1].width / 2),
-                            eyes[1].y + (eyes[1].height / 2));
+                glUniform1f(radius, 10.0f);
+                if (m_Face_Position == 1) {
+                    GLfloat left = glGetUniformLocation(m_Program_Fbo_YUV420P_Face, "fEyeLeft");
+                    glUniform2f(left, eyes[0].x + eyes[0].width / 2,
+                                eyes[0].y + (eyes[0].height / 2));
+                    GLfloat right = glGetUniformLocation(m_Program_Fbo_YUV420P_Face, "fEyeRight");
+                    glUniform2f(right, eyes[1].x + (eyes[1].width / 2),
+                                eyes[1].y + (eyes[1].height / 2));
+                } else {
+                    GLfloat left = glGetUniformLocation(m_Program_Fbo_YUV420P_Face, "fEyeLeft");
+                    glUniform2f(left, eyes[0].x, eyes[0].y);
+                    GLfloat right = glGetUniformLocation(m_Program_Fbo_YUV420P_Face, "fEyeRight");
+                    glUniform2f(right, eyes[1].x, eyes[1].y);
+                }
             }
             if (!noses.empty()) {
 

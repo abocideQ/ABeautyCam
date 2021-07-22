@@ -2,12 +2,21 @@
 
 extern "C" {
 
-void VdCameraRender::onFace(char *face, char *eye, char *nose, char *mouth) {
-    m_Render->onFace(face, eye, nose, mouth);
+void VdCameraRender::onFaceCV(char *face, char *eye, char *nose, char *mouth) {
+    m_Render->onFaceCV(face, eye, nose, mouth);
 }
 
 void VdCameraRender::onBuffer(int format, int w, int h, uint8_t *data) {
     m_Render->onBuffer(format, w, h, nullptr, data);
+}
+
+void VdCameraRender::onBufferFacePlus(int format, int w, int h, uint8_t *data,
+                                      int faceX, int faceY,
+                                      int faceW, int faceH,
+                                      int eyeLX, int eyeLY,
+                                      int eyeRX, int eyeRY) {
+    m_Render->onBufferFacePlus(format, w, h, nullptr, data, faceX, faceY, faceW, faceH, eyeLX,
+                               eyeLY, eyeRX, eyeRY);
 }
 
 void VdCameraRender::onRotate(float rot, bool modelRot) {

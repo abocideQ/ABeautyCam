@@ -7,9 +7,11 @@ import android.os.Build
 import android.util.Log
 import android.util.Size
 import androidx.annotation.RequiresApi
+import com.megvii.facepp.multi.sdk.FaceDetectApi
 import lin.abcdq.vd.camera.util.CAO
 import lin.abcdq.vd.camera.wrap.CameraWrap
 import lin.abcdq.vd.camera.wrap.CameraWrapCall
+import lin.abcdq.vd.facepp.FacePlus
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 
@@ -19,11 +21,16 @@ class VdCamera(context: Context) : GLSurfaceView.Renderer {
     private var mFormat = 1 //1.YUV420 2.NV21/12 3.RGB
     private var mCameraUse: CameraUse? = null
 
+    private var mFacePosition = 2// 1 opencv 2 face++
+
+    //openCV
     private var mFaceModel = ""
     private var mEyesModel = ""
     private var mNoseModel = ""
     private var mMouthModel = ""
-    private var mFace = false
+
+    //face++
+    private var mFacePlus: FacePlus? = null
 
     fun setSurface(surface: GLSurfaceView) {
         surface.setEGLContextClientVersion(3)
@@ -83,12 +90,30 @@ class VdCamera(context: Context) : GLSurfaceView.Renderer {
             }
         }
         mCameraUse?.open()
-        if (mFace) {
-            native_vdCameraRender_onFace(mFaceModel, mEyesModel, mNoseModel, mMouthModel)
-        }
         mCameraUse?.setCall(object : CameraWrapCall {
             override fun onPreview(byteArray: ByteArray, width: Int, height: Int) {
-                native_vdCameraRender_onBuffer(mFormat, width, height, byteArray)
+                if (mFacePosition == 1) {
+                    native_vdCameraRender_onBuffer(mFormat, width, height, byteArray)
+                } else {
+                    mFacePlus?.face(byteArray, width, height, object : FacePlus.FacePlusListener {
+                        override fun onFace(face: FaceDetectApi.Face?) {
+                            native_vdCameraRender_onBufferFacePlus(
+                                mFormat,
+                                width,
+                                height,
+                                byteArray,
+                                face?.rect?.centerX() ?: 0,
+                                face?.rect?.centerY() ?: 0,
+                                face?.rect?.width() ?: 0,
+                                face?.rect?.height() ?: 0,
+                                face?.gazeResult?.leftEyeGaze?.centerX?.toInt() ?: 0,
+                                face?.gazeResult?.leftEyeGaze?.centerY?.toInt() ?: 0,
+                                face?.gazeResult?.rightEyeGaze?.centerX?.toInt() ?: 0,
+                                face?.gazeResult?.rightEyeGaze?.centerY?.toInt() ?: 0
+                            )
+                        }
+                    })
+                }
             }
 
             override fun onCapture(byteArray: ByteArray, width: Int, height: Int) {
@@ -110,12 +135,16 @@ class VdCamera(context: Context) : GLSurfaceView.Renderer {
     }
 
     init {
-        copyModel2Local(context)
         mCameraUse = CameraUse(context)
         System.loadLibrary("vd_make")
+        if (mFacePosition == 1) {
+            onFaceCV(context)
+        } else {
+            onFacePlus(context)
+        }
     }
 
-    private external fun native_vdCameraRender_onFace(
+    private external fun native_vdCameraRender_onFaceCV(
         face: String,
         eyes: String,
         nose: String,
@@ -123,6 +152,21 @@ class VdCamera(context: Context) : GLSurfaceView.Renderer {
     )
 
     private external fun native_vdCameraRender_onBuffer(ft: Int, w: Int, h: Int, bytes: ByteArray)
+
+    private external fun native_vdCameraRender_onBufferFacePlus(
+        ft: Int,
+        w: Int,
+        h: Int,
+        bytes: ByteArray,
+        faceL: Int,
+        faceT: Int,
+        faceR: Int,
+        faceB: Int,
+        eyeLX: Int,
+        eyeLY: Int,
+        eyeRX: Int,
+        eyeRY: Int
+    )
 
     private external fun native_vdCameraRender_onBufferCapture(): ByteArray?
 
@@ -136,12 +180,17 @@ class VdCamera(context: Context) : GLSurfaceView.Renderer {
 
     private external fun native_vdCameraRender_onDrawFrame()
 
-    private fun copyModel2Local(context: Context) {
-        mFace = true
+    private fun onFaceCV(context: Context) {
         CAO.copyAssetsDirToSDCard(context, "opencv", context.obbDir.absolutePath)
         mFaceModel = context.obbDir.absolutePath + "/opencv/haarcascade_frontalface_default.xml"
         mEyesModel = context.obbDir.absolutePath + "/opencv/haarcascade_eye.xml"
         mNoseModel = context.obbDir.absolutePath + "/opencv/haarcascade_mcs_nose.xml"
         mMouthModel = context.obbDir.absolutePath + "/opencv/haarcascade_mcs_mouth.xml"
+        native_vdCameraRender_onFaceCV(mFaceModel, mEyesModel, mNoseModel, mMouthModel)
+    }
+
+    private fun onFacePlus(context: Context) {
+        mFacePlus = FacePlus()
+        mFacePlus?.auth(context)
     }
 }
