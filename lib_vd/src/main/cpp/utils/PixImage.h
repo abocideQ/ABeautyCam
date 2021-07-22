@@ -286,7 +286,7 @@ public:
             free(image->plane[2]);
             image->plane[2] = nullptr;
         }
-        if (!image->origin) {
+        if (nullptr != image->origin) {
             free(image->origin);
             image->origin = nullptr;
         }

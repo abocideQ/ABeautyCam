@@ -217,43 +217,46 @@ void VideoRender::onDrawFrame() {
     if (m_Image->format == 0) return;
     //textureImage2d
     std::unique_lock<std::mutex> lock(m_Mutex);
-    if (m_Image->format == IMAGE_FORMAT_YUV420P) {
+    int format = m_Image->format;
+    int width = m_Image->width;
+    int height = m_Image->height;
+    if (format == IMAGE_FORMAT_YUV420P) {
         glBindTexture(GL_TEXTURE_2D, m_Texture[0]);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, m_Image->width, m_Image->height, 0,
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, width, height, 0,
                      GL_LUMINANCE, GL_UNSIGNED_BYTE, m_Image->plane[0]);
         glBindTexture(GL_TEXTURE_2D, m_Texture[1]);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, m_Image->width / 2, m_Image->height / 2, 0,
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, width / 2, height / 2, 0,
                      GL_LUMINANCE, GL_UNSIGNED_BYTE, m_Image->plane[1]);
         glBindTexture(GL_TEXTURE_2D, m_Texture[2]);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, m_Image->width / 2, m_Image->height / 2, 0,
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, width / 2, height / 2, 0,
                      GL_LUMINANCE, GL_UNSIGNED_BYTE, m_Image->plane[2]);
-    } else if (m_Image->format == IMAGE_FORMAT_NV21 || m_Image->format == IMAGE_FORMAT_NV12) {
+    } else if (format == IMAGE_FORMAT_NV21 || format == IMAGE_FORMAT_NV12) {
         glBindTexture(GL_TEXTURE_2D, m_Texture[0]);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, m_Image->width, m_Image->height, 0,
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, width, height, 0,
                      GL_LUMINANCE, GL_UNSIGNED_BYTE, m_Image->plane[0]);
         glBindTexture(GL_TEXTURE_2D, m_Texture[1]);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE_ALPHA, m_Image->width / 2, m_Image->height / 2,
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE_ALPHA, width / 2, height / 2,
                      0, GL_LUMINANCE_ALPHA, GL_UNSIGNED_BYTE, m_Image->plane[1]);
     } else {
         glBindTexture(GL_TEXTURE_2D, m_Texture[0]);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, m_Image->width, m_Image->height, 0, GL_RGBA,
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA,
                      GL_UNSIGNED_BYTE, m_Image->plane[0]);
     }
     lock.unlock();
     //offscreen
     if (m_CameraData) {
         glBindTexture(GL_TEXTURE_2D, m_Texture_Fbo[0]);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, m_Image->height, m_Image->width, 0, GL_RGBA,
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, height, width, 0, GL_RGBA,
                      GL_UNSIGNED_BYTE, nullptr);
-        glViewport(0, 0, m_Image->height, m_Image->width);
+        glViewport(0, 0, height, width);
     } else {
         glBindTexture(GL_TEXTURE_2D, m_Texture_Fbo[0]);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, m_Image->width, m_Image->height, 0, GL_RGBA,
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA,
                      GL_UNSIGNED_BYTE, nullptr);
-        glViewport(0, 0, m_Image->width, m_Image->height);
+        glViewport(0, 0, width, height);
     }
     if (m_Face) {
-        if (m_Image->format == IMAGE_FORMAT_YUV420P) {
+        if (format == IMAGE_FORMAT_YUV420P) {
             glBindFramebuffer(GL_FRAMEBUFFER, m_Fbo[0]);
             glUseProgram(m_Program_Fbo_YUV420P_Face);
             glBindVertexArray(m_VAO_Fbo[0]);
@@ -275,11 +278,13 @@ void VideoRender::onDrawFrame() {
                 GLfloat scale = glGetUniformLocation(m_Program_Fbo_YUV420P_Face, "fEyeScale");
                 glUniform1f(scale, 2.0f);
                 GLfloat radius = glGetUniformLocation(m_Program_Fbo_YUV420P_Face, "fEyeRadius");
-                glUniform1f(radius, 36.0f);
+                glUniform1f(radius, eyes[0].height / 2);
                 GLfloat left = glGetUniformLocation(m_Program_Fbo_YUV420P_Face, "fEyeLeft");
-                glUniform2f(left, eyes[0].x, eyes[0].y);
+                glUniform2f(left, eyes[0].x + eyes[0].width / 2,
+                            eyes[0].y + (eyes[0].height / 2));
                 GLfloat right = glGetUniformLocation(m_Program_Fbo_YUV420P_Face, "fEyeRight");
-                glUniform2f(right, eyes[1].x, eyes[1].y);
+                glUniform2f(right, eyes[1].x + (eyes[1].width / 2),
+                            eyes[1].y + (eyes[1].height / 2));
             }
             if (!noses.empty()) {
 
@@ -288,9 +293,9 @@ void VideoRender::onDrawFrame() {
 
             }
             GLfloat size = glGetUniformLocation(m_Program_Fbo_YUV420P_Face, "fPixelSize");
-            glUniform2f(size, m_Image->width, m_Image->height);
+            glUniform2f(size, width, height);
         }
-    } else if (m_Image->format == IMAGE_FORMAT_YUV420P) {
+    } else if (format == IMAGE_FORMAT_YUV420P) {
         glBindFramebuffer(GL_FRAMEBUFFER, m_Fbo[0]);
         glUseProgram(m_Program_Fbo_YUV420P);
         glBindVertexArray(m_VAO_Fbo[0]);
@@ -306,7 +311,7 @@ void VideoRender::onDrawFrame() {
         glUniform1i(textureY, 0);
         glUniform1i(textureU, 1);
         glUniform1i(textureV, 2);
-    } else if (m_Image->format == IMAGE_FORMAT_NV21 || m_Image->format == IMAGE_FORMAT_NV12) {
+    } else if (format == IMAGE_FORMAT_NV21 || format == IMAGE_FORMAT_NV12) {
         glBindFramebuffer(GL_FRAMEBUFFER, m_Fbo[0]);
         glUseProgram(m_Program_Fbo_NV21);
         glBindVertexArray(m_VAO_Fbo[0]);

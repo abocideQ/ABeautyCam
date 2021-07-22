@@ -14,16 +14,15 @@ void FaceCheck::onFaces(int width, int height, uint8_t *data, std::vector<cv::Re
     cv::Mat gray;
     cv::Mat src(height + height / 2, width, CV_8UC1, data);//yuv数据
 //    cv::Mat src(height, width, CV_8UC3, data);//rgb数据
-//    cv::cvtColor(src, src, cv::COLOR_YUV2RGBA_I420);//YUV转RGB
+//    cv::cvtColor(src, src, cv::COLOR_YUV2RGB_I420);//YUV转RGB
+//    cv::cvtColor(src, gray, cv::COLOR_RGB2GRAY);//灰度图提高检测速度
     cv::cvtColor(src, gray, cv::COLOR_YUV2GRAY_420);//灰度图提高检测速度
-//    cv::equalizeHist(gray, gray);//直方图均衡化(二值化)
+    cv::equalizeHist(gray, gray);//直方图均衡化(二值化)
     //face check
-    if (m_faces.empty()) {
-        m_faces.clear();
-        m_eyes.clear();
-        m_noses.clear();
-        m_mouths.clear();
-    }
+    m_faces.clear();
+    m_eyes.clear();
+    m_noses.clear();
+    m_mouths.clear();
     std::vector<cv::Rect> faces;
     faceCheck(face_model, faces, gray);
     if (faces.empty()) {
@@ -39,22 +38,22 @@ void FaceCheck::onFaces(int width, int height, uint8_t *data, std::vector<cv::Re
         cv::Mat ROI = gray(cv::Rect(face.x, face.y, face.width, face.height));//特征检测
         //eyes
         std::vector<cv::Rect> eyes;
-        eyesCheck(eye_model, eyes, ROI);
+        eyesCheck(eye_model, eyes, gray);
         if (!eyes.empty()) {
             m_eyes.insert(m_eyes.end(), eyes.begin(), eyes.end());
         }
         //nose
-        std::vector<cv::Rect> noses;
-        noseCheck(nose_model, noses, ROI);
-        if (!noses.empty()) {
-            m_noses.insert(m_noses.end(), noses.begin(), noses.end());
-        }
+//        std::vector<cv::Rect> noses;
+//        noseCheck(nose_model, noses, ROI);
+//        if (!noses.empty()) {
+//            m_noses.insert(m_noses.end(), noses.begin(), noses.end());
+//        }
         //mouth
-        std::vector<cv::Rect> mouths;
-        mouthCheck(mouth_model, mouths, ROI);
-        if (!mouths.empty()) {
-            m_mouths.insert(m_mouths.end(), mouths.begin(), mouths.end());
-        }
+//        std::vector<cv::Rect> mouths;
+//        mouthCheck(mouth_model, mouths, ROI);
+//        if (!mouths.empty()) {
+//            m_mouths.insert(m_mouths.end(), mouths.begin(), mouths.end());
+//        }
     }
     gray.release();
     src.release();
@@ -68,7 +67,7 @@ void FaceCheck::faceCheck(char *model, std::vector<cv::Rect> &faces, cv::Mat ima
     if (faceCascade.empty()) {
         faceCascade.load(model);
     }
-    faceCascade.detectMultiScale(image, faces, 1.1f, 1, 0, cv::Size(30, 30));
+    faceCascade.detectMultiScale(image, faces, 1.1f, 3, 0, cv::Size(50, 50));
     return;
 }
 
@@ -80,7 +79,7 @@ void FaceCheck::eyesCheck(char *model, std::vector<cv::Rect> &features, cv::Mat 
     if (eyesCascade.empty()) {
         eyesCascade.load(model);
     }
-    eyesCascade.detectMultiScale(image, features, 1.5f, 1);
+    eyesCascade.detectMultiScale(image, features, 1.5f, 3, 0, cv::Size(30, 30));
 }
 
 void FaceCheck::noseCheck(char *model, std::vector<cv::Rect> &features, cv::Mat image) {
@@ -91,7 +90,7 @@ void FaceCheck::noseCheck(char *model, std::vector<cv::Rect> &features, cv::Mat 
     if (noseCascade.empty()) {
         noseCascade.load(model);
     }
-    noseCascade.detectMultiScale(image, features, 1.5f, 1);
+    noseCascade.detectMultiScale(image, features, 1.5f, 3, 0, cv::Size(30, 30));
 }
 
 void FaceCheck::mouthCheck(char *model, std::vector<cv::Rect> &features, cv::Mat image) {
@@ -102,7 +101,7 @@ void FaceCheck::mouthCheck(char *model, std::vector<cv::Rect> &features, cv::Mat
     if (mouthCascade.empty()) {
         mouthCascade.load(model);
     }
-    mouthCascade.detectMultiScale(image, features, 1.5f, 1);
+    mouthCascade.detectMultiScale(image, features, 1.5f, 3, 0, cv::Size(30, 30));
 }
 }
 
