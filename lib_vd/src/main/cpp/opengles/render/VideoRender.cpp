@@ -296,6 +296,7 @@ void VideoRender::onDrawFrame() {
                 glUniform1f(scale, 10.0f);
                 GLfloat radius = glGetUniformLocation(m_Program_Fbo_YUV420P_Face, "fEyeRadius");
                 glUniform1f(radius, 20.0f);
+                //眼睛大致位置参考 586 410
                 if (m_Face == 1) {
                     GLfloat left = glGetUniformLocation(m_Program_Fbo_YUV420P_Face, "fEyeLeft");
                     glUniform2f(left, eyes[0].x + eyes[0].width / 2,
