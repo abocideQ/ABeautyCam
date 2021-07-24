@@ -34,12 +34,28 @@ void FaceCnnDetection::onFacesDetection(int format, int width, int height, uint8
         LOGCATE("onFacesDetection DETECT_BUFFER_SIZE malloc error");
         return;
     }
-    pResults = facedetect_cnn(pBuffer, (unsigned char *) (gray.ptr(0)), gray.cols, gray.rows,
-                              (int) gray.step);
+    pResults = facedetect_cnn(pBuffer, (unsigned char *) (bgr.ptr(0)),
+                              bgr.cols, bgr.rows, (int) bgr.step);
     int numFaces = pResults ? *pResults : 0;
-    LOGCATE("onFacesDetection 5555555  === %d", numFaces);
     int i = 0;
     for (; i < (pResults ? *pResults : 0); i++) {
+        short *p = ((short *) (pResults + 1)) + 142 * i;
+        int confidence = p[0];
+        int face_x = p[1];
+        int face_y = p[2];
+        int face_w = p[3];
+        int face_h = p[4];
+        int eyeL_x = p[5];
+        int eyeL_y = p[6];
+        int eyeR_x = p[7];
+        int eyeR_y = p[8];
+        cv::Rect face(face_x, face_y, face_w, face_h);
+        m_faces.push_back(face);
+        cv::Rect eyeL(eyeL_x, eyeL_y, 10.0f, 10.0f);
+        cv::Rect eyeR(eyeR_x, eyeR_y, 10.0f, 10.0f);
+        m_eyes.push_back(eyeL);
+        m_eyes.push_back(eyeR);
+        return;
     }
 }
 }

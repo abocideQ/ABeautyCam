@@ -18,7 +18,7 @@ class VdCamera(context: Context) : GLSurfaceView.Renderer {
     private var mFormat = 1 //1.YUV420 2.NV21/12 3.RGB
     private var mCameraUse: CameraUse? = null
 
-    private var mFacePosition = 2// 1 opencv 2 faceCNN
+    private var mFacePosition = 1// 1 opencv 2 faceCNN
 
     //openCV
     private var mFaceModel = ""
