@@ -4,7 +4,7 @@
 #include "../glm/glm.hpp"
 #include "../glm/gtc/matrix_transform.hpp"
 #include "../glm/gtc/type_ptr.hpp"
-#include "FaceCheck.h"
+
 #include "PixImage.h"
 #include "GLUtils.h"
 #include "Log.h"
@@ -13,6 +13,8 @@
 #include <mutex>
 #include <unistd.h>
 
+#include "FaceCvDetection.h"
+#include "FaceCnnDetection.h"
 
 typedef void (*OnRenderFrameCallback)(void *, int, int, int, uint8_t *); // 回调函数 -> Record
 
@@ -21,16 +23,10 @@ class VideoRender {
 public:
 
     //face
-    void onFaceCV(char *face, char *eye, char *nose, char *mouth);
+    void onFace(char *face, char *eye, char *nose, char *mouth, int faceI);
 
     //normal
     void onBuffer(int format, int width, int height, int lineSize[3], uint8_t *data);
-
-    void onBufferFacePlus(int format, int width, int height, int lineSize[3], uint8_t *data,
-                          int faceX, int faceY,
-                          int faceW, int faceH,
-                          int eyeLX, int eyeLY,
-                          int eyeRX, int eyeRY);
 
     void onBuffer(PixImage *pix);
 
@@ -99,21 +95,23 @@ protected:
     volatile bool m_Interrupt = false;
 
 private:
-    //cv or face++
-    int m_Face_Position = 0; //1 cv 2 face++
+    //cv or faceCnn
+    int m_Face = 0; //1 cv 2 faceCnn
     //opencv
-    FaceCheck *m_Face = nullptr;
+    FaceCvDetection *m_FaceCvDetection = nullptr;
+    //faceCnn
+    FaceCnnDetection *mFaceCnnDetection = nullptr;
     std::vector<cv::Rect> faces;
     std::vector<cv::Rect> eyes;
     std::vector<cv::Rect> noses;
     std::vector<cv::Rect> mouths;
     //线程
-    std::thread *m_Thread_cv = nullptr;
-    volatile int m_Interrupt_cv = 1;
+    std::thread *m_Thread_Face = nullptr;
+    volatile int m_Interrupt_Face = 1;
     //互斥锁
     std::mutex m_Mutex_cv;
 
-    static void onFaceCVLoop(VideoRender *p);
+    static void onFaceLoop(VideoRender *p);
 };
 
 

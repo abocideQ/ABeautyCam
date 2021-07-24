@@ -25,32 +25,49 @@ const int Location_Indices[] = {
         0, 1, 2, 1, 3, 2
 };
 
-void VideoRender::onFaceCV(char *face, char *eye, char *nose, char *mouth) {
-    if (face == nullptr || eye == nullptr || nose == nullptr || mouth == nullptr) {
-        m_Interrupt_cv = 1;
-        m_Thread_cv->join();
-        delete m_Thread_cv;
-        m_Thread_cv = nullptr;
+void VideoRender::onFace(char *face, char *eye, char *nose, char *mouth, int faceI) {
+    if (faceI == 1) {
+        m_Face = 1;
+    } else if (faceI == 2) {
+        m_Face = 2;
+    } else if (faceI == -1) {
+        m_Interrupt_Face = 1;
+        m_Thread_Face->join();
+        delete m_Thread_Face;
+        m_Thread_Face = nullptr;
         return;
     }
-    m_Interrupt_cv = 0;
-    m_Face = new FaceCheck();
-    m_Face->onModelSource(face, eye, nose, mouth);
-    m_Thread_cv = new std::thread(onFaceCVLoop, this);
+    if (m_Face == 1) {
+        m_Interrupt_Face = 0;
+        m_FaceCvDetection = new FaceCvDetection();
+        m_FaceCvDetection->onModelSource(face, eye, nose, mouth);
+        m_Thread_Face = new std::thread(onFaceLoop, this);
+    } else {
+        m_Interrupt_Face = 0;
+        mFaceCnnDetection = new FaceCnnDetection();
+        m_Thread_Face = new std::thread(onFaceLoop, this);
+    }
 }
 
-void VideoRender::onFaceCVLoop(VideoRender *p) {
+void VideoRender::onFaceLoop(VideoRender *p) {
     while (true) {
         if (p == nullptr) return;
-        if (p->m_Interrupt_cv == 1 || p->m_Interrupt) return;
-        if (p->m_Face == nullptr || p->m_Image == nullptr || p->m_Image->origin == nullptr) {
+        if (p->m_Interrupt_Face == 1 || p->m_Interrupt) return;
+        if (p->m_Image == nullptr || p->m_Image->origin == nullptr) {
             usleep(10 * 1000);
             continue;
         }
+        int f = p->m_Image->format;
         int w = p->m_Image->width;
         int h = p->m_Image->height;
         uint8_t *data = p->m_Image->origin;
-        p->m_Face->onFaces(w, h, data, p->faces, p->eyes, p->noses, p->mouths);
+        if (p->m_Face == 1) {
+            p->m_FaceCvDetection->onFacesDetection(f, w, h, data, p->faces, p->eyes,
+                                                   p->noses, p->mouths);
+        } else if (p->m_Face == 2) {
+            p->mFaceCnnDetection->onFacesDetection(f, w, h, data, p->faces, p->eyes,
+                                                   p->noses, p->mouths);
+        }
         usleep(10 * 1000);
     }
 }
@@ -71,36 +88,6 @@ void VideoRender::onBuffer(int format, int w, int h, int lineSize[3], uint8_t *d
     } else {
         m_Image = PixImageUtils::pix_image_get(format, w, h, lineSize, &data);
     }
-}
-void
-VideoRender::onBufferFacePlus(int format, int w, int h, int lineSize[3], uint8_t *data,
-                              int faceX, int faceY,
-                              int faceW, int faceH,
-                              int eyeLX, int eyeLY,
-                              int eyeRX, int eyeRY) {
-    if (data == nullptr || format == 0 || w == 0 | h == 0) return;
-    std::unique_lock<std::mutex> lock(m_Mutex);//加锁
-    PixImageUtils::pix_image_free(m_Image);
-    if (format == 1) {
-        format = IMAGE_FORMAT_YUV420P;
-    } else if (format == 2 || format == 3) {
-        format = IMAGE_FORMAT_NV21;
-    } else {
-        format = IMAGE_FORMAT_RGBA;
-    }
-    if (lineSize == nullptr) {
-        m_Image = PixImageUtils::pix_image_get(format, w, h, data);
-    } else {
-        m_Image = PixImageUtils::pix_image_get(format, w, h, lineSize, &data);
-    }
-    faces.clear();
-    eyes.clear();
-    cv::Rect face(faceX, faceY, faceW, faceH);
-    cv::Rect eyeL(eyeLX, eyeLY, 20, 20);
-    cv::Rect eyeR(eyeRX, eyeRY, 20, 20);
-    faces.push_back(face);
-    eyes.push_back(eyeL);
-    eyes.push_back(eyeR);
 }
 
 void VideoRender::onBuffer(PixImage *pix) {
@@ -285,7 +272,7 @@ void VideoRender::onDrawFrame() {
                      GL_UNSIGNED_BYTE, nullptr);
         glViewport(0, 0, width, height);
     }
-    if (m_Face_Position == 1 || m_Face_Position == 2) {
+    if (m_Face == 1 || m_Face == 2) {
         if (format == IMAGE_FORMAT_YUV420P) {
             glBindFramebuffer(GL_FRAMEBUFFER, m_Fbo[0]);
             glUseProgram(m_Program_Fbo_YUV420P_Face);
@@ -309,7 +296,7 @@ void VideoRender::onDrawFrame() {
                 glUniform1f(scale, 2.0f);
                 GLfloat radius = glGetUniformLocation(m_Program_Fbo_YUV420P_Face, "fEyeRadius");
                 glUniform1f(radius, 10.0f);
-                if (m_Face_Position == 1) {
+                if (m_Face == 1) {
                     GLfloat left = glGetUniformLocation(m_Program_Fbo_YUV420P_Face, "fEyeLeft");
                     glUniform2f(left, eyes[0].x + eyes[0].width / 2,
                                 eyes[0].y + (eyes[0].height / 2));

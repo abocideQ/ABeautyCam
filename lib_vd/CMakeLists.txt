@@ -15,6 +15,8 @@ include_directories(
         src/main/cpp/opensles/render
         src/main/cpp/opencv/include
         src/main/cpp/opencv/render
+        src/main/cpp/facecnn/include
+        src/main/cpp/facecnn/render
         src/main/cpp/vd/player
         src/main/cpp/vd/camera
         src/main/cpp/vd/record
@@ -75,6 +77,9 @@ file(GLOB lib_mine
         src/main/cpp/opensles/render/*.cpp
         src/main/cpp/opencv/*.cpp
         src/main/cpp/opencv/render/*.cpp
+        src/main/cpp/facecnn/*.cpp
+        src/main/cpp/facecnn/include/*.cpp
+        src/main/cpp/facecnn/render/*.cpp
         src/main/cpp/vd/*.cpp
         src/main/cpp/vd/player/*.cpp
         src/main/cpp/vd/camera/*.cpp
