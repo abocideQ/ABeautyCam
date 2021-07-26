@@ -1,6 +1,7 @@
 package lin.abcdq.vd.camera
 
 import android.content.Context
+import android.graphics.BitmapFactory
 import android.graphics.ImageFormat
 import android.opengl.GLSurfaceView
 import android.os.Build
@@ -9,6 +10,7 @@ import androidx.annotation.RequiresApi
 import lin.abcdq.vd.camera.util.CAO
 import lin.abcdq.vd.camera.wrap.CameraWrap
 import lin.abcdq.vd.camera.wrap.CameraWrapCall
+import java.nio.ByteBuffer
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 
@@ -18,14 +20,13 @@ class VdCamera(context: Context) : GLSurfaceView.Renderer {
     private var mFormat = 1 //1.YUV420 2.NV21/12 3.RGB
     private var mCameraUse: CameraUse? = null
 
-    private var mFacePosition = 1// 1 opencv 2 faceCNN
+    private var mFacePosition = 2// 1 opencv 2 faceCNN
 
     //openCV
     private var mFaceModel = ""
     private var mEyesModel = ""
     private var mNoseModel = ""
     private var mMouthModel = ""
-
 
     fun setSurface(surface: GLSurfaceView) {
         surface.setEGLContextClientVersion(3)
@@ -114,7 +115,7 @@ class VdCamera(context: Context) : GLSurfaceView.Renderer {
         if (mFacePosition == 1) {
             onFaceCV(context)
         } else if (mFacePosition == 2) {
-            onFaceCnn()
+            onFaceCnn(context)
         }
     }
 
@@ -149,7 +150,8 @@ class VdCamera(context: Context) : GLSurfaceView.Renderer {
         native_vdCameraRender_onFace(mFaceModel, mEyesModel, mNoseModel, mMouthModel, 1)
     }
 
-    private fun onFaceCnn() {
+    private fun onFaceCnn(context: Context) {
+        CAO.copyAssetsDirToSDCard(context, "image", context.obbDir.absolutePath)
         native_vdCameraRender_onFace(mFaceModel, mEyesModel, mNoseModel, mMouthModel, 2)
     }
 }

@@ -17,6 +17,10 @@ include_directories(
         src/main/cpp/opencv/render
         src/main/cpp/facecnn/include
         src/main/cpp/facecnn/render
+        src/main/cpp/ncnn/include
+        src/main/cpp/ncnn/include/arm64-v8a/ncnn
+        src/main/cpp/ncnn/include/armeabi-v7a/ncnn
+        src/main/cpp/ncnn/render
         src/main/cpp/vd/player
         src/main/cpp/vd/camera
         src/main/cpp/vd/record
@@ -52,6 +56,13 @@ set(lib_ffmpeg
         swresample
         )
 
+#=====ncnn
+add_library(ncnn SHARED IMPORTED)
+set_target_properties(ncnn PROPERTIES IMPORTED_LOCATION ${CMAKE_HOME_DIRECTORY}/src/main/cpp/ncnn/include/${ANDROID_ABI}/lib/libncnn.so)
+set(lib_ncnn
+        ncnn
+        )
+
 #======opengles etc.
 set(lib_native
         EGL
@@ -80,6 +91,8 @@ file(GLOB lib_mine
         src/main/cpp/facecnn/*.cpp
         src/main/cpp/facecnn/include/*.cpp
         src/main/cpp/facecnn/render/*.cpp
+        src/main/cpp/ncnn/include/*.cpp
+        src/main/cpp/ncnn/render/*.cpp
         src/main/cpp/vd/*.cpp
         src/main/cpp/vd/player/*.cpp
         src/main/cpp/vd/camera/*.cpp
@@ -94,5 +107,6 @@ add_library(vd_make
 target_link_libraries(vd_make
         ${lib_ffmpeg}
         ${lib_opencv}
+        ${lib_ncnn}
         ${lib_native}
         )

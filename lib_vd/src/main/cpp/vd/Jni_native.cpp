@@ -66,7 +66,7 @@ void
 native_vdCameraRender_onFace(JNIEnv *env, jobject *obj, jstring face_model, jstring eyes_model,
                                 jstring nose_model, jstring mouth_model, jint faceI) {
     if (faceI == -1) {
-        VdCameraRender::instance()->onFace("", "", "", "", -1);
+        VdCameraRender::instance()->onFace(nullptr, nullptr, nullptr, nullptr, -1);
         return;
     }
     char *face = (char *) env->GetStringUTFChars(face_model, 0);

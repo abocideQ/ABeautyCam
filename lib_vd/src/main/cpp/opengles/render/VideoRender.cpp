@@ -61,14 +61,16 @@ void VideoRender::onFaceLoop(VideoRender *p) {
         int w = p->m_Image->width;
         int h = p->m_Image->height;
         uint8_t *data = p->m_Image->origin;
-        if (p->m_Face == 1) {
-            p->m_FaceCvDetection->onFacesDetection(f, w, h, data, p->faces, p->eyes,
-                                                   p->noses, p->mouths);
-        } else if (p->m_Face == 2) {
-            p->mFaceCnnDetection->onFacesDetection(f, w, h, data, p->faces, p->eyes,
-                                                   p->noses, p->mouths);
+        if (p->m_CameraData) {
+            if (p->m_Face == 1) {
+                p->m_FaceCvDetection->onFacesDetection(f, w, h, data, p->faces, p->eyes,
+                                                       p->noses, p->mouths);
+            } else if (p->m_Face == 2) {
+                p->mFaceCnnDetection->onFacesDetection(f, w, h, data, p->faces, p->eyes,
+                                                       p->noses, p->mouths);
+            }
+            usleep(10 * 1000);
         }
-        usleep(10 * 1000);
     }
 }
 
@@ -293,10 +295,10 @@ void VideoRender::onDrawFrame() {
             }
             if (!eyes.empty()) {
                 GLfloat scale = glGetUniformLocation(m_Program_Fbo_YUV420P_Face, "fEyeScale");
-                glUniform1f(scale, 10.0f);
+                glUniform1f(scale, 20.0f);
                 GLfloat radius = glGetUniformLocation(m_Program_Fbo_YUV420P_Face, "fEyeRadius");
-                glUniform1f(radius, 20.0f);
-                //眼睛大致位置参考 586 410
+                glUniform1f(radius, 30.0f);
+                //参考 586 410
                 if (m_Face == 1) {
                     GLfloat left = glGetUniformLocation(m_Program_Fbo_YUV420P_Face, "fEyeLeft");
                     glUniform2f(left, eyes[0].x + eyes[0].width / 2,
@@ -312,10 +314,18 @@ void VideoRender::onDrawFrame() {
                 }
             }
             if (!noses.empty()) {
-
+                if (m_Face == 2) {
+                    GLfloat nose = glGetUniformLocation(m_Program_Fbo_YUV420P_Face, "fNose");
+                    glUniform2f(nose, noses[0].x, noses[0].y);
+                }
             }
             if (!mouths.empty()) {
-
+                if (m_Face == 2) {
+                    GLfloat mouthL = glGetUniformLocation(m_Program_Fbo_YUV420P_Face, "fMouthL");
+                    glUniform2f(mouthL, mouths[0].x, mouths[0].y);
+                    GLfloat mouthR = glGetUniformLocation(m_Program_Fbo_YUV420P_Face, "fMouthR");
+                    glUniform2f(mouthR, mouths[1].x, mouths[1].y);
+                }
             }
             GLfloat size = glGetUniformLocation(m_Program_Fbo_YUV420P_Face, "fPixelSize");
             glUniform2f(size, width, height);

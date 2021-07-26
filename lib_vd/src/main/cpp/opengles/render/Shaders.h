@@ -139,6 +139,9 @@ const char *ShaderFragment_FBO_YUV420p_Face =
                 //眼睛
                 uniform vec2 fEyeLeft;
                 uniform vec2 fEyeRight;
+                uniform vec2 fNose;
+                uniform vec2 fMouthL;
+                uniform vec2 fMouthR;
                 uniform float fEyeScale;
                 uniform float fEyeRadius;
                 vec2 eyeScale(vec2 texCoord, int eye) {
@@ -168,9 +171,22 @@ const char *ShaderFragment_FBO_YUV420p_Face =
                     return result;
                 }
                 void main() {
-                    vec2 newCoord = eyeScale(fiTexCoord, 1);
-                    newCoord = eyeScale(newCoord, 2);
-                    fragColor = YUV420PtoRGB(newCoord);
+                    vec2 texture = fiTexCoord * fPixelSize;
+                    if (distance(texture, vec2(fEyeLeft.x, fEyeLeft.y)) < 10.0f) {
+                        fragColor = vec4(1.0, 1.0, 1.0, 1.0);
+                    } else if (distance(texture, vec2(fEyeRight.x, fEyeRight.y)) < 10.0f) {
+                        fragColor = vec4(1.0, 1.0, 1.0, 1.0);
+                    } else if (distance(texture, vec2(fNose.x, fNose.y)) < 10.0f) {
+                        fragColor = vec4(1.0, 1.0, 1.0, 1.0);
+                    }else if (distance(texture, vec2(fMouthL.x, fMouthL.y)) < 10.0f) {
+                        fragColor = vec4(1.0, 1.0, 1.0, 1.0);
+                    }else if (distance(texture, vec2(fMouthR.x, fMouthR.y)) < 10.0f) {
+                        fragColor = vec4(1.0, 1.0, 1.0, 1.0);
+                    }else {
+//                        vec2 newCoord = eyeScale(fiTexCoord, 1);
+//                        newCoord = eyeScale(newCoord, 2);
+                        fragColor = YUV420PtoRGB(fiTexCoord);
+                    }
                 }
         );
 #endif //OPENGLESTEST_CAMERASHADER_H

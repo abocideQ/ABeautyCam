@@ -44,6 +44,7 @@ the use of this software, even if advised of the possibility of such damage.
 //#define _ENABLE_AVX2 //Please enable it if X64 CPU
 #define _ENABLE_NEON //Please enable it if ARM CPU
 
+
 //FACEDETECTION_EXPORT
 int *facedetect_cnn(
         unsigned char *result_buffer, //buffer memory for storing face detection results, !!its size must be 0x20000 Bytes!!
@@ -59,6 +60,7 @@ DO NOT EDIT the following code if you don't really understand it.
 
 
 #if defined(_ENABLE_NEON)
+
 #include "arm_neon.h"
 //NEON does not support UINT8*INT8 dot product
 //to conver the input data to range [0, 127],
@@ -442,4 +444,4 @@ bool detection_output(CDataBlob<float> &priorbox,
                       int keep_top_k,
                       CDataBlob<float> &outputData);
 
-vector<FaceRect> objectdetect_cnn(unsigned char *rgbImageData, int with, int height, int step);
+vector <FaceRect> objectdetect_cnn(unsigned char *rgbImageData, int with, int height, int step);
