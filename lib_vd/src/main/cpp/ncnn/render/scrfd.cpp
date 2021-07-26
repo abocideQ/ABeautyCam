@@ -242,8 +242,8 @@ int SCRFD::load(const char* modeltype, bool use_gpu)
 
     char parampath[256];
     char modelpath[256];
-    sprintf(parampath, "scrfd_%s-opt2.param", modeltype);
-    sprintf(modelpath, "scrfd_%s-opt2.bin", modeltype);
+//    sprintf(parampath, "scrfd_%s-opt2.param", modeltype);
+//    sprintf(modelpath, "scrfd_%s-opt2.bin", modeltype);
 
     scrfd.load_param(parampath);
     scrfd.load_model(modelpath);
@@ -445,7 +445,7 @@ int SCRFD::draw(cv::Mat& rgb, const std::vector<FaceObject>& faceobjects)
         }
 
         char text[256];
-        sprintf(text, "%.1f%%", obj.prob * 100);
+//        sprintf(text, "%.1f%%", obj.prob * 100);
 
         int baseLine = 0;
         cv::Size label_size = cv::getTextSize(text, cv::FONT_HERSHEY_SIMPLEX, 0.5, 1, &baseLine);
@@ -464,3 +464,85 @@ int SCRFD::draw(cv::Mat& rgb, const std::vector<FaceObject>& faceobjects)
 
     return 0;
 }
+
+//void SCRFD::segmentation(cv::Mat &rgb, const FaceObject &obj,cv::Mat &mask,cv::Rect &box)
+//{
+//    int pad = obj.rect.height;
+//    box.x = (obj.rect.x+obj.rect.width/2)-pad/2-20;
+//    box.y = obj.rect.y-80;
+//    box.width = obj.rect.height+40;
+//    box.height = obj.rect.height+80;
+//
+//    box.x = std::max(0.f,(float)box.x);`1
+//    box.y = std::max(0.f,(float)box.y);
+//    box.width = box.x+box.width<rgb.cols?box.width:rgb.cols-box.x-1;
+//    box.height = box.y+box.height<rgb.rows?box.height:rgb.rows-box.y-1;
+//
+//    cv::Mat faceRoiImage = rgb(box).clone();
+//    ncnn::Extractor ex_face = faceseg.create_extractor();
+//    ncnn::Mat ncnn_in = ncnn::Mat::from_pixels_resize(faceRoiImage.data,ncnn::Mat::PIXEL_RGB, faceRoiImage.cols, faceRoiImage.rows,256,256);
+//
+//    ncnn_in.substract_mean_normalize(meanVals, normVals);
+//    ex_face.input("input",ncnn_in);
+//    ncnn::Mat ncnn_out;
+//    ex_face.extract("output",ncnn_out);
+//    float *scoredata = (float*)ncnn_out.data;
+//
+//    unsigned char * maskIndex = mask.data;
+//    int h = mask.rows;
+//    int w = mask.cols;
+//    for (int i = 0; i < h; i++)
+//    {
+//        for (int j = 0; j < w; j++)
+//        {
+//            int maxk = 0;
+//            float tmp = scoredata[0 * w * h + i * w + j];
+//            for (int k = 0; k < 8; k++)
+//            {
+//                if (tmp < scoredata[k * w * h + i * w + j])
+//                {
+//                    tmp = scoredata[k * w * h + i * w + j];
+//                    maxk = k;
+//                }
+//            }
+//            maskIndex[i * w + j] = maxk;
+//        }
+//    }
+//    //cv::resize(mask,mask,faceRoiImage.size(),0,0,cv::INTER_NEAREST);
+//
+//}
+//
+//void SCRFD::landmark(cv::Mat &rgb, const FaceObject &obj, std::vector<cv::Point2f> &landmarks)
+//{
+//    int pad = obj.rect.height;
+//    cv::Rect box;
+//
+//    box.x = (obj.rect.x+obj.rect.width/2)-pad/2;
+//    box.y = obj.rect.y;
+//    box.width = obj.rect.height;
+//    box.height = obj.rect.height;
+//
+//    box.x = std::max(0.f,(float)box.x);
+//    box.y = std::max(0.f,(float)box.y);
+//    box.width = box.x+box.width<rgb.cols?box.width:rgb.cols-box.x-1;
+//    box.height = box.y+box.height<rgb.rows?box.height:rgb.rows-box.y-1;
+//
+//    cv::Mat faceRoiImage = rgb(box).clone();
+//    ncnn::Extractor ex_face = facept.create_extractor();
+//    ncnn::Mat ncnn_in = ncnn::Mat::from_pixels_resize(faceRoiImage.data,ncnn::Mat::PIXEL_RGB, faceRoiImage.cols, faceRoiImage.rows,192,192);
+//    const float means[3] = { 127.5f, 127.5f,  127.5f };
+//    const float norms[3] = { 1/127.5f, 1 / 127.5f, 1 / 127.5f };
+//    ncnn_in.substract_mean_normalize(means, norms);
+//    ex_face.input("input.1",ncnn_in);
+//    ncnn::Mat ncnn_out;
+//    ex_face.extract("482",ncnn_out);
+//    float *scoredata = (float*)ncnn_out.data;
+//    for(int i = 0; i < 468; i++)
+//    {
+//        cv::Point2f pt;
+//        pt.x = scoredata[i*3]*box.width/192+box.x;
+//        pt.y = scoredata[i*3+1]*box.width/192+box.y;
+//        landmarks.push_back(pt);
+//    }
+//
+//}
