@@ -253,34 +253,6 @@ int SCRFD::load(const char* modeltype, bool use_gpu)
     return 0;
 }
 
-int SCRFD::load(AAssetManager* mgr, const char* modeltype, bool use_gpu)
-{
-    scrfd.clear();
-
-    ncnn::set_cpu_powersave(2);
-    ncnn::set_omp_num_threads(ncnn::get_big_cpu_count());
-
-    scrfd.opt = ncnn::Option();
-
-#if NCNN_VULKAN
-    scrfd.opt.use_vulkan_compute = use_gpu;
-#endif
-
-    scrfd.opt.num_threads = ncnn::get_big_cpu_count();
-
-    char parampath[256];
-    char modelpath[256];
-    sprintf(parampath, "scrfd_%s-opt2.param", modeltype);
-    sprintf(modelpath, "scrfd_%s-opt2.bin", modeltype);
-
-    scrfd.load_param(mgr, parampath);
-    scrfd.load_model(mgr, modelpath);
-
-    has_kps = strstr(modeltype, "_kps") != NULL;
-
-    return 0;
-}
-
 int SCRFD::detect(const cv::Mat& rgb, std::vector<FaceObject>& faceobjects, float prob_threshold, float nms_threshold)
 {
     int width = rgb.cols;
