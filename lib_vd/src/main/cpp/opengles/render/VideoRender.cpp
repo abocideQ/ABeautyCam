@@ -36,16 +36,16 @@ void VideoRender::onFace(char *s1, char *s2, char *s3, char *s4, int faceI) {
         m_Interrupt_Face = 0;
         m_FaceCvDetection = new FaceCvDetection();
         m_FaceCvDetection->onModelSource(s1, s2, s3, s4);
-        m_Thread_Face = new std::thread(onFaceLoop, this);
+//        m_Thread_Face = new std::thread(onFaceLoop, this);
     } else if (m_Face == 2) { //facecnn
         m_Interrupt_Face = 0;
         mFaceCnnDetection = new FaceCnnDetection();
-        m_Thread_Face = new std::thread(onFaceLoop, this);
+//        m_Thread_Face = new std::thread(onFaceLoop, this);
     } else if (m_Face == 3) { //ncnn
         m_Interrupt_Face = 0;
         m_FaceNCNNDetection = new FaceNCNNDetection();
         m_FaceNCNNDetection->onModel(s1);
-        m_Thread_Face = new std::thread(onFaceLoop, this);
+//        m_Thread_Face = new std::thread(onFaceLoop, this);
     }
 }
 
@@ -79,7 +79,6 @@ void VideoRender::onFaceLoop(VideoRender *p) {
 
 void VideoRender::onBuffer(int format, int w, int h, int lineSize[3], uint8_t *data) {
     if (data == nullptr || format == 0 || w == 0 | h == 0) return;
-    std::unique_lock<std::mutex> lock(m_Mutex);//加锁
     if (format == 1) {
         format = IMAGE_FORMAT_YUV420P;
     } else if (format == 2 || format == 3) {
@@ -111,12 +110,10 @@ void VideoRender::onBuffer(int format, int w, int h, int lineSize[3], uint8_t *d
     render->noses = noses;
     render->mouths = mouths;
     m_VRenderQueue.push(render);
-    lock.unlock();
 }
 
 void VideoRender::onBuffer(PixImage *pix) {
     if (pix == nullptr || pix->format == 0 || pix->width == 0 | pix->height == 0) return;
-    std::unique_lock<std::mutex> lock(m_Mutex);//加锁
     VRender *render = new VRender();
     render->pixel = pix;
     m_VRenderQueue.push(render);
@@ -257,9 +254,6 @@ void VideoRender::onDrawFrame() {
     //textureImage2d
     std::unique_lock<std::mutex> lock(m_Mutex);
     VRender *render = m_VRenderQueue.front();
-    if (m_VRenderQueue.size() > 2) {
-        m_VRenderQueue.pop();
-    }
     int format = render->pixel->format;
     int width = render->pixel->width;
     int height = render->pixel->height;
@@ -268,7 +262,8 @@ void VideoRender::onDrawFrame() {
     std::vector<cv::Rect> eyes = render->eyes;
     std::vector<cv::Rect> noses = render->noses;
     std::vector<cv::Rect> mouths = render->mouths;
-    if (m_VRenderQueue.size() > 2) {
+    if (m_VRenderQueue.size() > 1) {
+        m_VRenderQueue.pop();
         onReleaseRender(render);
     }
     if (format == IMAGE_FORMAT_YUV420P) {
