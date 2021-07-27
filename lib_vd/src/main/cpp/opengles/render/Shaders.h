@@ -176,13 +176,7 @@ const char *ShaderFragment_FBO_YUV420p_Face =
                         fragColor = vec4(1.0, 1.0, 1.0, 1.0);
                     } else if (distance(texture, vec2(fEyeRight.x, fEyeRight.y)) < 10.0f) {
                         fragColor = vec4(1.0, 1.0, 1.0, 1.0);
-                    } else if (distance(texture, vec2(fNose.x, fNose.y)) < 10.0f) {
-                        fragColor = vec4(1.0, 1.0, 1.0, 1.0);
-                    }else if (distance(texture, vec2(fMouthL.x, fMouthL.y)) < 10.0f) {
-                        fragColor = vec4(1.0, 1.0, 1.0, 1.0);
-                    }else if (distance(texture, vec2(fMouthR.x, fMouthR.y)) < 10.0f) {
-                        fragColor = vec4(1.0, 1.0, 1.0, 1.0);
-                    }else {
+                    } else {
 //                        vec2 newCoord = eyeScale(fiTexCoord, 1);
 //                        newCoord = eyeScale(newCoord, 2);
                         fragColor = YUV420PtoRGB(fiTexCoord);

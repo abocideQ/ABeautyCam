@@ -1,6 +1,6 @@
 #include "FaceNCNNDetection.h"
 
-#define DETECT_SCALE 3.0f
+#define DETECT_SCALE 5.0f
 extern "C" {
 
 int FaceNCNNDetection::onModel(char *folder, bool gpu) {
@@ -254,8 +254,12 @@ int FaceNCNNDetection::onDetect(int format, int w1, int h1, uint8_t *data,
             cv::Rect face(obj.rect.x * DETECT_SCALE, obj.rect.y * DETECT_SCALE,
                           obj.rect.width * DETECT_SCALE, obj.rect.height * DETECT_SCALE);
             m_faces.push_back(face);
-            cv::Rect eyeL(pts[0].x * DETECT_SCALE, pts[0].y * DETECT_SCALE, 10.0f, 10.0f);
-            cv::Rect eyeR(pts[1].x * DETECT_SCALE, pts[1].y * DETECT_SCALE, 10.0f, 10.0f);
+            cv::Rect eyeL(obj.landmark[0].x * DETECT_SCALE, obj.landmark[0].y * DETECT_SCALE, 10.0f,
+                          10.0f);
+            cv::Rect eyeR(obj.landmark[1].x * DETECT_SCALE, obj.landmark[1].y * DETECT_SCALE, 10.0f,
+                          10.0f);
+//            cv::Rect eyeL(pts[0].x * DETECT_SCALE, pts[0].y * DETECT_SCALE, 10.0f, 10.0f);
+//            cv::Rect eyeR(pts[1].x * DETECT_SCALE, pts[1].y * DETECT_SCALE, 10.0f, 10.0f);
             m_eyes.push_back(eyeL);
             m_eyes.push_back(eyeR);
             LOGCATE("landmark ?= %d  %d", (int) pts[0].x, (int) pts[0].y);
