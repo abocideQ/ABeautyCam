@@ -22,7 +22,8 @@ import lin.abcdq.vdmake.view.recyclerview.decoration.GridDecoration
 import lin.abcdq.vdmake.view.recyclerview.manager.GridManager
 
 //VideoDecodeMake
-//aarch64-linux-android-addr2line -C -f -e libvd_make.so 000000000006f434
+//C:\Android_Project\github_admin\VdMake\lib_vd\build\intermediates\cmake\debug\obj\arm64-v8a
+//aarch64-linux-android-addr2line -C -f -e libvd_make.so 0000000000086340
 class MainActivity : AppCompatActivity(), GridLayoutBinder {
 
     private val mItemImages = arrayOf(

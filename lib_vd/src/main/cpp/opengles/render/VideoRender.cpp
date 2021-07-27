@@ -25,26 +25,26 @@ const int Location_Indices[] = {
         0, 1, 2, 1, 3, 2
 };
 
-void VideoRender::onFace(char *face, char *eye, char *nose, char *mouth, int faceI) {
-    if (faceI == 1) {
-        m_Face = 1;
-    } else if (faceI == 2) {
-        m_Face = 2;
-    } else if (faceI == -1) {
+void VideoRender::onFace(char *s1, char *s2, char *s3, char *s4, int faceI) {
+    m_Face = faceI;
+    if (m_Face == -1) {  //stop
         m_Interrupt_Face = 1;
         m_Thread_Face->join();
         delete m_Thread_Face;
         m_Thread_Face = nullptr;
-        return;
-    }
-    if (m_Face == 1) {
+    } else if (m_Face == 1) { //opencv
         m_Interrupt_Face = 0;
         m_FaceCvDetection = new FaceCvDetection();
-        m_FaceCvDetection->onModelSource(face, eye, nose, mouth);
+        m_FaceCvDetection->onModelSource(s1, s2, s3, s4);
         m_Thread_Face = new std::thread(onFaceLoop, this);
-    } else {
+    } else if (m_Face == 2) { //facecnn
         m_Interrupt_Face = 0;
         mFaceCnnDetection = new FaceCnnDetection();
+        m_Thread_Face = new std::thread(onFaceLoop, this);
+    } else if (m_Face == 3) { //ncnn
+        m_Interrupt_Face = 0;
+        m_FaceNCNNDetection = new FaceNCNNDetection();
+        m_FaceNCNNDetection->onModel(s1);
         m_Thread_Face = new std::thread(onFaceLoop, this);
     }
 }
@@ -62,12 +62,15 @@ void VideoRender::onFaceLoop(VideoRender *p) {
         int h = p->m_Image->height;
         uint8_t *data = p->m_Image->origin;
         if (p->m_CameraData) {
-            if (p->m_Face == 1) {
+            if (p->m_Face == 1) {//opencv
                 p->m_FaceCvDetection->onFacesDetection(f, w, h, data, p->faces, p->eyes,
                                                        p->noses, p->mouths);
-            } else if (p->m_Face == 2) {
+            } else if (p->m_Face == 2) {//facecnn
                 p->mFaceCnnDetection->onFacesDetection(f, w, h, data, p->faces, p->eyes,
                                                        p->noses, p->mouths);
+            } else if (p->m_Face == 3) {//ncnn
+                p->m_FaceNCNNDetection->onDetect(f, w, h, data, p->faces, p->eyes,
+                                                 p->noses, p->mouths);
             }
             usleep(10 * 1000);
         }

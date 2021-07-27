@@ -20,28 +20,24 @@
 
 #include "cpu.h"
 
-static inline float intersection_area(const FaceObject& a, const FaceObject& b)
-{
+static inline float intersection_area(const FaceObject &a, const FaceObject &b) {
     cv::Rect_<float> inter = a.rect & b.rect;
     return inter.area();
 }
 
-static void qsort_descent_inplace(std::vector<FaceObject>& faceobjects, int left, int right)
-{
+static void qsort_descent_inplace(std::vector<FaceObject> &faceobjects, int left, int right) {
     int i = left;
     int j = right;
     float p = faceobjects[(left + right) / 2].prob;
 
-    while (i <= j)
-    {
+    while (i <= j) {
         while (faceobjects[i].prob > p)
             i++;
 
         while (faceobjects[j].prob < p)
             j--;
 
-        if (i <= j)
-        {
+        if (i <= j) {
             // swap
             std::swap(faceobjects[i], faceobjects[j]);
 
@@ -63,34 +59,30 @@ static void qsort_descent_inplace(std::vector<FaceObject>& faceobjects, int left
     }
 }
 
-static void qsort_descent_inplace(std::vector<FaceObject>& faceobjects)
-{
+static void qsort_descent_inplace(std::vector<FaceObject> &faceobjects) {
     if (faceobjects.empty())
         return;
 
     qsort_descent_inplace(faceobjects, 0, faceobjects.size() - 1);
 }
 
-static void nms_sorted_bboxes(const std::vector<FaceObject>& faceobjects, std::vector<int>& picked, float nms_threshold)
-{
+static void nms_sorted_bboxes(const std::vector<FaceObject> &faceobjects, std::vector<int> &picked,
+                              float nms_threshold) {
     picked.clear();
 
     const int n = faceobjects.size();
 
     std::vector<float> areas(n);
-    for (int i = 0; i < n; i++)
-    {
+    for (int i = 0; i < n; i++) {
         areas[i] = faceobjects[i].rect.area();
     }
 
-    for (int i = 0; i < n; i++)
-    {
-        const FaceObject& a = faceobjects[i];
+    for (int i = 0; i < n; i++) {
+        const FaceObject &a = faceobjects[i];
 
         int keep = 1;
-        for (int j = 0; j < (int)picked.size(); j++)
-        {
-            const FaceObject& b = faceobjects[picked[j]];
+        for (int j = 0; j < (int) picked.size(); j++) {
+            const FaceObject &b = faceobjects[picked[j]];
 
             // intersection over union
             float inter_area = intersection_area(a, b);
@@ -106,8 +98,7 @@ static void nms_sorted_bboxes(const std::vector<FaceObject>& faceobjects, std::v
 }
 
 // insightface/detection/scrfd/mmdet/core/anchor/anchor_generator.py gen_single_level_base_anchors()
-static ncnn::Mat generate_anchors(int base_size, const ncnn::Mat& ratios, const ncnn::Mat& scales)
-{
+static ncnn::Mat generate_anchors(int base_size, const ncnn::Mat &ratios, const ncnn::Mat &scales) {
     int num_ratio = ratios.w;
     int num_scale = scales.w;
 
@@ -117,21 +108,19 @@ static ncnn::Mat generate_anchors(int base_size, const ncnn::Mat& ratios, const 
     const float cx = 0;
     const float cy = 0;
 
-    for (int i = 0; i < num_ratio; i++)
-    {
+    for (int i = 0; i < num_ratio; i++) {
         float ar = ratios[i];
 
         int r_w = round(base_size / sqrt(ar));
         int r_h = round(r_w * ar); //round(base_size * sqrt(ar));
 
-        for (int j = 0; j < num_scale; j++)
-        {
+        for (int j = 0; j < num_scale; j++) {
             float scale = scales[j];
 
             float rs_w = r_w * scale;
             float rs_h = r_h * scale;
 
-            float* anchor = anchors.row(i * num_scale + j);
+            float *anchor = anchors.row(i * num_scale + j);
 
             anchor[0] = cx - rs_w * 0.5f;
             anchor[1] = cy - rs_h * 0.5f;
@@ -143,17 +132,18 @@ static ncnn::Mat generate_anchors(int base_size, const ncnn::Mat& ratios, const 
     return anchors;
 }
 
-static void generate_proposals(const ncnn::Mat& anchors, int feat_stride, const ncnn::Mat& score_blob, const ncnn::Mat& bbox_blob, const ncnn::Mat& kps_blob, float prob_threshold, std::vector<FaceObject>& faceobjects)
-{
+static void
+generate_proposals(const ncnn::Mat &anchors, int feat_stride, const ncnn::Mat &score_blob,
+                   const ncnn::Mat &bbox_blob, const ncnn::Mat &kps_blob, float prob_threshold,
+                   std::vector<FaceObject> &faceobjects) {
     int w = score_blob.w;
     int h = score_blob.h;
 
     // generate face proposal from bbox deltas and shifted anchors
     const int num_anchors = anchors.h;
 
-    for (int q = 0; q < num_anchors; q++)
-    {
-        const float* anchor = anchors.row(q);
+    for (int q = 0; q < num_anchors; q++) {
+        const float *anchor = anchors.row(q);
 
         const ncnn::Mat score = score_blob.channel(q);
         const ncnn::Mat bbox = bbox_blob.channel_range(q * 4, 4);
@@ -164,18 +154,15 @@ static void generate_proposals(const ncnn::Mat& anchors, int feat_stride, const 
         float anchor_w = anchor[2] - anchor[0];
         float anchor_h = anchor[3] - anchor[1];
 
-        for (int i = 0; i < h; i++)
-        {
+        for (int i = 0; i < h; i++) {
             float anchor_x = anchor[0];
 
-            for (int j = 0; j < w; j++)
-            {
+            for (int j = 0; j < w; j++) {
                 int index = i * w + j;
 
                 float prob = score[index];
 
-                if (prob >= prob_threshold)
-                {
+                if (prob >= prob_threshold) {
                     // insightface/detection/scrfd/mmdet/models/dense_heads/scrfd_head.py _get_bboxes_single()
                     float dx = bbox.channel(0)[index] * feat_stride;
                     float dy = bbox.channel(1)[index] * feat_stride;
@@ -198,8 +185,7 @@ static void generate_proposals(const ncnn::Mat& anchors, int feat_stride, const 
                     obj.rect.height = y1 - y0 + 1;
                     obj.prob = prob;
 
-                    if (!kps_blob.empty())
-                    {
+                    if (!kps_blob.empty()) {
                         const ncnn::Mat kps = kps_blob.channel_range(q * 10, 10);
 
                         obj.landmark[0].x = cx + kps.channel(0)[index] * feat_stride;
@@ -225,8 +211,7 @@ static void generate_proposals(const ncnn::Mat& anchors, int feat_stride, const 
     }
 }
 
-int SCRFD::load(const char* modeltype, bool use_gpu)
-{
+int SCRFD::load(const char *modeltype, bool use_gpu) {
     scrfd.clear();
 
     ncnn::set_cpu_powersave(2);
@@ -253,8 +238,8 @@ int SCRFD::load(const char* modeltype, bool use_gpu)
     return 0;
 }
 
-int SCRFD::detect(const cv::Mat& rgb, std::vector<FaceObject>& faceobjects, float prob_threshold, float nms_threshold)
-{
+int SCRFD::detect(const cv::Mat &rgb, std::vector<FaceObject> &faceobjects, float prob_threshold,
+                  float nms_threshold) {
     int width = rgb.cols;
     int height = rgb.rows;
 
@@ -265,29 +250,28 @@ int SCRFD::detect(const cv::Mat& rgb, std::vector<FaceObject>& faceobjects, floa
     int w = width;
     int h = height;
     float scale = 1.f;
-    if (w > h)
-    {
-        scale = (float)target_size / w;
+    if (w > h) {
+        scale = (float) target_size / w;
         w = target_size;
         h = h * scale;
-    }
-    else
-    {
-        scale = (float)target_size / h;
+    } else {
+        scale = (float) target_size / h;
         h = target_size;
         w = w * scale;
     }
 
-    ncnn::Mat in = ncnn::Mat::from_pixels_resize(rgb.data, ncnn::Mat::PIXEL_RGB, width, height, w, h);
+    ncnn::Mat in = ncnn::Mat::from_pixels_resize(rgb.data, ncnn::Mat::PIXEL_RGB, width, height, w,
+                                                 h);
 
     // pad to target_size rectangle
     int wpad = (w + 31) / 32 * 32 - w;
     int hpad = (h + 31) / 32 * 32 - h;
     ncnn::Mat in_pad;
-    ncnn::copy_make_border(in, in_pad, hpad / 2, hpad - hpad / 2, wpad / 2, wpad - wpad / 2, ncnn::BORDER_CONSTANT, 0.f);
+    ncnn::copy_make_border(in, in_pad, hpad / 2, hpad - hpad / 2, wpad / 2, wpad - wpad / 2,
+                           ncnn::BORDER_CONSTANT, 0.f);
 
     const float mean_vals[3] = {127.5f, 127.5f, 127.5f};
-    const float norm_vals[3] = {1/128.f, 1/128.f, 1/128.f};
+    const float norm_vals[3] = {1 / 128.f, 1 / 128.f, 1 / 128.f};
     in_pad.substract_mean_normalize(mean_vals, norm_vals);
 
     ncnn::Extractor ex = scrfd.create_extractor();
@@ -314,7 +298,8 @@ int SCRFD::detect(const cv::Mat& rgb, std::vector<FaceObject>& faceobjects, floa
         ncnn::Mat anchors = generate_anchors(base_size, ratios, scales);
 
         std::vector<FaceObject> faceobjects32;
-        generate_proposals(anchors, feat_stride, score_blob, bbox_blob, kps_blob, prob_threshold, faceobjects32);
+        generate_proposals(anchors, feat_stride, score_blob, bbox_blob, kps_blob, prob_threshold,
+                           faceobjects32);
 
         faceproposals.insert(faceproposals.end(), faceobjects32.begin(), faceobjects32.end());
     }
@@ -337,7 +322,8 @@ int SCRFD::detect(const cv::Mat& rgb, std::vector<FaceObject>& faceobjects, floa
         ncnn::Mat anchors = generate_anchors(base_size, ratios, scales);
 
         std::vector<FaceObject> faceobjects16;
-        generate_proposals(anchors, feat_stride, score_blob, bbox_blob, kps_blob, prob_threshold, faceobjects16);
+        generate_proposals(anchors, feat_stride, score_blob, bbox_blob, kps_blob, prob_threshold,
+                           faceobjects16);
 
         faceproposals.insert(faceproposals.end(), faceobjects16.begin(), faceobjects16.end());
     }
@@ -360,7 +346,8 @@ int SCRFD::detect(const cv::Mat& rgb, std::vector<FaceObject>& faceobjects, floa
         ncnn::Mat anchors = generate_anchors(base_size, ratios, scales);
 
         std::vector<FaceObject> faceobjects8;
-        generate_proposals(anchors, feat_stride, score_blob, bbox_blob, kps_blob, prob_threshold, faceobjects8);
+        generate_proposals(anchors, feat_stride, score_blob, bbox_blob, kps_blob, prob_threshold,
+                           faceobjects8);
 
         faceproposals.insert(faceproposals.end(), faceobjects8.begin(), faceobjects8.end());
     }
@@ -375,8 +362,7 @@ int SCRFD::detect(const cv::Mat& rgb, std::vector<FaceObject>& faceobjects, floa
     int face_count = picked.size();
 
     faceobjects.resize(face_count);
-    for (int i = 0; i < face_count; i++)
-    {
+    for (int i = 0; i < face_count; i++) {
         faceobjects[i] = faceproposals[picked[i]];
 
         // adjust offset to original unpadded
@@ -385,18 +371,17 @@ int SCRFD::detect(const cv::Mat& rgb, std::vector<FaceObject>& faceobjects, floa
         float x1 = (faceobjects[i].rect.x + faceobjects[i].rect.width - (wpad / 2)) / scale;
         float y1 = (faceobjects[i].rect.y + faceobjects[i].rect.height - (hpad / 2)) / scale;
 
-        x0 = std::max(std::min(x0, (float)width - 1), 0.f);
-        y0 = std::max(std::min(y0, (float)height - 1), 0.f);
-        x1 = std::max(std::min(x1, (float)width - 1), 0.f);
-        y1 = std::max(std::min(y1, (float)height - 1), 0.f);
+        x0 = std::max(std::min(x0, (float) width - 1), 0.f);
+        y0 = std::max(std::min(y0, (float) height - 1), 0.f);
+        x1 = std::max(std::min(x1, (float) width - 1), 0.f);
+        y1 = std::max(std::min(y1, (float) height - 1), 0.f);
 
         faceobjects[i].rect.x = x0;
         faceobjects[i].rect.y = y0;
         faceobjects[i].rect.width = x1 - x0;
         faceobjects[i].rect.height = y1 - y0;
 
-        if (has_kps)
-        {
+        if (has_kps) {
             float x0 = (faceobjects[i].landmark[0].x - (wpad / 2)) / scale;
             float y0 = (faceobjects[i].landmark[0].y - (hpad / 2)) / scale;
             float x1 = (faceobjects[i].landmark[1].x - (wpad / 2)) / scale;
@@ -408,30 +393,56 @@ int SCRFD::detect(const cv::Mat& rgb, std::vector<FaceObject>& faceobjects, floa
             float x4 = (faceobjects[i].landmark[4].x - (wpad / 2)) / scale;
             float y4 = (faceobjects[i].landmark[4].y - (hpad / 2)) / scale;
 
-            faceobjects[i].landmark[0].x = std::max(std::min(x0, (float)width - 1), 0.f);
-            faceobjects[i].landmark[0].y = std::max(std::min(y0, (float)height - 1), 0.f);
-            faceobjects[i].landmark[1].x = std::max(std::min(x1, (float)width - 1), 0.f);
-            faceobjects[i].landmark[1].y = std::max(std::min(y1, (float)height - 1), 0.f);
-            faceobjects[i].landmark[2].x = std::max(std::min(x2, (float)width - 1), 0.f);
-            faceobjects[i].landmark[2].y = std::max(std::min(y2, (float)height - 1), 0.f);
-            faceobjects[i].landmark[3].x = std::max(std::min(x3, (float)width - 1), 0.f);
-            faceobjects[i].landmark[3].y = std::max(std::min(y3, (float)height - 1), 0.f);
-            faceobjects[i].landmark[4].x = std::max(std::min(x4, (float)width - 1), 0.f);
-            faceobjects[i].landmark[4].y = std::max(std::min(y4, (float)height - 1), 0.f);
+            faceobjects[i].landmark[0].x = std::max(std::min(x0, (float) width - 1), 0.f);
+            faceobjects[i].landmark[0].y = std::max(std::min(y0, (float) height - 1), 0.f);
+            faceobjects[i].landmark[1].x = std::max(std::min(x1, (float) width - 1), 0.f);
+            faceobjects[i].landmark[1].y = std::max(std::min(y1, (float) height - 1), 0.f);
+            faceobjects[i].landmark[2].x = std::max(std::min(x2, (float) width - 1), 0.f);
+            faceobjects[i].landmark[2].y = std::max(std::min(y2, (float) height - 1), 0.f);
+            faceobjects[i].landmark[3].x = std::max(std::min(x3, (float) width - 1), 0.f);
+            faceobjects[i].landmark[3].y = std::max(std::min(y3, (float) height - 1), 0.f);
+            faceobjects[i].landmark[4].x = std::max(std::min(x4, (float) width - 1), 0.f);
+            faceobjects[i].landmark[4].y = std::max(std::min(y4, (float) height - 1), 0.f);
         }
     }
-
     return 0;
 }
 
-int SCRFD::draw(cv::Mat& rgb, const std::vector<FaceObject>& faceobjects)
-{
+int SCRFD::draw(cv::Mat &rgb, const std::vector<FaceObject> &faceobjects) {
+    static const unsigned  char face_part_colors[8][3] = {{0, 0, 255}, {255, 85, 0}, {255, 170, 0},
+                                                          {255, 0, 85}, {255, 0, 170},
+                                                          {0, 255, 0}, {170, 255, 255}, {255, 255, 255}};
     for (size_t i = 0; i < faceobjects.size(); i++)
     {
         const FaceObject& obj = faceobjects[i];
+        //face segmentation
+        /*
+        cv::Mat mask = cv::Mat::zeros(256, 256, CV_8UC1);
+        cv::Rect  box;
+        seg(rgb,obj,mask,box);
+        cv::Mat maskResize;
+        cv::resize(mask,maskResize,cv::Size(box.width,box.height),0,0,cv::INTER_NEAREST);
 
-//         fprintf(stderr, "%.5f at %.2f %.2f %.2f x %.2f\n", obj.prob,
-//                 obj.rect.x, obj.rect.y, obj.rect.width, obj.rect.height);
+        for(size_t h = 0; h < maskResize.rows; h++)
+        {
+            cv::Vec3b* pRgb = rgb(box).ptr<cv::Vec3b >(h);
+            for(size_t w = 0; w < maskResize.cols; w++)
+            {
+                int index = maskResize.at<uchar>(h,w);
+                if(index == 0)
+                    continue;
+                pRgb[w] = cv::Vec3b(face_part_colors[index][2]*0.3+pRgb[w][2]*0.7,
+                                    face_part_colors[index][1]*0.3+pRgb[w][1]*0.7,
+                                    face_part_colors[index][0]*0.3+pRgb[w][0]*0.7);
+            }
+        }
+         */
+
+        //mediapipe face mesh
+        std::vector<cv::Point2f> pts;
+        landmark(rgb,obj,pts);
+        for(int i = 0; i < pts.size(); i++)
+            cv::circle(rgb,pts[i],2,cv::Scalar(255,255,0),-1);
 
         cv::rectangle(rgb, obj.rect, cv::Scalar(0, 255, 0));
 
@@ -445,7 +456,7 @@ int SCRFD::draw(cv::Mat& rgb, const std::vector<FaceObject>& faceobjects)
         }
 
         char text[256];
-//        sprintf(text, "%.1f%%", obj.prob * 100);
+        sprintf(text, "%.1f%%", obj.prob * 100);
 
         int baseLine = 0;
         cv::Size label_size = cv::getTextSize(text, cv::FONT_HERSHEY_SIMPLEX, 0.5, 1, &baseLine);
@@ -465,6 +476,39 @@ int SCRFD::draw(cv::Mat& rgb, const std::vector<FaceObject>& faceobjects)
     return 0;
 }
 
+void SCRFD::landmark(cv::Mat &rgb, const FaceObject &obj, std::vector<cv::Point2f> &landmarks) {
+    int pad = obj.rect.height;
+    cv::Rect box;
+
+    box.x = (obj.rect.x + obj.rect.width / 2) - pad / 2;
+    box.y = obj.rect.y;
+    box.width = obj.rect.height;
+    box.height = obj.rect.height;
+
+    box.x = std::max(0.f, (float) box.x);
+    box.y = std::max(0.f, (float) box.y);
+    box.width = box.x + box.width < rgb.cols ? box.width : rgb.cols - box.x - 1;
+    box.height = box.y + box.height < rgb.rows ? box.height : rgb.rows - box.y - 1;
+
+    cv::Mat faceRoiImage = rgb(box).clone();
+    ncnn::Extractor ex_face = facept.create_extractor();
+    ncnn::Mat ncnn_in = ncnn::Mat::from_pixels_resize(faceRoiImage.data, ncnn::Mat::PIXEL_RGB,
+                                                      faceRoiImage.cols, faceRoiImage.rows, 192,
+                                                      192);
+    const float means[3] = {127.5f, 127.5f, 127.5f};
+    const float norms[3] = {1 / 127.5f, 1 / 127.5f, 1 / 127.5f};
+    ncnn_in.substract_mean_normalize(means, norms);
+    ex_face.input("input.1", ncnn_in);
+    ncnn::Mat ncnn_out;
+    ex_face.extract("482", ncnn_out);
+    float *scoredata = (float *) ncnn_out.data;
+    for (int i = 0; i < 468; i++) {
+        cv::Point2f pt;
+        pt.x = scoredata[i * 3] * box.width / 192 + box.x;
+        pt.y = scoredata[i * 3 + 1] * box.width / 192 + box.y;
+        landmarks.push_back(pt);
+    }
+}
 //void SCRFD::segmentation(cv::Mat &rgb, const FaceObject &obj,cv::Mat &mask,cv::Rect &box)
 //{
 //    int pad = obj.rect.height;
@@ -512,37 +556,4 @@ int SCRFD::draw(cv::Mat& rgb, const std::vector<FaceObject>& faceobjects)
 //
 //}
 //
-//void SCRFD::landmark(cv::Mat &rgb, const FaceObject &obj, std::vector<cv::Point2f> &landmarks)
-//{
-//    int pad = obj.rect.height;
-//    cv::Rect box;
-//
-//    box.x = (obj.rect.x+obj.rect.width/2)-pad/2;
-//    box.y = obj.rect.y;
-//    box.width = obj.rect.height;
-//    box.height = obj.rect.height;
-//
-//    box.x = std::max(0.f,(float)box.x);
-//    box.y = std::max(0.f,(float)box.y);
-//    box.width = box.x+box.width<rgb.cols?box.width:rgb.cols-box.x-1;
-//    box.height = box.y+box.height<rgb.rows?box.height:rgb.rows-box.y-1;
-//
-//    cv::Mat faceRoiImage = rgb(box).clone();
-//    ncnn::Extractor ex_face = facept.create_extractor();
-//    ncnn::Mat ncnn_in = ncnn::Mat::from_pixels_resize(faceRoiImage.data,ncnn::Mat::PIXEL_RGB, faceRoiImage.cols, faceRoiImage.rows,192,192);
-//    const float means[3] = { 127.5f, 127.5f,  127.5f };
-//    const float norms[3] = { 1/127.5f, 1 / 127.5f, 1 / 127.5f };
-//    ncnn_in.substract_mean_normalize(means, norms);
-//    ex_face.input("input.1",ncnn_in);
-//    ncnn::Mat ncnn_out;
-//    ex_face.extract("482",ncnn_out);
-//    float *scoredata = (float*)ncnn_out.data;
-//    for(int i = 0; i < 468; i++)
-//    {
-//        cv::Point2f pt;
-//        pt.x = scoredata[i*3]*box.width/192+box.x;
-//        pt.y = scoredata[i*3+1]*box.width/192+box.y;
-//        landmarks.push_back(pt);
-//    }
-//
-//}
+

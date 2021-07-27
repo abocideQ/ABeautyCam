@@ -15,6 +15,7 @@
 
 #include "FaceCvDetection.h"
 #include "FaceCnnDetection.h"
+#include "FaceNCNNDetection.h"
 
 typedef void (*OnRenderFrameCallback)(void *, int, int, int, uint8_t *); // 回调函数 -> Record
 
@@ -23,7 +24,7 @@ class VideoRender {
 public:
 
     //face
-    void onFace(char *face, char *eye, char *nose, char *mouth, int faceI);
+    void onFace(char *s1, char *s2, char *s3, char *s4, int faceI);
 
     //normal
     void onBuffer(int format, int width, int height, int lineSize[3], uint8_t *data);
@@ -105,6 +106,8 @@ private:
     std::vector<cv::Rect> eyes;
     std::vector<cv::Rect> noses;
     std::vector<cv::Rect> mouths;
+    //ncnn
+    FaceNCNNDetection *m_FaceNCNNDetection = nullptr;
     //线程
     std::thread *m_Thread_Face = nullptr;
     volatile int m_Interrupt_Face = 1;

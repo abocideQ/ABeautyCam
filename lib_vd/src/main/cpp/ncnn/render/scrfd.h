@@ -19,25 +19,34 @@
 
 #include <net.h>
 
-struct FaceObject
-{
+struct FaceObject {
     cv::Rect_<float> rect;
     cv::Point2f landmark[5];
     float prob;
 };
 
-class SCRFD
-{
+class SCRFD {
 public:
-    int load(const char* modeltype, bool use_gpu = false);
+    int load(const char *model, bool use_gpu = false);
 
-    int detect(const cv::Mat& rgb, std::vector<FaceObject>& faceobjects, float prob_threshold = 0.5f, float nms_threshold = 0.45f);
+    int
+    detect(const cv::Mat &rgb, std::vector<FaceObject> &faceobjects, float prob_threshold = 0.5f,
+           float nms_threshold = 0.45f);
 
-    int draw(cv::Mat& rgb, const std::vector<FaceObject>& faceobjects);
+    int draw(cv::Mat &rgb, const std::vector<FaceObject> &faceobjects);
+
+    void landmark(cv::Mat &rgb, const FaceObject &obj, std::vector<cv::Point2f> &landmarks);
+
+//    void seg(cv::Mat &rgb, const FaceObject &obj, cv::Mat &mask, cv::Rect &box);
 
 private:
     ncnn::Net scrfd;
     bool has_kps;
+
+    const float meanVals[3] = {123.675f, 116.28f, 103.53f};
+    const float normVals[3] = {0.01712475f, 0.0175f, 0.01742919f};
+    ncnn::Net facept;
+    ncnn::Net faceseg;
 };
 
 #endif // SCRFD_H
