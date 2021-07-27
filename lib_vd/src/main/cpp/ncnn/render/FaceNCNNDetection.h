@@ -14,7 +14,7 @@ struct FaceObject {
 
 class FaceNCNNDetection {
 public:
-    int onModel(char *folder, bool gpu = true);
+    int onModel(char *folder, bool gpu = false);
 
     int onDetect(int format, int w1, int h1, uint8_t *data,
                  std::vector<cv::Rect> &m_faces,

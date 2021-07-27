@@ -1,14 +1,14 @@
 #include "FaceNCNNDetection.h"
 
-#define DETECT_SCALE 2.0f
+#define DETECT_SCALE 3.0f
 extern "C" {
 
 int FaceNCNNDetection::onModel(char *folder, bool gpu) {
-    ncnn::set_cpu_powersave(2);
-    ncnn::set_omp_num_threads(ncnn::get_big_cpu_count());
     m_DetectNet.clear();
     m_MeshNet.clear();
     m_SegNet.clear();
+    ncnn::set_cpu_powersave(2);
+    ncnn::set_omp_num_threads(ncnn::get_big_cpu_count());
     m_DetectNet.opt = ncnn::Option();
     m_MeshNet.opt = ncnn::Option();
     m_SegNet.opt = ncnn::Option();
@@ -21,13 +21,14 @@ int FaceNCNNDetection::onModel(char *folder, bool gpu) {
     m_MeshNet.opt.num_threads = ncnn::get_big_cpu_count();
     m_SegNet.opt.num_threads = ncnn::get_big_cpu_count();
     const char *models[] = {
-            "scrfd_500m-opt2.param",
-            "scrfd_500m-opt2.bin",
+            "scrfd_1g-opt2.param",
+            "scrfd_1g-opt2.bin",
             "facemesh-op.param",
             "facemesh-op.bin",
             "faceseg-op.param",
             "faceseg-op.bin",
     };
+    m_Kps = false;
     int i = 0;
     for (; i < 6; i++) {
         std::string cc1 = folder;
@@ -48,8 +49,6 @@ int FaceNCNNDetection::onModel(char *folder, bool gpu) {
             m_SegNet.load_model(cc3.c_str());
         }
     }
-    m_Kps = false;
-//    m_Kps = strstr(modelId, "_kps") != NULL;
     return 0;
 }
 
@@ -217,7 +216,7 @@ int FaceNCNNDetection::onDetect(int format, int w1, int h1, uint8_t *data,
         }
     }
     //draw/segmentation/landmark ====================================================
-    LOGCATE("sdsdsdsdsd   faces = %d", face_count);
+    LOGCATE("detection faces = %d", face_count);
     const unsigned char face_part_colors[8][3] = {{0,   0,   255},
                                                   {255, 85,  0},
                                                   {255, 170, 0},
@@ -249,9 +248,18 @@ int FaceNCNNDetection::onDetect(int format, int w1, int h1, uint8_t *data,
         //face mesh landmark
         std::vector<cv::Point2f> pts;
         onMesh(rgb, obj, pts);
-        LOGCATE("sdsdsdsdsd   pts = %d", pts.size());
+        LOGCATE("landmark pts = %d", pts.size());
         i = 0;
         for (; i < pts.size(); i++) {
+            cv::Rect face(obj.rect.x * DETECT_SCALE, obj.rect.y * DETECT_SCALE,
+                          obj.rect.width * DETECT_SCALE, obj.rect.height * DETECT_SCALE);
+            m_faces.push_back(face);
+            cv::Rect eyeL(pts[0].x * DETECT_SCALE, pts[0].y * DETECT_SCALE, 10.0f, 10.0f);
+            cv::Rect eyeR(pts[1].x * DETECT_SCALE, pts[1].y * DETECT_SCALE, 10.0f, 10.0f);
+            m_eyes.push_back(eyeL);
+            m_eyes.push_back(eyeR);
+            LOGCATE("landmark ?= %d  %d", (int) pts[0].x, (int) pts[0].y);
+            return 0;
         }
     }
     return 0;

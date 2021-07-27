@@ -50,37 +50,36 @@ void VideoRender::onFace(char *s1, char *s2, char *s3, char *s4, int faceI) {
 }
 
 void VideoRender::onFaceLoop(VideoRender *p) {
-    while (true) {
-        if (p == nullptr) return;
-        if (p->m_Interrupt_Face == 1 || p->m_Interrupt) return;
-        if (p->m_Image == nullptr || p->m_Image->origin == nullptr) {
-            usleep(10 * 1000);
-            continue;
-        }
-        int f = p->m_Image->format;
-        int w = p->m_Image->width;
-        int h = p->m_Image->height;
-        uint8_t *data = p->m_Image->origin;
-        if (p->m_CameraData) {
-            if (p->m_Face == 1) {//opencv
-                p->m_FaceCvDetection->onFacesDetection(f, w, h, data, p->faces, p->eyes,
-                                                       p->noses, p->mouths);
-            } else if (p->m_Face == 2) {//facecnn
-                p->mFaceCnnDetection->onFacesDetection(f, w, h, data, p->faces, p->eyes,
-                                                       p->noses, p->mouths);
-            } else if (p->m_Face == 3) {//ncnn
-                p->m_FaceNCNNDetection->onDetect(f, w, h, data, p->faces, p->eyes,
-                                                 p->noses, p->mouths);
-            }
-            usleep(10 * 1000);
-        }
-    }
+//    while (true) 
+//        if (p == nullptr) return;
+//        if (p->m_Interrupt_Face == 1 || p->m_Interrupt) return;
+//        if (p->image == nullptr || p->image->origin == nullptr) {
+//            usleep(10 * 1000);
+//            continue;
+//        }
+//        int f = p->image->format;
+//        int w = p->image->width;
+//        int h = p->image->height;
+//        uint8_t *data = p->image->origin;
+//        if (p->m_CameraData) {
+//            if (p->m_Face == 1) {//opencv
+//                p->m_FaceCvDetection->onFacesDetection(f, w, h, data, p->faces, p->eyes,
+//                                                       p->noses, p->mouths);
+//            } else if (p->m_Face == 2) {//facecnn
+//                p->mFaceCnnDetection->onFacesDetection(f, w, h, data, p->faces, p->eyes,
+//                                                       p->noses, p->mouths);
+//            } else if (p->m_Face == 3) {//ncnn
+//                p->m_FaceNCNNDetection->onDetect(f, w, h, data, p->faces, p->eyes,
+//                                                 p->noses, p->mouths);
+//            }
+//            usleep(10 * 1000);
+//        }
+//    }
 }
 
 void VideoRender::onBuffer(int format, int w, int h, int lineSize[3], uint8_t *data) {
     if (data == nullptr || format == 0 || w == 0 | h == 0) return;
     std::unique_lock<std::mutex> lock(m_Mutex);//加锁
-    PixImageUtils::pix_image_free(m_Image);
     if (format == 1) {
         format = IMAGE_FORMAT_YUV420P;
     } else if (format == 2 || format == 3) {
@@ -88,26 +87,47 @@ void VideoRender::onBuffer(int format, int w, int h, int lineSize[3], uint8_t *d
     } else {
         format = IMAGE_FORMAT_RGBA;
     }
+    PixImage *pixel;
     if (lineSize == nullptr) {
-        m_Image = PixImageUtils::pix_image_get(format, w, h, data);
+        pixel = PixImageUtils::pix_image_get(format, w, h, data);
     } else {
-        m_Image = PixImageUtils::pix_image_get(format, w, h, lineSize, &data);
+        pixel = PixImageUtils::pix_image_get(format, w, h, lineSize, &data);
     }
+    std::vector<cv::Rect> faces;
+    std::vector<cv::Rect> eyes;
+    std::vector<cv::Rect> noses;
+    std::vector<cv::Rect> mouths;
+    if (m_Face == 1) {//opencv
+        m_FaceCvDetection->onFacesDetection(format, w, h, data, faces, eyes, noses, mouths);
+    } else if (m_Face == 2) {//facecnn
+        mFaceCnnDetection->onFacesDetection(format, w, h, data, faces, eyes, noses, mouths);
+    } else if (m_Face == 3) {//ncnn
+        m_FaceNCNNDetection->onDetect(format, w, h, data, faces, eyes, noses, mouths);
+    }
+    VRender *render = new VRender();
+    render->pixel = pixel;
+    render->faces = faces;
+    render->eyes = eyes;
+    render->noses = noses;
+    render->mouths = mouths;
+    m_VRenderQueue.push(render);
+    lock.unlock();
 }
 
 void VideoRender::onBuffer(PixImage *pix) {
     if (pix == nullptr || pix->format == 0 || pix->width == 0 | pix->height == 0) return;
     std::unique_lock<std::mutex> lock(m_Mutex);//加锁
-    PixImageUtils::pix_image_free(m_Image);
-    m_Image = pix;
+    VRender *render = new VRender();
+    render->pixel = pix;
+    m_VRenderQueue.push(render);
 }
 
 uint8_t *VideoRender::onFrameBuffer() {
-    return m_data;
+    return m_FrameBuffer;
 }
 
 int VideoRender::onFrameBufferSize() {
-    return m_dataSize;
+    return m_FrameBufferSize;
 }
 
 void VideoRender::onCamera(bool camera) {
@@ -118,7 +138,7 @@ void VideoRender::onRotate(float viewRot, int modelRot) {
     m_ViewRot = viewRot;
     m_ModelRot = modelRot;
     std::lock_guard<std::mutex> lock(m_Mutex);//加锁
-    m_Image = nullptr;
+    onReleaseRenders();
 }
 
 void VideoRender::onSurfaceCreated() {
@@ -233,36 +253,45 @@ void VideoRender::onDrawFrame() {
     if (m_Program_Fbo_NV21 == GL_NONE) return;
     if (m_Program_Fbo_RGB == GL_NONE) return;
     if (m_Program_Fbo_YUV420P_Face == GL_NONE) return;
-    if (m_Image == nullptr)return;
-    if (m_Image->width == 0) return;
-    if (m_Image->height == 0) return;
-    if (m_Image->format == 0) return;
+    if (m_VRenderQueue.empty())return;
     //textureImage2d
     std::unique_lock<std::mutex> lock(m_Mutex);
-    int format = m_Image->format;
-    int width = m_Image->width;
-    int height = m_Image->height;
+    VRender *render = m_VRenderQueue.front();
+    if (m_VRenderQueue.size() > 2) {
+        m_VRenderQueue.pop();
+    }
+    int format = render->pixel->format;
+    int width = render->pixel->width;
+    int height = render->pixel->height;
+    PixImage *image = render->pixel;
+    std::vector<cv::Rect> faces = render->faces;
+    std::vector<cv::Rect> eyes = render->eyes;
+    std::vector<cv::Rect> noses = render->noses;
+    std::vector<cv::Rect> mouths = render->mouths;
+    if (m_VRenderQueue.size() > 2) {
+        onReleaseRender(render);
+    }
     if (format == IMAGE_FORMAT_YUV420P) {
         glBindTexture(GL_TEXTURE_2D, m_Texture[0]);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, width, height, 0,
-                     GL_LUMINANCE, GL_UNSIGNED_BYTE, m_Image->plane[0]);
+                     GL_LUMINANCE, GL_UNSIGNED_BYTE, image->plane[0]);
         glBindTexture(GL_TEXTURE_2D, m_Texture[1]);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, width / 2, height / 2, 0,
-                     GL_LUMINANCE, GL_UNSIGNED_BYTE, m_Image->plane[1]);
+                     GL_LUMINANCE, GL_UNSIGNED_BYTE, image->plane[1]);
         glBindTexture(GL_TEXTURE_2D, m_Texture[2]);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, width / 2, height / 2, 0,
-                     GL_LUMINANCE, GL_UNSIGNED_BYTE, m_Image->plane[2]);
+                     GL_LUMINANCE, GL_UNSIGNED_BYTE, image->plane[2]);
     } else if (format == IMAGE_FORMAT_NV21 || format == IMAGE_FORMAT_NV12) {
         glBindTexture(GL_TEXTURE_2D, m_Texture[0]);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, width, height, 0,
-                     GL_LUMINANCE, GL_UNSIGNED_BYTE, m_Image->plane[0]);
+                     GL_LUMINANCE, GL_UNSIGNED_BYTE, image->plane[0]);
         glBindTexture(GL_TEXTURE_2D, m_Texture[1]);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE_ALPHA, width / 2, height / 2,
-                     0, GL_LUMINANCE_ALPHA, GL_UNSIGNED_BYTE, m_Image->plane[1]);
+                     0, GL_LUMINANCE_ALPHA, GL_UNSIGNED_BYTE, image->plane[1]);
     } else {
         glBindTexture(GL_TEXTURE_2D, m_Texture[0]);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA,
-                     GL_UNSIGNED_BYTE, m_Image->plane[0]);
+                     GL_UNSIGNED_BYTE, image->plane[0]);
     }
     lock.unlock();
     //offscreen
@@ -277,7 +306,7 @@ void VideoRender::onDrawFrame() {
                      GL_UNSIGNED_BYTE, nullptr);
         glViewport(0, 0, width, height);
     }
-    if (m_Face == 1 || m_Face == 2) {
+    if (m_Face > 0) {
         if (format == IMAGE_FORMAT_YUV420P) {
             glBindFramebuffer(GL_FRAMEBUFFER, m_Fbo[0]);
             glUseProgram(m_Program_Fbo_YUV420P_Face);
@@ -294,44 +323,38 @@ void VideoRender::onDrawFrame() {
             glUniform1i(textureY, 0);
             glUniform1i(textureU, 1);
             glUniform1i(textureV, 2);
+            GLfloat scale = glGetUniformLocation(m_Program_Fbo_YUV420P_Face, "fEyeScale");
+            GLfloat radius = glGetUniformLocation(m_Program_Fbo_YUV420P_Face, "fEyeRadius");
+            GLfloat left = glGetUniformLocation(m_Program_Fbo_YUV420P_Face, "fEyeLeft");
+            GLfloat right = glGetUniformLocation(m_Program_Fbo_YUV420P_Face, "fEyeRight");
+            GLfloat nose = glGetUniformLocation(m_Program_Fbo_YUV420P_Face, "fNose");
+            GLfloat mouthL = glGetUniformLocation(m_Program_Fbo_YUV420P_Face, "fMouthL");
+            GLfloat mouthR = glGetUniformLocation(m_Program_Fbo_YUV420P_Face, "fMouthR");
+            GLfloat size = glGetUniformLocation(m_Program_Fbo_YUV420P_Face, "fPixelSize");
+            glUniform2f(size, width, height);
             if (!faces.empty()) {
             }
             if (!eyes.empty()) {
-                GLfloat scale = glGetUniformLocation(m_Program_Fbo_YUV420P_Face, "fEyeScale");
-                glUniform1f(scale, 20.0f);
-                GLfloat radius = glGetUniformLocation(m_Program_Fbo_YUV420P_Face, "fEyeRadius");
-                glUniform1f(radius, 30.0f);
+                glUniform1f(scale, 10.0f);
+                glUniform1f(radius, 20.0f);
                 //参考 586 410
                 if (m_Face == 1) {
-                    GLfloat left = glGetUniformLocation(m_Program_Fbo_YUV420P_Face, "fEyeLeft");
                     glUniform2f(left, eyes[0].x + eyes[0].width / 2,
                                 eyes[0].y + (eyes[0].height / 2));
-                    GLfloat right = glGetUniformLocation(m_Program_Fbo_YUV420P_Face, "fEyeRight");
                     glUniform2f(right, eyes[1].x + (eyes[1].width / 2),
                                 eyes[1].y + (eyes[1].height / 2));
                 } else {
-                    GLfloat left = glGetUniformLocation(m_Program_Fbo_YUV420P_Face, "fEyeLeft");
                     glUniform2f(left, eyes[0].x, eyes[0].y);
-                    GLfloat right = glGetUniformLocation(m_Program_Fbo_YUV420P_Face, "fEyeRight");
                     glUniform2f(right, eyes[1].x, eyes[1].y);
                 }
             }
             if (!noses.empty()) {
-                if (m_Face == 2) {
-                    GLfloat nose = glGetUniformLocation(m_Program_Fbo_YUV420P_Face, "fNose");
-                    glUniform2f(nose, noses[0].x, noses[0].y);
-                }
+                glUniform2f(nose, noses[0].x, noses[0].y);
             }
             if (!mouths.empty()) {
-                if (m_Face == 2) {
-                    GLfloat mouthL = glGetUniformLocation(m_Program_Fbo_YUV420P_Face, "fMouthL");
-                    glUniform2f(mouthL, mouths[0].x, mouths[0].y);
-                    GLfloat mouthR = glGetUniformLocation(m_Program_Fbo_YUV420P_Face, "fMouthR");
-                    glUniform2f(mouthR, mouths[1].x, mouths[1].y);
-                }
+                glUniform2f(mouthL, mouths[0].x, mouths[0].y);
+                glUniform2f(mouthR, mouths[1].x, mouths[1].y);
             }
-            GLfloat size = glGetUniformLocation(m_Program_Fbo_YUV420P_Face, "fPixelSize");
-            glUniform2f(size, width, height);
         }
     } else if (format == IMAGE_FORMAT_YUV420P) {
         glBindFramebuffer(GL_FRAMEBUFFER, m_Fbo[0]);
@@ -373,7 +396,7 @@ void VideoRender::onDrawFrame() {
 //    onMatrix("vMatrix", 0.0f, 0.0f);
     onMatrix("vMatrix", m_ViewRot, m_ModelRot);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (const void *) 0);
-    onFrameBufferUpdate();
+    onFrameBufferUpdate(width, height);
     glBindVertexArray(0);
     glBindTexture(GL_TEXTURE_2D, 0);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -445,32 +468,45 @@ void VideoRender::onRelease() {
     if (m_Program) {
         glDeleteProgram(m_Program);
     }
-    if (m_Image) {
-        std::lock_guard<std::mutex> lock(m_Mutex);//加锁
-        PixImageUtils::pix_image_free(m_Image);
-    }
+    onReleaseRenders();
     m_Interrupt = true;
 }
 
-void VideoRender::onFrameBufferUpdate() {
+void VideoRender::onFrameBufferUpdate(int width, int height) {
     std::lock_guard<std::mutex> lock(m_Mutex);//加锁
-    if (!m_Image) return;
-    if (!m_Image->format) return;
-    int width = m_Image->width;
-    int height = m_Image->height;
-    if (!m_data) m_data = new uint8_t[width * height * 4];
-    m_dataSize = width * height * 4;
+    if (!m_FrameBuffer) m_FrameBuffer = new uint8_t[width * height * 4];
+    m_FrameBufferSize = width * height * 4;
     if (m_CameraData) {
-        glReadPixels(0, 0, height, width, GL_RGBA, GL_UNSIGNED_BYTE, m_data);
+        glReadPixels(0, 0, height, width, GL_RGBA, GL_UNSIGNED_BYTE, m_FrameBuffer);
         if (m_RenderFrameCallback && m_CallbackContext) {
-            m_RenderFrameCallback(m_CallbackContext, IMAGE_FORMAT_RGBA, height, width, m_data);
+            m_RenderFrameCallback(m_CallbackContext, IMAGE_FORMAT_RGBA, height, width,
+                                  m_FrameBuffer);
         }
     } else {
-        glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, m_data);
+        glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, m_FrameBuffer);
         if (m_RenderFrameCallback && m_CallbackContext) {
-            m_RenderFrameCallback(m_CallbackContext, IMAGE_FORMAT_RGBA, width, height, m_data);
+            m_RenderFrameCallback(m_CallbackContext, IMAGE_FORMAT_RGBA, width, height,
+                                  m_FrameBuffer);
         }
     }
 }
 
+void VideoRender::onReleaseRenders() {
+    while (!m_VRenderQueue.empty()) {
+        VRender *render = m_VRenderQueue.front();
+        m_VRenderQueue.pop();
+        onReleaseRender(render);
+    }
 }
+
+void VideoRender::onReleaseRender(VRender *render) {
+    PixImageUtils::pix_image_free(render->pixel);
+    if (!render->faces.empty()) render->faces.clear();
+    if (!render->eyes.empty()) render->eyes.clear();
+    if (!render->noses.empty()) render->noses.clear();
+    if (!render->mouths.empty()) render->mouths.clear();
+    delete render;
+}
+}
+
+
