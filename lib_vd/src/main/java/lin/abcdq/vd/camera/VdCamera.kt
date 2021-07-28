@@ -2,8 +2,10 @@ package lin.abcdq.vd.camera
 
 import android.content.Context
 import android.graphics.ImageFormat
+import android.graphics.PixelFormat
 import android.opengl.GLSurfaceView
 import android.os.Build
+import android.util.Log
 import android.util.Size
 import androidx.annotation.RequiresApi
 import lin.abcdq.vd.camera.util.CAO
@@ -15,7 +17,7 @@ import javax.microedition.khronos.opengles.GL10
 @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
 class VdCamera(context: Context) : GLSurfaceView.Renderer {
 
-    private var mFormat = 1 //1.YUV420 2.NV21/12 3.RGB
+    private var mFormat = 2 //1.YUV420 2.NV21/12
     private var mCameraUse: CameraUse? = null
 
     //人脸检测

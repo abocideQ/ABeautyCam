@@ -83,7 +83,6 @@ public:
 
 protected:
     //数据
-//    PixImage *m_Image = nullptr;
     std::queue<VRender *> m_VRenderQueue;
     int m_Width_display = 0;
     int m_Height_display = 0;
@@ -104,7 +103,7 @@ protected:
     GLuint m_Program_Fbo_YUV420P;
     GLuint m_Program_Fbo_NV21;
     GLuint m_Program_Fbo_RGB;
-    GLuint m_Program_Fbo_YUV420P_Face;
+    GLuint m_Program_Fbo_NV21_Face;
     GLuint m_Texture_Fbo[1];
     GLuint m_VAO_Fbo[1];
     GLuint m_Fbo[1];
@@ -122,11 +121,6 @@ private:
     FaceCnnDetection *mFaceCnnDetection = nullptr;
     //ncnn
     FaceNCNNDetection *m_FaceNCNNDetection = nullptr;
-    //线程
-    std::thread *m_Thread_Face = nullptr;
-    volatile int m_Interrupt_Face = 1;
-
-    static void onFaceLoop(VideoRender *p);
 };
 
 

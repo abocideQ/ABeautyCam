@@ -108,17 +108,16 @@ const char *ShaderFragment_FBO_RGB =
                     fragColor = texture(s_textureRGB, fiTexCoord);
                 }
         );
-const char *ShaderFragment_FBO_YUV420p_Face =
+const char *ShaderFragment_FBO_NV21_Face =
         GL_SHADER_VERSION
         GL_SHADER(
                 precision highp float;
                 in vec2 fiTexCoord;
                 uniform sampler2D s_textureY;
-                uniform sampler2D s_textureU;
-                uniform sampler2D s_textureV;
+                uniform sampler2D s_textureVU;
                 layout(location = 0) out vec4 fragColor;
-                //yuv2rgb
-                vec4 YUV420PtoRGB(vec2 texCoord) {
+                //nv21rgb
+                vec4 NV21toRGB(vec2 texCoord) {
                     float y = 0.0f;
                     float u = 0.0f;
                     float v = 0.0f;
@@ -126,8 +125,8 @@ const char *ShaderFragment_FBO_YUV420p_Face =
                     float g = 0.0f;
                     float b = 0.0f;
                     y = texture(s_textureY, texCoord).r;
-                    u = texture(s_textureU, texCoord).r;
-                    v = texture(s_textureV, texCoord).r;
+                    u = texture(s_textureVU, texCoord).a;
+                    v = texture(s_textureVU, texCoord).r;
                     u = u - 0.5;
                     v = v - 0.5;
                     r = y + 1.403 * v;
@@ -172,14 +171,20 @@ const char *ShaderFragment_FBO_YUV420p_Face =
                 }
                 void main() {
                     vec2 texture = fiTexCoord * fPixelSize;
-                    if (distance(texture, vec2(fEyeLeft.x, fEyeLeft.y)) < 10.0f) {
+                    if (distance(texture, vec2(fEyeLeft.x, fEyeLeft.y)) < 2.0f) {
                         fragColor = vec4(1.0, 1.0, 1.0, 1.0);
-                    } else if (distance(texture, vec2(fEyeRight.x, fEyeRight.y)) < 10.0f) {
+                    } else if (distance(texture, vec2(fEyeRight.x, fEyeRight.y)) < 2.0f) {
+                        fragColor = vec4(1.0, 1.0, 1.0, 1.0);
+                    } else if (distance(texture, vec2(fNose.x, fNose.y)) < 2.0f) {
+                        fragColor = vec4(1.0, 1.0, 1.0, 1.0);
+                    } else if (distance(texture, vec2(fMouthL.x, fMouthL.y)) < 2.0f) {
+                        fragColor = vec4(1.0, 1.0, 1.0, 1.0);
+                    } else if (distance(texture, vec2(fMouthR.x, fMouthR.y)) < 2.0f) {
                         fragColor = vec4(1.0, 1.0, 1.0, 1.0);
                     } else {
 //                        vec2 newCoord = eyeScale(fiTexCoord, 1);
 //                        newCoord = eyeScale(newCoord, 2);
-                        fragColor = YUV420PtoRGB(fiTexCoord);
+                        fragColor = NV21toRGB(fiTexCoord);
                     }
                 }
         );

@@ -14,7 +14,7 @@ void FaceCnnDetection::onFacesDetection(int format, int width, int height, uint8
         cv::cvtColor(src, bgr, cv::COLOR_YUV2BGR_I420);//转BGR
         src.release();
     } else if (format == 2 || format == 3) {
-        cv::Mat src(height + height / 2, width, CV_8UC2, data);//nv
+        cv::Mat src(height + height / 2, width, CV_8UC1, data);//nv
         cv::cvtColor(src, bgr, cv::COLOR_YUV2BGR_NV21);
         src.release();
     } else if (format == 4) {

@@ -1,6 +1,6 @@
 #include "FaceNCNNDetection.h"
 
-#define DETECT_SCALE 5.0f
+#define DETECT_SCALE 4.0f
 extern "C" {
 
 int FaceNCNNDetection::onModel(char *folder, bool gpu) {
@@ -21,14 +21,14 @@ int FaceNCNNDetection::onModel(char *folder, bool gpu) {
     m_MeshNet.opt.num_threads = ncnn::get_big_cpu_count();
     m_SegNet.opt.num_threads = ncnn::get_big_cpu_count();
     const char *models[] = {
-            "scrfd_1g-opt2.param",
-            "scrfd_1g-opt2.bin",
+            "scrfd_2.5g_kps-opt2.param",
+            "scrfd_2.5g_kps-opt2.bin",
             "facemesh-op.param",
             "facemesh-op.bin",
             "faceseg-op.param",
             "faceseg-op.bin",
     };
-    m_Kps = false;
+    m_Kps = true;
     int i = 0;
     for (; i < 6; i++) {
         std::string cc1 = folder;
@@ -62,20 +62,22 @@ int FaceNCNNDetection::onDetect(int format, int w1, int h1, uint8_t *data,
     cv::Mat rgb;
     if (format == 1) {
         cv::Mat src(h1 + h1 / 2, w1, CV_8UC1, data);
-        cv::cvtColor(src, rgb, cv::COLOR_YUV2RGB_I420);
+        cv::cvtColor(src, src, cv::COLOR_YUV2RGB_I420);
+        cv::resize(src, rgb, cv::Size(w1 / DETECT_SCALE, h1 / DETECT_SCALE));
         src.release();
     } else if (format == 2 || format == 3) {
-        cv::Mat src(h1 + h1 / 2, w1, CV_8UC2, data);
-        cv::cvtColor(src, rgb, cv::COLOR_YUV2RGB_NV21);
+        cv::Mat src(h1 + h1 / 2, w1, CV_8UC1, data);
+        cv::cvtColor(src, src, cv::COLOR_YUV2RGB_NV21);
+        cv::resize(src, rgb, cv::Size(w1 / DETECT_SCALE, h1 / DETECT_SCALE));
         src.release();
     } else if (format == 4) {
         cv::Mat src(h1 + h1, w1, CV_8UC3, data);
-        cv::cvtColor(src, rgb, cv::COLOR_RGBA2BGR);
+        cv::cvtColor(src, src, cv::COLOR_RGBA2BGR);
+        cv::resize(src, rgb, cv::Size(w1 / DETECT_SCALE, h1 / DETECT_SCALE));
         src.release();
     } else {
         return 0;
     }
-    cv::resize(rgb, rgb, cv::Size(w1 / DETECT_SCALE, h1 / DETECT_SCALE));
     m_faces.clear();
     m_eyes.clear();
     m_noses.clear();
@@ -245,26 +247,38 @@ int FaceNCNNDetection::onDetect(int format, int w1, int h1, uint8_t *data,
                                     face_part_colors[index][0] * 0.3 + pRgb[w][0] * 0.7);
             }
         }*/
+        cv::Rect face(obj.rect.x * DETECT_SCALE, obj.rect.y * DETECT_SCALE,
+                      obj.rect.width * DETECT_SCALE, obj.rect.height * DETECT_SCALE);
+        m_faces.push_back(face);
+        cv::Rect eyeL(obj.landmark[0].x * DETECT_SCALE, obj.landmark[0].y * DETECT_SCALE, 10.0f,
+                      10.0f);
+        cv::Rect eyeR(obj.landmark[1].x * DETECT_SCALE, obj.landmark[1].y * DETECT_SCALE, 10.0f,
+                      10.0f);
+        m_eyes.push_back(eyeL);
+        m_eyes.push_back(eyeR);
+        cv::Rect nose(obj.landmark[2].x * DETECT_SCALE, obj.landmark[2].y * DETECT_SCALE, 10.0f,
+                      10.0f);
+        m_noses.push_back(nose);
+        cv::Rect mouthL(obj.landmark[3].x * DETECT_SCALE, obj.landmark[3].y * DETECT_SCALE, 10.0f,
+                        10.0f);
+        cv::Rect mouthR(obj.landmark[4].x * DETECT_SCALE, obj.landmark[4].y * DETECT_SCALE, 10.0f,
+                        10.0f);
+        m_mouths.push_back(mouthL);
+        m_mouths.push_back(mouthR);
         //face mesh landmark
-        std::vector<cv::Point2f> pts;
-        onMesh(rgb, obj, pts);
-        LOGCATE("landmark pts = %d", pts.size());
-        i = 0;
-        for (; i < pts.size(); i++) {
-            cv::Rect face(obj.rect.x * DETECT_SCALE, obj.rect.y * DETECT_SCALE,
-                          obj.rect.width * DETECT_SCALE, obj.rect.height * DETECT_SCALE);
-            m_faces.push_back(face);
-            cv::Rect eyeL(obj.landmark[0].x * DETECT_SCALE, obj.landmark[0].y * DETECT_SCALE, 10.0f,
-                          10.0f);
-            cv::Rect eyeR(obj.landmark[1].x * DETECT_SCALE, obj.landmark[1].y * DETECT_SCALE, 10.0f,
-                          10.0f);
+//        std::vector<cv::Point2f> pts;
+//        onMesh(rgb, obj, pts);
+//        i = 0;
+//        for (; i < pts.size(); i++) {
+//            cv::Rect face(obj.rect.x * DETECT_SCALE, obj.rect.y * DETECT_SCALE,
+//                          obj.rect.width * DETECT_SCALE, obj.rect.height * DETECT_SCALE);
+//            m_faces.push_back(face);
 //            cv::Rect eyeL(pts[0].x * DETECT_SCALE, pts[0].y * DETECT_SCALE, 10.0f, 10.0f);
 //            cv::Rect eyeR(pts[1].x * DETECT_SCALE, pts[1].y * DETECT_SCALE, 10.0f, 10.0f);
-            m_eyes.push_back(eyeL);
-            m_eyes.push_back(eyeR);
-            LOGCATE("landmark ?= %d  %d", (int) pts[0].x, (int) pts[0].y);
-            return 0;
-        }
+//            m_eyes.push_back(eyeL);
+//            m_eyes.push_back(eyeR);
+//            return 0;
+//        }
     }
     return 0;
 }

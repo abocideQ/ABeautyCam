@@ -55,6 +55,10 @@ internal class ImageUtils {
             return data
         }
 
+        fun image2PixelRgba(image: Image): ByteArray {
+            return image.planes[0].buffer.array()
+        }
+
         fun image2NV21(image: Image): ByteArray {
             val nv21: ByteArray
             val yBuffer: ByteBuffer = image.planes[0].buffer

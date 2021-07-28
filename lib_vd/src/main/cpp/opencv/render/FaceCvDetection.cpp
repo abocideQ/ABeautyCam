@@ -19,7 +19,7 @@ void FaceCvDetection::onFacesDetection(int format, int width, int height, uint8_
         cv::cvtColor(src, gray, cv::COLOR_YUV2RGB_I420);//转RGB
         src.release();
     } else if (format == 2 || format == 3) {
-        cv::Mat src(height + height / 2, width, CV_8UC2, data);//nv
+        cv::Mat src(height + height / 2, width, CV_8UC1, data);//nv
         cv::cvtColor(src, gray, cv::COLOR_YUV2RGB_NV21);
         src.release();
     } else if (format == 4) {

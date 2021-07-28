@@ -3,6 +3,7 @@ package lin.abcdq.vd.camera.wrap
 import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.ImageFormat
+import android.graphics.PixelFormat
 import android.hardware.camera2.*
 import android.hardware.camera2.CameraCaptureSession.CaptureCallback
 import android.hardware.camera2.params.OutputConfiguration
@@ -24,10 +25,17 @@ import kotlin.math.abs
 internal class CameraWrap(context: Context) {
 
     companion object CameraFacing {
+
         var CAMERA_FRONT = "0"
         var CAMERA_BACK = "1"
         var CAMERA_EXTERNAL = "2"
-        var IMAGE_FORMAT = ImageFormat.YUV_420_888
+
+        //ImageFormat.YUV_420_888 : 5~8 ms
+        //ImageFormat.NV21 : 1~3 ms
+        var IMAGE_FORMAT = ImageFormat.NV21
+
+        //ImageFormat.YUV_420_888
+        private const val IMAGE_READER_FORMAT = ImageFormat.YUV_420_888
     }
 
     var facing = CAMERA_FRONT
@@ -36,7 +44,7 @@ internal class CameraWrap(context: Context) {
         val characteristics = mCameras[facing] ?: return null
         val configs = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP)
             ?: return null
-        return configs.getOutputSizes(ImageFormat.YUV_420_888)
+        return configs.getOutputSizes(IMAGE_READER_FORMAT)
     }
 
     fun getPreviewSize(): Size? {
@@ -59,33 +67,35 @@ internal class CameraWrap(context: Context) {
     fun openCamera(facing: String, surface: Surface?) {
         initHandler()
         mPreviewReader = ImageReader.newInstance(
-            mPreviewSize?.width ?: 1, mPreviewSize?.height ?: 1, ImageFormat.YUV_420_888, 2
+            mPreviewSize?.width ?: 1, mPreviewSize?.height ?: 1, IMAGE_READER_FORMAT, 2
         )
         mPreviewReader?.setOnImageAvailableListener(
             {
                 val image: Image? = it.acquireLatestImage()
                 if (image != null) {
-                    when (IMAGE_FORMAT) {
-                        ImageFormat.YUV_420_888 -> {
-                            mCall?.onPreview(
-                                ImageUtils.image2YUV420888(image),
-                                image.width,
-                                image.height
-                            )
-                        }
-                        ImageFormat.NV21 -> {
-                            mCall?.onPreview(
-                                ImageUtils.image2NV21(image),
-                                image.width,
-                                image.height
-                            )
-                        }
-                        ImageFormat.JPEG -> {
-                            mCall?.onPreview(
-                                ImageUtils.image2JPEG(image),
-                                image.width,
-                                image.height
-                            )
+                    if (IMAGE_READER_FORMAT == ImageFormat.YUV_420_888) {
+                        when (IMAGE_FORMAT) {
+                            ImageFormat.YUV_420_888 -> {
+                                mCall?.onPreview(
+                                    ImageUtils.image2YUV420888(image),
+                                    image.width,
+                                    image.height
+                                )
+                            }
+                            ImageFormat.NV21 -> {
+                                mCall?.onPreview(
+                                    ImageUtils.image2NV21(image),
+                                    image.width,
+                                    image.height
+                                )
+                            }
+                            ImageFormat.JPEG -> {
+                                mCall?.onPreview(
+                                    ImageUtils.image2JPEG(image),
+                                    image.width,
+                                    image.height
+                                )
+                            }
                         }
                     }
                     image.close()
@@ -94,33 +104,35 @@ internal class CameraWrap(context: Context) {
             mHandler
         )
         mCaptureReader = ImageReader.newInstance(
-            mPreviewSize?.width ?: 1, mPreviewSize?.height ?: 1, ImageFormat.YUV_420_888, 2
+            mPreviewSize?.width ?: 1, mPreviewSize?.height ?: 1, IMAGE_READER_FORMAT, 2
         )
         mCaptureReader?.setOnImageAvailableListener(
             {
                 val image: Image? = it.acquireLatestImage()
                 if (image != null) {
-                    when (IMAGE_FORMAT) {
-                        ImageFormat.YUV_420_888 -> {
-                            mCall?.onCapture(
-                                ImageUtils.image2YUV420888(image),
-                                image.width,
-                                image.height
-                            )
-                        }
-                        ImageFormat.NV21 -> {
-                            mCall?.onCapture(
-                                ImageUtils.image2NV21(image),
-                                image.width,
-                                image.height
-                            )
-                        }
-                        ImageFormat.JPEG -> {
-                            mCall?.onCapture(
-                                ImageUtils.image2JPEG(image),
-                                image.width,
-                                image.height
-                            )
+                    if (IMAGE_READER_FORMAT == ImageFormat.YUV_420_888) {
+                        when (IMAGE_FORMAT) {
+                            ImageFormat.YUV_420_888 -> {
+                                mCall?.onCapture(
+                                    ImageUtils.image2YUV420888(image),
+                                    image.width,
+                                    image.height
+                                )
+                            }
+                            ImageFormat.NV21 -> {
+                                mCall?.onCapture(
+                                    ImageUtils.image2NV21(image),
+                                    image.width,
+                                    image.height
+                                )
+                            }
+                            ImageFormat.JPEG -> {
+                                mCall?.onCapture(
+                                    ImageUtils.image2JPEG(image),
+                                    image.width,
+                                    image.height
+                                )
+                            }
                         }
                     }
                     image.close()
@@ -291,7 +303,7 @@ internal class CameraWrap(context: Context) {
             characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP) ?: return
         val orientation = characteristics.get(CameraCharacteristics.SENSOR_ORIENTATION) ?: return
         Log.e("CameraWrap", "SENSOR_ORIENTATION : $orientation")
-        val previewSizes: Array<Size> = configs.getOutputSizes(ImageFormat.YUV_420_888) ?: return
+        val previewSizes: Array<Size> = configs.getOutputSizes(IMAGE_READER_FORMAT) ?: return
         val defaultRatio = mDefaultCaptureSize.width * 1.0f / mDefaultCaptureSize.height
         var sameRatioSize: Size? = null
         val threshold = 0.001f

@@ -21,8 +21,8 @@ public:
                  std::vector<cv::Rect> &m_eyes,
                  std::vector<cv::Rect> &m_noses,
                  std::vector<cv::Rect> &m_mouths,
-                 float prob_threshold = 0.5f,
-                 float nms_threshold = 0.45f);
+                 float prob_threshold = 0.4f,
+                 float nms_threshold = 0.4f);
 
     void onMesh(cv::Mat &rgb, FaceObject &obj, std::vector<cv::Point2f> &landmarks);
 
