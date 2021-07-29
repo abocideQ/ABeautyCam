@@ -22,7 +22,7 @@ class VdCamera(context: Context) : GLSurfaceView.Renderer {
     private var mCameraUse: CameraUse? = null
 
     //人脸检测方式 :1.opencv(slow) 2.faceCNN(fucking slow) 3.NCNN(normal) 4.opencvTrack(fast but wheres my face)
-    private var mFacePosition = 3
+    private var mFacePosition = 1
 
     fun setSurface(surface: GLSurfaceView) {
         surface.setEGLContextClientVersion(3)
@@ -141,7 +141,7 @@ class VdCamera(context: Context) : GLSurfaceView.Renderer {
 
     private fun onFaceCV(context: Context) {
         CAO.copyAssetsDirToSDCard(context, "opencv", context.obbDir.absolutePath)
-        val mFaceModel = context.obbDir.absolutePath + "/opencv/haarcascade_frontalface_default.xml"
+        val mFaceModel = context.obbDir.absolutePath + "/opencv/haarcascade_frontalface_alt.xml"
         val mEyesModel = context.obbDir.absolutePath + "/opencv/haarcascade_eye.xml"
         val mNoseModel = context.obbDir.absolutePath + "/opencv/haarcascade_mcs_nose.xml"
         val mMouthModel = context.obbDir.absolutePath + "/opencv/haarcascade_mcs_mouth.xml"
@@ -169,12 +169,14 @@ class VdCamera(context: Context) : GLSurfaceView.Renderer {
 
     private fun onFaceNCNN(context: Context) {
         CAO.copyAssetsDirToSDCard(context, "ncnn", context.obbDir.absolutePath)
+        CAO.copyAssetsDirToSDCard(context, "alignment", context.obbDir.absolutePath)
+        val mAlignmentModel = context.obbDir.absolutePath + "/alignment/seeta_fa_v1.1.bin"
         native_vdCameraRender_onFace(
             context.obbDir.absolutePath + "/ncnn/",
             " mEyesModel ",
             " mNoseModel ",
             " mMouthModel ",
-            " mAlignmentModel ",
+            mAlignmentModel,
             3
         )
     }
@@ -182,7 +184,7 @@ class VdCamera(context: Context) : GLSurfaceView.Renderer {
     private fun onFaceCVTrack(context: Context) {
         CAO.copyAssetsDirToSDCard(context, "opencv", context.obbDir.absolutePath)
         CAO.copyAssetsDirToSDCard(context, "alignment", context.obbDir.absolutePath)
-        val mFaceModel = context.obbDir.absolutePath + "/opencv/haarcascade_frontalface_default.xml"
+        val mFaceModel = context.obbDir.absolutePath + "/opencv/haarcascade_frontalface_alt.xml"
         val mEyesModel = context.obbDir.absolutePath + "/opencv/haarcascade_eye.xml"
         val mNoseModel = context.obbDir.absolutePath + "/opencv/haarcascade_mcs_nose.xml"
         val mMouthModel = context.obbDir.absolutePath + "/opencv/haarcascade_mcs_mouth.xml"

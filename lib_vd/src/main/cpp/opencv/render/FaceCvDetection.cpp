@@ -45,6 +45,7 @@ void FaceCvDetection::onFacesDetection(int format, int width, int height, uint8_
     //features check
     int i = 0;
     int size = (int) faces.size();
+    LOGCATE("faceCvDetection = %d", size);
     for (; i < size; i++) {
         cv::Rect face = faces[i];
 //        cv::rectangle(src, face, cv::Scalar(255, 0, 0), 2, 4, 0);//矩形绘制

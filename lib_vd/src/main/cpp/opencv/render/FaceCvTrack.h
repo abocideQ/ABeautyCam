@@ -47,6 +47,7 @@ private:
     char *mouth_model = nullptr;
     Ptr<seeta::FaceAlignment> m_Alignment;
     char *alignment_model = nullptr;
+    cv::CascadeClassifier faceCascade;
 };
 
 #endif //VDMAKE_FACECVTRACK_H

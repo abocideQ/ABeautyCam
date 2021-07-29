@@ -77,7 +77,8 @@ native_vdCameraRender_onFace(JNIEnv *env, jobject *obj, jstring string1, jstring
         VdCameraRender::instance()->onFace(nullptr, nullptr, nullptr, nullptr, nullptr, 2);
     } else if (faceI == 3) {
         char *string = (char *) env->GetStringUTFChars(string1, 0);
-        VdCameraRender::instance()->onFace(string, nullptr, nullptr, nullptr, nullptr, 3);
+        char *aligment = (char *) env->GetStringUTFChars(string5, 0);
+        VdCameraRender::instance()->onFace(string, nullptr, nullptr, nullptr, aligment, 3);
     } else if (faceI == 4) {
         char *face = (char *) env->GetStringUTFChars(string1, 0);
         char *eyes = (char *) env->GetStringUTFChars(string2, 0);

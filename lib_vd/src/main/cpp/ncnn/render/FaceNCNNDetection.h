@@ -4,6 +4,7 @@
 #include "net.h"
 #include "cpu.h"
 #include "opencv2/opencv.hpp"
+#include "face_alignment.h"
 #include "Log.h"
 
 struct FaceObject {
@@ -14,7 +15,7 @@ struct FaceObject {
 
 class FaceNCNNDetection {
 public:
-    int onModel(char *folder, bool gpu = false);
+    int onModel(char *folder, char *alignment, bool gpu = false);
 
     int onDetect(int format, int w1, int h1, uint8_t *data,
                  std::vector<cv::Rect> &m_faces,
@@ -36,6 +37,9 @@ private:
     const float m_MeanVal[3] = {123.675f, 116.28f, 103.53f};
     const float m_NormVal[3] = {0.01712475f, 0.0175f, 0.01742919f};
 
+    //faceAlignment
+    cv::Ptr<seeta::FaceAlignment> m_Alignment;
+    char *alignment_model = nullptr;
 };
 
 //utils methods

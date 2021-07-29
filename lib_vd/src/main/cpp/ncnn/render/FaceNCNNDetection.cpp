@@ -1,9 +1,9 @@
 #include "FaceNCNNDetection.h"
 
-#define DETECT_SCALE 4.0f
+#define DETECT_SCALE 1.0f
 extern "C" {
 
-int FaceNCNNDetection::onModel(char *folder, bool gpu) {
+int FaceNCNNDetection::onModel(char *folder, char *alignment, bool gpu) {
     m_DetectNet.clear();
     m_MeshNet.clear();
     m_SegNet.clear();
@@ -21,14 +21,14 @@ int FaceNCNNDetection::onModel(char *folder, bool gpu) {
     m_MeshNet.opt.num_threads = ncnn::get_big_cpu_count();
     m_SegNet.opt.num_threads = ncnn::get_big_cpu_count();
     const char *models[] = {
-            "scrfd_2.5g_kps-opt2.param",
-            "scrfd_2.5g_kps-opt2.bin",
+            "scrfd_500m-opt2.param",
+            "scrfd_500m-opt2.bin",
             "facemesh-op.param",
             "facemesh-op.bin",
             "faceseg-op.param",
             "faceseg-op.bin",
     };
-    m_Kps = true;
+    m_Kps = false;
     int i = 0;
     for (; i < 6; i++) {
         std::string cc1 = folder;
@@ -49,6 +49,7 @@ int FaceNCNNDetection::onModel(char *folder, bool gpu) {
             m_SegNet.load_model(cc3.c_str());
         }
     }
+    m_Alignment = cv::makePtr<seeta::FaceAlignment>(alignment);
     return 0;
 }
 
@@ -247,38 +248,49 @@ int FaceNCNNDetection::onDetect(int format, int w1, int h1, uint8_t *data,
                                     face_part_colors[index][0] * 0.3 + pRgb[w][0] * 0.7);
             }
         }*/
+        //mediapipe face mesh landmark
+/*        std::vector<cv::Point2f> pts;
+        onMesh(rgb, obj, pts);
+        i = 0;
+        for (; i < pts.size(); i++) {
+            cv::Rect face(obj.rect.x * DETECT_SCALE, obj.rect.y * DETECT_SCALE,
+                          obj.rect.width * DETECT_SCALE, obj.rect.height * DETECT_SCALE);
+            m_faces.push_back(face);
+            cv::Rect eyeL(pts[0].x * DETECT_SCALE, pts[0].y * DETECT_SCALE, 10.0f, 10.0f);
+            cv::Rect eyeR(pts[1].x * DETECT_SCALE, pts[1].y * DETECT_SCALE, 10.0f, 10.0f);
+            m_eyes.push_back(eyeL);
+            m_eyes.push_back(eyeR);
+            return 0;
+        }*/
+        //face alignment
         cv::Rect face(obj.rect.x * DETECT_SCALE, obj.rect.y * DETECT_SCALE,
                       obj.rect.width * DETECT_SCALE, obj.rect.height * DETECT_SCALE);
         m_faces.push_back(face);
-        cv::Rect eyeL(obj.landmark[0].x * DETECT_SCALE, obj.landmark[0].y * DETECT_SCALE, 10.0f,
-                      10.0f);
-        cv::Rect eyeR(obj.landmark[1].x * DETECT_SCALE, obj.landmark[1].y * DETECT_SCALE, 10.0f,
-                      10.0f);
+        //faceinfo
+        seeta::FaceInfo faceInfo;
+        seeta::Rect bbox;
+        bbox.x = obj.rect.x;
+        bbox.y = obj.rect.y;
+        bbox.width = obj.rect.width;
+        bbox.height = obj.rect.height;
+        faceInfo.bbox = bbox;
+        //imagedata
+        seeta::ImageData gray_im(rgb.cols, rgb.rows);
+        gray_im.data = rgb.data;
+        //landmark
+        seeta::FacialLandmark landmark[5];
+        m_Alignment->PointDetectLandmarks(gray_im, faceInfo, landmark);
+        cv::Rect eyeL(landmark[0].x * DETECT_SCALE, landmark[0].y * DETECT_SCALE, 10.0f, 10.0f);
+        cv::Rect eyeR(landmark[1].x * DETECT_SCALE, landmark[1].y * DETECT_SCALE, 10.0f, 10.0f);
         m_eyes.push_back(eyeL);
         m_eyes.push_back(eyeR);
-        cv::Rect nose(obj.landmark[2].x * DETECT_SCALE, obj.landmark[2].y * DETECT_SCALE, 10.0f,
-                      10.0f);
+        cv::Rect nose(landmark[2].x * DETECT_SCALE, landmark[2].y * DETECT_SCALE, 10.0f, 10.0f);
         m_noses.push_back(nose);
-        cv::Rect mouthL(obj.landmark[3].x * DETECT_SCALE, obj.landmark[3].y * DETECT_SCALE, 10.0f,
-                        10.0f);
-        cv::Rect mouthR(obj.landmark[4].x * DETECT_SCALE, obj.landmark[4].y * DETECT_SCALE, 10.0f,
-                        10.0f);
+        cv::Rect mouthL(landmark[3].x * DETECT_SCALE, landmark[3].y * DETECT_SCALE, 10.0f, 10.0f);
+        cv::Rect mouthR(landmark[4].x * DETECT_SCALE, landmark[4].y * DETECT_SCALE, 10.0f, 10.0f);
         m_mouths.push_back(mouthL);
         m_mouths.push_back(mouthR);
-        //face mesh landmark
-//        std::vector<cv::Point2f> pts;
-//        onMesh(rgb, obj, pts);
-//        i = 0;
-//        for (; i < pts.size(); i++) {
-//            cv::Rect face(obj.rect.x * DETECT_SCALE, obj.rect.y * DETECT_SCALE,
-//                          obj.rect.width * DETECT_SCALE, obj.rect.height * DETECT_SCALE);
-//            m_faces.push_back(face);
-//            cv::Rect eyeL(pts[0].x * DETECT_SCALE, pts[0].y * DETECT_SCALE, 10.0f, 10.0f);
-//            cv::Rect eyeR(pts[1].x * DETECT_SCALE, pts[1].y * DETECT_SCALE, 10.0f, 10.0f);
-//            m_eyes.push_back(eyeL);
-//            m_eyes.push_back(eyeR);
-//            return 0;
-//        }
+        return 0;
     }
     return 0;
 }

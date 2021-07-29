@@ -43,16 +43,23 @@ void FaceCvTrack::onFacesTrack(int format, int width, int height, uint8_t *data,
         return;
     }
     cv::cvtColor(gray, gray, cv::COLOR_RGB2GRAY);//灰度图提高检测速度
-    cv::equalizeHist(gray, gray);//直方图均衡化(二值化)，增强对比度
+    cv::equalizeHist(gray, gray);//直方图均衡化(二值化)
+    //face check
     m_faces.clear();
     m_eyes.clear();
     m_noses.clear();
     m_mouths.clear();
     //检测
-    m_Tracker->process(gray);
+//    m_Tracker->process(gray);
     //结果
     vector<Rect> faces;
-    m_Tracker->getObjects(faces);
+//    m_Tracker->getObjects(faces);
+    if (face_model != nullptr) {
+        faceCascade.load(face_model);
+        face_model = nullptr;
+    } else{
+        faceCascade.detectMultiScale(gray, faces, 1.1f, 3, 0, cv::Size(50, 50));
+    }
     if (faces.empty()) {
         return;
     }
@@ -60,26 +67,27 @@ void FaceCvTrack::onFacesTrack(int format, int width, int height, uint8_t *data,
     seeta::FacialLandmark landmark[5];
     int i = 0;
     int size = (int) faces.size();
+    LOGCATE("============= faces %d", size);
     for (; i < size; i++) {
         cv::Rect face = faces[i];
-        //faceinfo
-        seeta::FaceInfo faceInfo;
-        seeta::Rect bbox;
-        bbox.x = face.x;
-        bbox.y = face.y;
-        bbox.width = face.width;
-        bbox.height = face.height;
-        faceInfo.bbox = bbox;
-        //imagedata
-        seeta::ImageData gray_im(gray.cols, gray.rows);
-        gray_im.data = gray.data;
-        //landmark
-        m_Alignment->PointDetectLandmarks(gray_im, faceInfo, landmark);
-        cv::Rect eyeL(landmark[0].x, landmark[0].y, 10.0f, 10.0f);
-        cv::Rect eyeR(landmark[1].x, landmark[1].y, 10.0f, 10.0f);
-        m_eyes.push_back(eyeL);
-        m_eyes.push_back(eyeR);
-        return;
+//        //faceinfo
+//        seeta::FaceInfo faceInfo;
+//        seeta::Rect bbox;
+//        bbox.x = face.x;
+//        bbox.y = face.y;
+//        bbox.width = face.width;
+//        bbox.height = face.height;
+//        faceInfo.bbox = bbox;
+//        //imagedata
+//        seeta::ImageData gray_im(gray.cols, gray.rows);
+//        gray_im.data = gray.data;
+//        //landmark
+//        m_Alignment->PointDetectLandmarks(gray_im, faceInfo, landmark);
+//        cv::Rect eyeL(landmark[0].x, landmark[0].y, 10.0f, 10.0f);
+//        cv::Rect eyeR(landmark[1].x, landmark[1].y, 10.0f, 10.0f);
+//        m_eyes.push_back(eyeL);
+//        m_eyes.push_back(eyeR);
+//        return;
     }
     gray.release();
 }

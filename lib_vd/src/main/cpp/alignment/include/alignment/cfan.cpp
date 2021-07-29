@@ -168,6 +168,9 @@ void CCFAN::FacialPointLocate(const unsigned char *gray_im, int im_width, int im
     int face_h = extend_ry - extend_ly + 1;
 
     /*Get the face image based on the extended face region*/
+    if (face_w < 0 || face_h < 0) {
+        return;
+    }
     unsigned char *face_patch = new unsigned char[face_w * face_h];
     for (int h = 0; h < face_h; h++) {
         const unsigned char *p_origin = gray_im + (h + extend_ly) * im_width + extend_lx;
