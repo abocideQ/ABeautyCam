@@ -16,6 +16,7 @@
 #include "FaceCvDetection.h"
 #include "FaceCnnDetection.h"
 #include "FaceNCNNDetection.h"
+#include "FaceCvTracK.h"
 
 typedef struct _tag_render {
     PixImage *pixel;
@@ -36,7 +37,7 @@ class VideoRender {
 public:
 
     //face
-    void onFace(char *s1, char *s2, char *s3, char *s4, int faceI);
+    void onFace(char *s1, char *s2, char *s3, char *s4, char *s5, int faceI);
 
     //normal
     void onBuffer(int format, int width, int height, int lineSize[3], uint8_t *data);
@@ -114,13 +115,15 @@ protected:
 
 private:
     //cv or faceCnn
-    int m_Face = 0; //1 cv 2 faceCnn
+    int m_Face = 0; //1 cv 2 faceCnn 3 ncnn 4 cvTrack
     //opencv
     FaceCvDetection *m_FaceCvDetection = nullptr;
     //faceCnn
     FaceCnnDetection *mFaceCnnDetection = nullptr;
     //ncnn
     FaceNCNNDetection *m_FaceNCNNDetection = nullptr;
+    //cvTrack
+    FaceCvTrack *m_FaceTrack = nullptr;
 };
 
 

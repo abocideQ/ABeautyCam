@@ -64,20 +64,27 @@ void native_vdPlayer_onDrawFrame(JNIEnv *env, jobject *obj) {
 //============CameraRender
 void
 native_vdCameraRender_onFace(JNIEnv *env, jobject *obj, jstring string1, jstring string2,
-                             jstring string3, jstring string4, jint faceI) {
+                             jstring string3, jstring string4, jstring string5, jint faceI) {
     if (faceI == -1) {
-        VdCameraRender::instance()->onFace(nullptr, nullptr, nullptr, nullptr, -1);
+        VdCameraRender::instance()->onFace(nullptr, nullptr, nullptr, nullptr, nullptr, -1);
     } else if (faceI == 1) {
         char *face = (char *) env->GetStringUTFChars(string1, 0);
         char *eyes = (char *) env->GetStringUTFChars(string2, 0);
         char *nose = (char *) env->GetStringUTFChars(string3, 0);
         char *mouth = (char *) env->GetStringUTFChars(string4, 0);
-        VdCameraRender::instance()->onFace(face, eyes, nose, mouth, 1);
+        VdCameraRender::instance()->onFace(face, eyes, nose, mouth, nullptr, 1);
     } else if (faceI == 2) {
-        VdCameraRender::instance()->onFace(nullptr, nullptr, nullptr, nullptr, 2);
+        VdCameraRender::instance()->onFace(nullptr, nullptr, nullptr, nullptr, nullptr, 2);
     } else if (faceI == 3) {
         char *string = (char *) env->GetStringUTFChars(string1, 0);
-        VdCameraRender::instance()->onFace(string, nullptr, nullptr, nullptr, 3);
+        VdCameraRender::instance()->onFace(string, nullptr, nullptr, nullptr, nullptr, 3);
+    } else if (faceI == 4) {
+        char *face = (char *) env->GetStringUTFChars(string1, 0);
+        char *eyes = (char *) env->GetStringUTFChars(string2, 0);
+        char *nose = (char *) env->GetStringUTFChars(string3, 0);
+        char *mouth = (char *) env->GetStringUTFChars(string4, 0);
+        char *aligment = (char *) env->GetStringUTFChars(string5, 0);
+        VdCameraRender::instance()->onFace(face, eyes, nose, mouth, aligment, 4);
     }
 }
 
@@ -173,14 +180,14 @@ JNINativeMethod JNI_Methods_Player[] = {
         {"native_vdPlayer_onDrawFrame",      "()V",                   (void *) native_vdPlayer_onDrawFrame},
 };
 JNINativeMethod JNI_Methods_Camera[] = {
-        {"native_vdCameraRender_onFace",           "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;I)V", (void *) native_vdCameraRender_onFace},
-        {"native_vdCameraRender_onBuffer",         "(III[B)V",                                                                     (void *) native_vdCameraRender_onBuffer},
-        {"native_vdCameraRender_onBufferCapture",  "()[B",                                                                         (void *) native_vdCameraRender_onBufferCapture},
-        {"native_vdCameraRender_onRotate",         "(FZ)V",                                                                        (void *) native_vdCameraRender_onRotate},
-        {"native_vdCameraRender_onSurfaceCreated", "()V",                                                                          (void *) native_vdCameraRender_onSurfaceCreated},
-        {"native_vdCameraRender_onSurfaceChanged", "(II)V",                                                                        (void *) native_vdCameraRender_onSurfaceChanged},
-        {"native_vdCameraRender_onDrawFrame",      "()V",                                                                          (void *) native_vdCameraRender_onDrawFrame},
-        {"native_vdCameraRender_onRelease",        "()V",                                                                          (void *) native_vdCameraRender_onRelease}
+        {"native_vdCameraRender_onFace",           "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;I)V", (void *) native_vdCameraRender_onFace},
+        {"native_vdCameraRender_onBuffer",         "(III[B)V",                                                                                       (void *) native_vdCameraRender_onBuffer},
+        {"native_vdCameraRender_onBufferCapture",  "()[B",                                                                                           (void *) native_vdCameraRender_onBufferCapture},
+        {"native_vdCameraRender_onRotate",         "(FZ)V",                                                                                          (void *) native_vdCameraRender_onRotate},
+        {"native_vdCameraRender_onSurfaceCreated", "()V",                                                                                            (void *) native_vdCameraRender_onSurfaceCreated},
+        {"native_vdCameraRender_onSurfaceChanged", "(II)V",                                                                                          (void *) native_vdCameraRender_onSurfaceChanged},
+        {"native_vdCameraRender_onDrawFrame",      "()V",                                                                                            (void *) native_vdCameraRender_onDrawFrame},
+        {"native_vdCameraRender_onRelease",        "()V",                                                                                            (void *) native_vdCameraRender_onRelease}
 };
 JNINativeMethod JNI_Methods_Record[] = {
         {"native_vdRecord_onSource",      "(Ljava/lang/String;IIJI)V", (void *) native_vdRecord_onSource},

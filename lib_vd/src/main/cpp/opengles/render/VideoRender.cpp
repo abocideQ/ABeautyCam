@@ -25,7 +25,7 @@ const int Location_Indices[] = {
         0, 1, 2, 1, 3, 2
 };
 
-void VideoRender::onFace(char *s1, char *s2, char *s3, char *s4, int faceI) {
+void VideoRender::onFace(char *s1, char *s2, char *s3, char *s4, char *s5, int faceI) {
     m_Face = faceI;
     if (m_Face == -1) {
     } else if (m_Face == 1) { //opencv
@@ -36,6 +36,9 @@ void VideoRender::onFace(char *s1, char *s2, char *s3, char *s4, int faceI) {
     } else if (m_Face == 3) { //ncnn
         m_FaceNCNNDetection = new FaceNCNNDetection();
         m_FaceNCNNDetection->onModel(s1);
+    } else if (m_Face == 4) { //ncnn
+        m_FaceTrack = new FaceCvTrack();
+        m_FaceTrack->onModelSource(s1, s2, s3, s4, s5);
     }
 }
 
@@ -64,6 +67,8 @@ void VideoRender::onBuffer(int format, int w, int h, int lineSize[3], uint8_t *d
         mFaceCnnDetection->onFacesDetection(format, w, h, data, faces, eyes, noses, mouths);
     } else if (m_Face == 3) {//ncnn
         m_FaceNCNNDetection->onDetect(format, w, h, data, faces, eyes, noses, mouths);
+    } else if (m_Face == 4) {//cvTrack
+        m_FaceTrack->onFacesTrack(format, w, h, data, faces, eyes, noses, mouths);
     }
     VRender *render = new VRender();
     render->pixel = pixel;

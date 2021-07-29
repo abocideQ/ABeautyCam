@@ -171,15 +171,15 @@ const char *ShaderFragment_FBO_NV21_Face =
                 }
                 void main() {
                     vec2 texture = fiTexCoord * fPixelSize;
-                    if (distance(texture, vec2(fEyeLeft.x, fEyeLeft.y)) < 2.0f) {
+                    if (distance(texture, vec2(fEyeLeft.x, fEyeLeft.y)) < 6.0f) {
                         fragColor = vec4(1.0, 1.0, 1.0, 1.0);
-                    } else if (distance(texture, vec2(fEyeRight.x, fEyeRight.y)) < 2.0f) {
+                    } else if (distance(texture, vec2(fEyeRight.x, fEyeRight.y)) < 6.0f) {
                         fragColor = vec4(1.0, 1.0, 1.0, 1.0);
-                    } else if (distance(texture, vec2(fNose.x, fNose.y)) < 2.0f) {
+                    } else if (distance(texture, vec2(fNose.x, fNose.y)) < 6.0f) {
                         fragColor = vec4(1.0, 1.0, 1.0, 1.0);
-                    } else if (distance(texture, vec2(fMouthL.x, fMouthL.y)) < 2.0f) {
+                    } else if (distance(texture, vec2(fMouthL.x, fMouthL.y)) < 6.0f) {
                         fragColor = vec4(1.0, 1.0, 1.0, 1.0);
-                    } else if (distance(texture, vec2(fMouthR.x, fMouthR.y)) < 2.0f) {
+                    } else if (distance(texture, vec2(fMouthR.x, fMouthR.y)) < 6.0f) {
                         fragColor = vec4(1.0, 1.0, 1.0, 1.0);
                     } else {
 //                        vec2 newCoord = eyeScale(fiTexCoord, 1);

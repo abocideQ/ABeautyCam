@@ -17,11 +17,12 @@ import javax.microedition.khronos.opengles.GL10
 @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
 class VdCamera(context: Context) : GLSurfaceView.Renderer {
 
-    private var mFormat = 2 //1.YUV420 2.NV21/12
+    //图像采样格式：1.YUV420 (5~8ms)  2.NV21/12 (1~3ms)
+    private var mFormat = 2
     private var mCameraUse: CameraUse? = null
 
-    //人脸检测
-    private var mFacePosition = 3// 1 opencv 2 faceCNN 3 NCNN
+    //人脸检测方式 :1.opencv(slow) 2.faceCNN(fucking slow) 3.NCNN(normal) 4.opencvTrack(fast but wheres my face)
+    private var mFacePosition = 3
 
     fun setSurface(surface: GLSurfaceView) {
         surface.setEGLContextClientVersion(3)
@@ -111,6 +112,7 @@ class VdCamera(context: Context) : GLSurfaceView.Renderer {
             1 -> onFaceCV(context)
             2 -> onFaceCnn(context)
             3 -> onFaceNCNN(context)
+            4 -> onFaceCVTrack(context)
         }
     }
 
@@ -119,6 +121,7 @@ class VdCamera(context: Context) : GLSurfaceView.Renderer {
         s2: String,
         s3: String,
         s4: String,
+        s5: String,
         faceI: Int
     )
 
@@ -142,12 +145,26 @@ class VdCamera(context: Context) : GLSurfaceView.Renderer {
         val mEyesModel = context.obbDir.absolutePath + "/opencv/haarcascade_eye.xml"
         val mNoseModel = context.obbDir.absolutePath + "/opencv/haarcascade_mcs_nose.xml"
         val mMouthModel = context.obbDir.absolutePath + "/opencv/haarcascade_mcs_mouth.xml"
-        native_vdCameraRender_onFace(mFaceModel, mEyesModel, mNoseModel, mMouthModel, 1)
+        native_vdCameraRender_onFace(
+            mFaceModel,
+            mEyesModel,
+            mNoseModel,
+            mMouthModel,
+            "mAlignmentModel",
+            1
+        )
     }
 
     private fun onFaceCnn(context: Context) {
         CAO.copyAssetsDirToSDCard(context, "image", context.obbDir.absolutePath)
-        native_vdCameraRender_onFace("mFaceModel", "mEyesModel", "mNoseModel", "mMouthModel", 2)
+        native_vdCameraRender_onFace(
+            "mFaceModel",
+            "mEyesModel",
+            "mNoseModel",
+            "mMouthModel",
+            "mAlignmentModel",
+            2
+        )
     }
 
     private fun onFaceNCNN(context: Context) {
@@ -157,7 +174,26 @@ class VdCamera(context: Context) : GLSurfaceView.Renderer {
             " mEyesModel ",
             " mNoseModel ",
             " mMouthModel ",
+            " mAlignmentModel ",
             3
+        )
+    }
+
+    private fun onFaceCVTrack(context: Context) {
+        CAO.copyAssetsDirToSDCard(context, "opencv", context.obbDir.absolutePath)
+        CAO.copyAssetsDirToSDCard(context, "alignment", context.obbDir.absolutePath)
+        val mFaceModel = context.obbDir.absolutePath + "/opencv/haarcascade_frontalface_default.xml"
+        val mEyesModel = context.obbDir.absolutePath + "/opencv/haarcascade_eye.xml"
+        val mNoseModel = context.obbDir.absolutePath + "/opencv/haarcascade_mcs_nose.xml"
+        val mMouthModel = context.obbDir.absolutePath + "/opencv/haarcascade_mcs_mouth.xml"
+        val mAlignmentModel = context.obbDir.absolutePath + "/alignment/seeta_fa_v1.1.bin"
+        native_vdCameraRender_onFace(
+            mFaceModel,
+            mEyesModel,
+            mNoseModel,
+            mMouthModel,
+            mAlignmentModel,
+            4
         )
     }
 }

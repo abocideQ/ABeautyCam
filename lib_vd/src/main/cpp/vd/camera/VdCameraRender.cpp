@@ -2,8 +2,8 @@
 
 extern "C" {
 
-void VdCameraRender::onFace(char *s1, char *s2, char *s3, char *s4, int faceI) {
-    m_Render->onFace(s1, s2, s3, s4, faceI);
+void VdCameraRender::onFace(char *s1, char *s2, char *s3, char *s4, char *s5, int faceI) {
+    m_Render->onFace(s1, s2, s3, s4, s5, faceI);
 }
 
 void VdCameraRender::onBuffer(int format, int w, int h, uint8_t *data) {

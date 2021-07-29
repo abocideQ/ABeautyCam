@@ -72,7 +72,7 @@ int FaceNCNNDetection::onDetect(int format, int w1, int h1, uint8_t *data,
         src.release();
     } else if (format == 4) {
         cv::Mat src(h1 + h1, w1, CV_8UC3, data);
-        cv::cvtColor(src, src, cv::COLOR_RGBA2BGR);
+        cv::cvtColor(src, src, cv::COLOR_RGBA2RGB);
         cv::resize(src, rgb, cv::Size(w1 / DETECT_SCALE, h1 / DETECT_SCALE));
         src.release();
     } else {
