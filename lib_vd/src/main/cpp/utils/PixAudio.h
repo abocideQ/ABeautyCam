@@ -17,8 +17,9 @@ public:
     }
 
     ~AudioFrame() {
-        if (hardCopy && this->data)
+        if (hardCopy && this->data){
             free(this->data);
+        }
         this->data = nullptr;
     }
 

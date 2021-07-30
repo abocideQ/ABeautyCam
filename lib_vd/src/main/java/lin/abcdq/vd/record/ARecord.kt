@@ -3,6 +3,7 @@ package lin.abcdq.vd.record
 import android.media.AudioFormat
 import android.media.AudioRecord
 import android.media.MediaRecorder
+import android.util.Log
 import java.util.concurrent.Executors
 
 internal class ARecord {
@@ -18,28 +19,14 @@ internal class ARecord {
     private var mCall: AudioRecordCall? = null
     private var mInterrupt = false
 
-    fun setCall(call: AudioRecordCall) {
-        mCall = call
-    }
-
-    fun onStart() {
-        mThread.execute { loopStart() }
-    }
-
-    fun onStop() {
-        mInterrupt = true
-        mAudioRecord?.release()
-        mAudioRecord = null
-    }
-
-    private fun loopStart() {
+    init {
         val minBufferSize = AudioRecord.getMinBufferSize(
             DEFAULT_SAMPLE_RATE,
             DEFAULT_CHANNEL_LAYOUT,
             DEFAULT_SAMPLE_FORMAT
         )
         if (AudioRecord.ERROR_BAD_VALUE == minBufferSize) {
-            return
+            Log.e("ARecord", "AudioRecord init error")
         }
         mAudioRecord = AudioRecord(
             MediaRecorder.AudioSource.MIC,
@@ -48,22 +35,33 @@ internal class ARecord {
             DEFAULT_SAMPLE_FORMAT,
             minBufferSize
         )
-        try {
+    }
+
+    fun setCall(call: AudioRecordCall) {
+        mCall = call
+    }
+
+    fun onStart() {
+        mThread.execute {
             mAudioRecord?.startRecording()
-        } catch (e: IllegalStateException) {
-            return
-        }
-        val sampleBuffer = ByteArray(4096)
-        try {
-            while (!Thread.currentThread().isInterrupted && !mInterrupt) {
-                val result: Int = mAudioRecord?.read(sampleBuffer, 0, 4096) ?: 0
-                if (result > 0) {
-                    mCall?.onCall(sampleBuffer)
+            val sampleBuffer = ByteArray(4096)
+            try {
+                while (!Thread.currentThread().isInterrupted && !mInterrupt) {
+                    val result: Int = mAudioRecord?.read(sampleBuffer, 0, 4096) ?: 0
+                    if (result > 0) {
+                        mCall?.onCall(sampleBuffer)
+                    }
                 }
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
-        } catch (e: Exception) {
-            e.printStackTrace()
         }
+    }
+
+    fun onStop() {
+        mInterrupt = true
+        mAudioRecord?.release()
+        mAudioRecord = null
     }
 
     interface AudioRecordCall {

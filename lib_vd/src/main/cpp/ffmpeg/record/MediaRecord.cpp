@@ -83,14 +83,14 @@ void MediaRecord::onBufferVideo(int format, int width, int height, uint8_t *data
     int h = width;
     VideoFrame *frame = new VideoFrame();
     frame->image = PixImageUtils::pix_image_get(format, width, height, data);
-    std::lock_guard<std::mutex> lock(m_Mutex);
+//    std::lock_guard<std::mutex> lock(m_Mutex);
     m_VideoQueue.push(frame);
 }
 
 void MediaRecord::onBufferAudio(AudioFrame *input) {
     if (m_Interrupt) return;
     AudioFrame *frame = new AudioFrame(input->data, input->dataSize);
-    std::lock_guard<std::mutex> lock(m_Mutex);
+//    std::lock_guard<std::mutex> lock(m_Mutex);
     m_AudioQueue.push(frame);
 }
 
@@ -362,7 +362,7 @@ int MediaRecord::codeAFrame(AVOutputStream *stream) {
         frame->pts = stream->m_NextPts;
         stream->m_NextPts += frame->nb_samples;
     }
-    if ((m_AudioQueue.empty() && m_Interrupt) || stream->m_EncodeEnd) {
+    if (m_AudioQueue.empty() && m_Interrupt) {
         frame = nullptr;
         result = 1;
         goto EXIT;
@@ -433,6 +433,7 @@ int MediaRecord::codeAFrame(AVOutputStream *stream) {
 }
 
 void MediaRecord::release() {
+    std::unique_lock<std::mutex> lock(m_Mutex);
     while (!m_VideoQueue.empty()) {
         VideoFrame *frame = m_VideoQueue.front();
         m_VideoQueue.pop();
@@ -444,6 +445,7 @@ void MediaRecord::release() {
         m_AudioQueue.pop();
         delete frame;
     }
+    lock.unlock();
     //Close each codec
     avcodec_free_context(&m_VideoStream.m_CodecCtx);
     av_frame_free(&m_VideoStream.m_Frame);

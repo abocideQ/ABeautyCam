@@ -1,4 +1,4 @@
-#### Android 视频录制/播放/滤镜/人脸 : Camera2 OpenGL OpenSL OpenCV FFmpeg
+#### Android 视频录制/播放/滤镜/人脸/美颜 : Camera2 OpenGL OpenSL OpenCV FFmpeg
 #### 奇怪的小知识?????????????
 ####  Camera高宽数据：
 ```
