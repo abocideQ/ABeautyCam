@@ -33,11 +33,11 @@ class FaceCvTrack {
 public:
     void onModelSource(char *face, char *eye, char *nose, char *mouth, char *alignment);
 
-    void onFacesTrack(int format, int width, int height, uint8_t *data,
-                      std::vector<cv::Rect> &m_faces,
-                      std::vector<cv::Rect> &m_eyes,
-                      std::vector<cv::Rect> &m_noses,
-                      std::vector<cv::Rect> &m_mouths);
+    void onFacesTrack(int format, int width, int height, uint8_t *data, int cId,
+                          std::vector<cv::Rect> &m_faces,
+                          std::vector<cv::Rect> &m_eyes,
+                          std::vector<cv::Rect> &m_noses,
+                          std::vector<cv::Rect> &m_mouths);
 
 private:
     Ptr<DetectionBasedTracker> m_Tracker;

@@ -35,6 +35,7 @@
 
 #include <algorithm>
 #include <map>
+#include <cassert>
 #include <limits>
 #include <cmath>
 
@@ -152,7 +153,7 @@ private:
         int n = indices_length;
 
         int rnd = rand_int(n);
-        CV_DbgAssert(rnd >=0 && rnd < n);
+        assert(rnd >=0 && rnd < n);
 
         centers[0] = dsindices[rnd];
 
@@ -207,7 +208,7 @@ private:
 
         // Choose one random center and set the closestDistSq values
         int index = rand_int(n);
-        CV_DbgAssert(index >=0 && index < n);
+        assert(index >=0 && index < n);
         centers[0] = dsindices[index];
 
         // Computing distance^2 will have the advantage of even higher probability further to pick new centers
@@ -294,7 +295,7 @@ private:
 
         // Choose one random center and set the closestDistSq values
         int index = rand_int(n);
-        CV_DbgAssert(index >=0 && index < n);
+        assert(index >=0 && index < n);
         centers[0] = dsindices[index];
 
         for (int i = 0; i < n; i++) {
@@ -382,9 +383,10 @@ public:
             chooseCenters = &HierarchicalClusteringIndex::GroupWiseCenterChooser;
         }
         else {
-            FLANN_THROW(cv::Error::StsError, "Unknown algorithm for choosing initial centers.");
+            throw FLANNException("Unknown algorithm for choosing initial centers.");
         }
 
+        trees_ = get_param(params,"trees",4);
         root = new NodePtr[trees_];
         indices = new int*[trees_];
 
@@ -404,15 +406,33 @@ public:
      */
     virtual ~HierarchicalClusteringIndex()
     {
+        free_elements();
+
         if (root!=NULL) {
             delete[] root;
         }
 
         if (indices!=NULL) {
-            free_indices();
             delete[] indices;
         }
     }
+
+
+    /**
+     * Release the inner elements of indices[]
+     */
+    void free_elements()
+    {
+        if (indices!=NULL) {
+            for(int i=0; i<trees_; ++i) {
+                if (indices[i]!=NULL) {
+                    delete[] indices[i];
+                    indices[i] = NULL;
+                }
+            }
+        }
+    }
+
 
     /**
      *  Returns size of index.
@@ -446,10 +466,10 @@ public:
     void buildIndex() CV_OVERRIDE
     {
         if (branching_<2) {
-            FLANN_THROW(cv::Error::StsError, "Branching factor must be at least 2");
+            throw FLANNException("Branching factor must be at least 2");
         }
 
-        free_indices();
+        free_elements();
 
         for (int i=0; i<trees_; ++i) {
             indices[i] = new int[size_];
@@ -485,12 +505,13 @@ public:
 
     void loadIndex(FILE* stream) CV_OVERRIDE
     {
+        free_elements();
+
         if (root!=NULL) {
             delete[] root;
         }
 
         if (indices!=NULL) {
-            free_indices();
             delete[] indices;
         }
 
@@ -528,8 +549,7 @@ public:
     void findNeighbors(ResultSet<DistanceType>& result, const ElementType* vec, const SearchParams& searchParams) CV_OVERRIDE
     {
 
-        const int maxChecks = get_param(searchParams,"checks",32);
-        const bool explore_all_trees = get_param(searchParams,"explore_all_trees",false);
+        int maxChecks = get_param(searchParams,"checks",32);
 
         // Priority queue storing intermediate branches in the best-bin-first search
         Heap<BranchSt>* heap = new Heap<BranchSt>((int)size_);
@@ -537,20 +557,18 @@ public:
         std::vector<bool> checked(size_,false);
         int checks = 0;
         for (int i=0; i<trees_; ++i) {
-            findNN(root[i], result, vec, checks, maxChecks, heap, checked, explore_all_trees);
-            if (!explore_all_trees && (checks >= maxChecks) && result.full())
-                break;
+            findNN(root[i], result, vec, checks, maxChecks, heap, checked);
         }
 
         BranchSt branch;
         while (heap->popMin(branch) && (checks<maxChecks || !result.full())) {
             NodePtr node = branch.node;
-            findNN(node, result, vec, checks, maxChecks, heap, checked, false);
+            findNN(node, result, vec, checks, maxChecks, heap, checked);
         }
+        assert(result.full());
 
         delete heap;
 
-        CV_Assert(result.full());
     }
 
     IndexParams getParameters() const CV_OVERRIDE
@@ -631,20 +649,6 @@ private:
     }
 
 
-    /**
-     * Release the inner elements of indices[]
-     */
-    void free_indices()
-    {
-        if (indices!=NULL) {
-            for(int i=0; i<trees_; ++i) {
-                if (indices[i]!=NULL) {
-                    delete[] indices[i];
-                    indices[i] = NULL;
-                }
-            }
-        }
-    }
 
 
     void computeLabels(int* dsindices, int indices_length,  int* centers, int centers_length, int* labels, DistanceType& cost)
@@ -742,11 +746,11 @@ private:
 
 
     void findNN(NodePtr node, ResultSet<DistanceType>& result, const ElementType* vec, int& checks, int maxChecks,
-                Heap<BranchSt>* heap, std::vector<bool>& checked, bool explore_all_trees = false)
+                Heap<BranchSt>* heap, std::vector<bool>& checked)
     {
         if (node->childs==NULL) {
-            if (!explore_all_trees && (checks>=maxChecks) && result.full()) {
-                return;
+            if (checks>=maxChecks) {
+                if (result.full()) return;
             }
             for (int i=0; i<node->size; ++i) {
                 int index = node->indices[i];
@@ -774,7 +778,7 @@ private:
                 }
             }
             delete[] domain_distances;
-            findNN(node->childs[best_index],result,vec, checks, maxChecks, heap, checked, explore_all_trees);
+            findNN(node->childs[best_index],result,vec, checks, maxChecks, heap, checked);
         }
     }
 

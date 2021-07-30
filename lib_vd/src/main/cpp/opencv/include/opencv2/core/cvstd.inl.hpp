@@ -46,7 +46,6 @@
 
 #include <complex>
 #include <ostream>
-#include <sstream>
 
 //! @cond IGNORED
 

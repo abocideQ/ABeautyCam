@@ -21,8 +21,8 @@ class VdCamera(context: Context) : GLSurfaceView.Renderer {
     private var mFormat = 2
     private var mCameraUse: CameraUse? = null
 
-    //人脸检测方式 :1.opencv(slow) 2.faceCNN(fucking slow) 3.NCNN(normal) 4.opencvTrack(fast but wheres my face)
-    private var mFacePosition = 1
+    //人脸检测方式 :1.opencv(slow) 2.faceCNN(fucking slow) 3.NCNN(normal) 4.opencvTrack(fast but opencv face need rotation or cant find face,fuck)
+    private var mFacePosition = 4
 
     fun setSurface(surface: GLSurfaceView) {
         surface.setEGLContextClientVersion(3)

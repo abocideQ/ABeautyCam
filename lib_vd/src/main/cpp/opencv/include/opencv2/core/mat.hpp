@@ -170,9 +170,7 @@ public:
         STD_VECTOR        = 3 << KIND_SHIFT,
         STD_VECTOR_VECTOR = 4 << KIND_SHIFT,
         STD_VECTOR_MAT    = 5 << KIND_SHIFT,
-#if OPENCV_ABI_COMPATIBILITY < 500
-        EXPR              = 6 << KIND_SHIFT,  //!< removed: https://github.com/opencv/opencv/pull/17046
-#endif
+        EXPR              = 6 << KIND_SHIFT,
         OPENGL_BUFFER     = 7 << KIND_SHIFT,
         CUDA_HOST_MEM     = 8 << KIND_SHIFT,
         CUDA_GPU_MAT      = 9 << KIND_SHIFT,
@@ -180,9 +178,7 @@ public:
         STD_VECTOR_UMAT   =11 << KIND_SHIFT,
         STD_BOOL_VECTOR   =12 << KIND_SHIFT,
         STD_VECTOR_CUDA_GPU_MAT = 13 << KIND_SHIFT,
-#if OPENCV_ABI_COMPATIBILITY < 500
-        STD_ARRAY         =14 << KIND_SHIFT,  //!< removed: https://github.com/opencv/opencv/issues/18897
-#endif
+        STD_ARRAY         =14 << KIND_SHIFT,
         STD_ARRAY_MAT     =15 << KIND_SHIFT
     };
 
@@ -569,31 +565,30 @@ struct CV_EXPORTS UMatData
     int allocatorFlags_;
     int mapcount;
     UMatData* originalUMatData;
-    std::shared_ptr<void> allocatorContext;
 };
 CV_ENUM_FLAGS(UMatData::MemoryFlag)
 
 
 struct CV_EXPORTS MatSize
 {
-    explicit MatSize(int* _p) CV_NOEXCEPT;
-    int dims() const CV_NOEXCEPT;
+    explicit MatSize(int* _p);
+    int dims() const;
     Size operator()() const;
     const int& operator[](int i) const;
     int& operator[](int i);
-    operator const int*() const CV_NOEXCEPT;  // TODO OpenCV 4.0: drop this
-    bool operator == (const MatSize& sz) const CV_NOEXCEPT;
-    bool operator != (const MatSize& sz) const CV_NOEXCEPT;
+    operator const int*() const;  // TODO OpenCV 4.0: drop this
+    bool operator == (const MatSize& sz) const;
+    bool operator != (const MatSize& sz) const;
 
     int* p;
 };
 
 struct CV_EXPORTS MatStep
 {
-    MatStep() CV_NOEXCEPT;
-    explicit MatStep(size_t s) CV_NOEXCEPT;
-    const size_t& operator[](int i) const CV_NOEXCEPT;
-    size_t& operator[](int i) CV_NOEXCEPT;
+    MatStep();
+    explicit MatStep(size_t s);
+    const size_t& operator[](int i) const;
+    size_t& operator[](int i);
     operator size_t() const;
     MatStep& operator = (size_t s);
 
@@ -698,16 +693,11 @@ sub-matrices.
     -# Process "foreign" data using OpenCV (for example, when you implement a DirectShow\* filter or
     a processing module for gstreamer, and so on). For example:
     @code
-        Mat process_video_frame(const unsigned char* pixels,
-                                int width, int height, int step)
+        void process_video_frame(const unsigned char* pixels,
+                                 int width, int height, int step)
         {
-            // wrap input buffer
-            Mat img(height, width, CV_8UC3, (unsigned char*)pixels, step);
-
-            Mat result;
-            GaussianBlur(img, result, Size(7, 7), 1.5, 1.5);
-
-            return result;
+            Mat img(height, width, CV_8UC3, pixels, step);
+            GaussianBlur(img, img, Size(7,7), 1.5, 1.5);
         }
     @endcode
     -# Quickly initialize small matrices and/or get a super-fast element access.
@@ -807,7 +797,7 @@ public:
     The constructed matrix can further be assigned to another matrix or matrix expression or can be
     allocated with Mat::create . In the former case, the old content is de-referenced.
      */
-    Mat() CV_NOEXCEPT;
+    Mat();
 
     /** @overload
     @param rows Number of rows in a 2D array.
@@ -2193,7 +2183,7 @@ public:
     typedef MatConstIterator_<_Tp> const_iterator;
 
     //! default constructor
-    Mat_() CV_NOEXCEPT;
+    Mat_();
     //! equivalent to Mat(_rows, _cols, DataType<_Tp>::type)
     Mat_(int _rows, int _cols);
     //! constructor that sets each matrix element to specified value
@@ -2385,7 +2375,7 @@ class CV_EXPORTS UMat
 {
 public:
     //! default constructor
-    UMat(UMatUsageFlags usageFlags = USAGE_DEFAULT) CV_NOEXCEPT;
+    UMat(UMatUsageFlags usageFlags = USAGE_DEFAULT);
     //! constructs 2D matrix of the specified size and type
     // (_type is CV_8UC1, CV_64FC3, CV_32SC(12) etc.)
     UMat(int rows, int cols, int type, UMatUsageFlags usageFlags = USAGE_DEFAULT);
@@ -2406,10 +2396,19 @@ public:
     UMat(const UMat& m, const Rect& roi);
     UMat(const UMat& m, const Range* ranges);
     UMat(const UMat& m, const std::vector<Range>& ranges);
-
-    // FIXIT copyData=false is not implemented, drop this in favor of cv::Mat (OpenCV 5.0)
     //! builds matrix from std::vector with or without copying the data
     template<typename _Tp> explicit UMat(const std::vector<_Tp>& vec, bool copyData=false);
+
+    //! builds matrix from cv::Vec; the data is copied by default
+    template<typename _Tp, int n> explicit UMat(const Vec<_Tp, n>& vec, bool copyData=true);
+    //! builds matrix from cv::Matx; the data is copied by default
+    template<typename _Tp, int m, int n> explicit UMat(const Matx<_Tp, m, n>& mtx, bool copyData=true);
+    //! builds matrix from a 2D point
+    template<typename _Tp> explicit UMat(const Point_<_Tp>& pt, bool copyData=true);
+    //! builds matrix from a 3D point
+    template<typename _Tp> explicit UMat(const Point3_<_Tp>& pt, bool copyData=true);
+    //! builds matrix from comma initializer
+    template<typename _Tp> explicit UMat(const MatCommaInitializer_<_Tp>& commaInitializer);
 
     //! destructor - calls release()
     ~UMat();
@@ -3542,8 +3541,6 @@ public:
 
     Mat cross(const Mat& m) const;
     double dot(const Mat& m) const;
-
-    void swap(MatExpr& b);
 
     const MatOp* op;
     int flags;

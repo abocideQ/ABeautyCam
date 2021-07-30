@@ -160,8 +160,7 @@ class KNNResultSet : public ResultSet<DistanceType>
     DistanceType worst_distance_;
 
 public:
-    KNNResultSet(int capacity_)
-        : indices(NULL), dists(NULL), capacity(capacity_), count(0), worst_distance_(0)
+    KNNResultSet(int capacity_) : capacity(capacity_), count(0)
     {
     }
 
@@ -187,8 +186,6 @@ public:
 
     void addPoint(DistanceType dist, int index) CV_OVERRIDE
     {
-        CV_DbgAssert(indices);
-        CV_DbgAssert(dists);
         if (dist >= worst_distance_) return;
         int i;
         for (i = count; i > 0; --i) {
@@ -199,10 +196,12 @@ public:
 #endif
             {
                 // Check for duplicate indices
-                for (int j = i; dists[j] == dist && j--;) {
+                int j = i - 1;
+                while ((j >= 0) && (dists[j] == dist)) {
                     if (indices[j] == index) {
                         return;
                     }
+                    --j;
                 }
                 break;
             }

@@ -8,7 +8,7 @@ void FaceCvDetection::onModelSource(char *face, char *eye, char *nose, char *mou
     mouth_model = mouth;
 }
 
-void FaceCvDetection::onFacesDetection(int format, int width, int height, uint8_t *data,
+void FaceCvDetection::onFacesDetection(int format, int width, int height, uint8_t *data, int cId,
                                        std::vector<cv::Rect> &m_faces,
                                        std::vector<cv::Rect> &m_eyes,
                                        std::vector<cv::Rect> &m_noses,
@@ -29,6 +29,12 @@ void FaceCvDetection::onFacesDetection(int format, int width, int height, uint8_
     } else {
         return;
     }
+    if (cId == 1) {
+        cv::rotate(gray, gray, cv::ROTATE_90_COUNTERCLOCKWISE); //前置摄像头  逆时针旋转90度
+        cv::flip(gray, gray, 1);//水平镜像  1：水平翻转；0：垂直翻转
+    } else if (cId == 2) {
+        cv::rotate(gray, gray, cv::ROTATE_90_CLOCKWISE);
+    }
     cv::cvtColor(gray, gray, cv::COLOR_RGB2GRAY);//灰度图提高检测速度
     cv::equalizeHist(gray, gray);//直方图均衡化(二值化)
     //face check
@@ -45,29 +51,32 @@ void FaceCvDetection::onFacesDetection(int format, int width, int height, uint8_
     //features check
     int i = 0;
     int size = (int) faces.size();
-    LOGCATE("faceCvDetection = %d", size);
     for (; i < size; i++) {
         cv::Rect face = faces[i];
 //        cv::rectangle(src, face, cv::Scalar(255, 0, 0), 2, 4, 0);//矩形绘制
         cv::Mat ROI = gray(cv::Rect(face.x, face.y, face.width, face.height));//特征检测
-        //eyes
-        std::vector<cv::Rect> eyes;
-        eyesDetection(eye_model, eyes, gray);
-        if (!eyes.empty()) {
-            m_eyes.insert(m_eyes.end(), eyes.begin(), eyes.end());
-        }
-        //nose
+        if (cId == 1) {
+
+        } else if (cId == 2) {
+            //eyes
+            std::vector<cv::Rect> eyes;
+            eyesDetection(eye_model, eyes, gray);
+            if (!eyes.empty()) {
+                m_eyes.insert(m_eyes.end(), eyes.begin(), eyes.end());
+            }
+            //nose
 //        std::vector<cv::Rect> noses;
 //        noseDetection(nose_model, noses, ROI);
 //        if (!noses.empty()) {
 //            m_noses.insert(m_noses.end(), noses.begin(), noses.end());
 //        }
-        //mouth
+            //mouth
 //        std::vector<cv::Rect> mouths;
 //        mouthDetection(mouth_model, mouths, ROI);
 //        if (!mouths.empty()) {
 //            m_mouths.insert(m_mouths.end(), mouths.begin(), mouths.end());
 //        }
+        }
     }
     gray.release();
 }

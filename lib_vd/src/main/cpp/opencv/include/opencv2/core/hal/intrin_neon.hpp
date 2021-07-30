@@ -62,22 +62,6 @@ CV_CPU_OPTIMIZATION_HAL_NAMESPACE_BEGIN
 #define CV_SIMD128_64F 0
 #endif
 
-// The following macro checks if the code is being compiled for the
-// AArch64 execution state of Armv8, to enable the 128-bit
-// intrinsics. The macro `__ARM_64BIT_STATE` is the one recommended by
-// the Arm C Language Extension (ACLE) specifications [1] to check the
-// availability of 128-bit intrinsics, and it is supporrted by clang
-// and gcc. The macro `_M_ARM64` is the equivalent one for Microsoft
-// Visual Studio [2] .
-//
-// [1] https://developer.arm.com/documentation/101028/0012/13--Advanced-SIMD--Neon--intrinsics
-// [2] https://docs.microsoft.com/en-us/cpp/preprocessor/predefined-macros
-#if defined(__ARM_64BIT_STATE) || defined(_M_ARM64)
-#define CV_NEON_AARCH64 1
-#else
-#define CV_NEON_AARCH64 0
-#endif
-
 // TODO
 #define CV_NEON_DOT 0
 
@@ -742,61 +726,41 @@ inline v_float64x2 v_dotprod_expand(const v_int32x4& a,   const v_int32x4& b,
 // 16 >> 32
 inline v_int32x4 v_dotprod_fast(const v_int16x8& a, const v_int16x8& b)
 {
-#if CV_NEON_AARCH64
-    int32x4_t p = vmull_s16(vget_low_s16(a.val), vget_low_s16(b.val));
-    return v_int32x4(vmlal_high_s16(p, a.val, b.val));
-#else
     int16x4_t a0 = vget_low_s16(a.val);
     int16x4_t a1 = vget_high_s16(a.val);
     int16x4_t b0 = vget_low_s16(b.val);
     int16x4_t b1 = vget_high_s16(b.val);
     int32x4_t p = vmull_s16(a0, b0);
     return v_int32x4(vmlal_s16(p, a1, b1));
-#endif
 }
 inline v_int32x4 v_dotprod_fast(const v_int16x8& a, const v_int16x8& b, const v_int32x4& c)
 {
-#if CV_NEON_AARCH64
-    int32x4_t p = vmlal_s16(c.val, vget_low_s16(a.val), vget_low_s16(b.val));
-    return v_int32x4(vmlal_high_s16(p, a.val, b.val));
-#else
     int16x4_t a0 = vget_low_s16(a.val);
     int16x4_t a1 = vget_high_s16(a.val);
     int16x4_t b0 = vget_low_s16(b.val);
     int16x4_t b1 = vget_high_s16(b.val);
     int32x4_t p = vmlal_s16(c.val, a0, b0);
     return v_int32x4(vmlal_s16(p, a1, b1));
-#endif
 }
 
 // 32 >> 64
 inline v_int64x2 v_dotprod_fast(const v_int32x4& a, const v_int32x4& b)
 {
-#if CV_NEON_AARCH64
-    int64x2_t p = vmull_s32(vget_low_s32(a.val), vget_low_s32(b.val));
-    return v_int64x2(vmlal_high_s32(p, a.val, b.val));
-#else
     int32x2_t a0 = vget_low_s32(a.val);
     int32x2_t a1 = vget_high_s32(a.val);
     int32x2_t b0 = vget_low_s32(b.val);
     int32x2_t b1 = vget_high_s32(b.val);
     int64x2_t p = vmull_s32(a0, b0);
     return v_int64x2(vmlal_s32(p, a1, b1));
-#endif
 }
 inline v_int64x2 v_dotprod_fast(const v_int32x4& a, const v_int32x4& b, const v_int64x2& c)
 {
-#if CV_NEON_AARCH64
-    int64x2_t p = vmlal_s32(c.val, vget_low_s32(a.val), vget_low_s32(b.val));
-    return v_int64x2(vmlal_high_s32(p, a.val, b.val));
-#else
     int32x2_t a0 = vget_low_s32(a.val);
     int32x2_t a1 = vget_high_s32(a.val);
     int32x2_t b0 = vget_low_s32(b.val);
     int32x2_t b1 = vget_high_s32(b.val);
     int64x2_t p = vmlal_s32(c.val, a0, b0);
     return v_int64x2(vmlal_s32(p, a1, b1));
-#endif
 }
 
 // 8 >> 32
@@ -1277,20 +1241,6 @@ inline int v_reduce_sum(const v_int16x8& a)
     return vget_lane_s32(vpadd_s32(t1, t1), 0);
 }
 
-#define OPENCV_HAL_IMPL_NEON_REDUCE_OP_16(_Tpvec, _Tpnvec, scalartype, func, vectorfunc, suffix) \
-inline scalartype v_reduce_##func(const _Tpvec& a) \
-{ \
-    _Tpnvec##_t a0 = vp##vectorfunc##_##suffix(vget_low_##suffix(a.val), vget_high_##suffix(a.val)); \
-    a0 = vp##vectorfunc##_##suffix(a0, a0); \
-    a0 = vp##vectorfunc##_##suffix(a0, a0); \
-    return (scalartype)vget_lane_##suffix(vp##vectorfunc##_##suffix(a0, a0),0); \
-}
-
-OPENCV_HAL_IMPL_NEON_REDUCE_OP_16(v_uint8x16, uint8x8, uchar, max, max, u8)
-OPENCV_HAL_IMPL_NEON_REDUCE_OP_16(v_uint8x16, uint8x8, uchar, min, min, u8)
-OPENCV_HAL_IMPL_NEON_REDUCE_OP_16(v_int8x16, int8x8, schar, max, max, s8)
-OPENCV_HAL_IMPL_NEON_REDUCE_OP_16(v_int8x16, int8x8, schar, min, min, s8)
-
 #define OPENCV_HAL_IMPL_NEON_REDUCE_OP_8(_Tpvec, _Tpnvec, scalartype, func, vectorfunc, suffix) \
 inline scalartype v_reduce_##func(const _Tpvec& a) \
 { \
@@ -1299,10 +1249,10 @@ inline scalartype v_reduce_##func(const _Tpvec& a) \
     return (scalartype)vget_lane_##suffix(vp##vectorfunc##_##suffix(a0, a0),0); \
 }
 
-OPENCV_HAL_IMPL_NEON_REDUCE_OP_8(v_uint16x8, uint16x4, ushort, max, max, u16)
-OPENCV_HAL_IMPL_NEON_REDUCE_OP_8(v_uint16x8, uint16x4, ushort, min, min, u16)
-OPENCV_HAL_IMPL_NEON_REDUCE_OP_8(v_int16x8, int16x4, short, max, max, s16)
-OPENCV_HAL_IMPL_NEON_REDUCE_OP_8(v_int16x8, int16x4, short, min, min, s16)
+OPENCV_HAL_IMPL_NEON_REDUCE_OP_8(v_uint16x8, uint16x4, unsigned int, max, max, u16)
+OPENCV_HAL_IMPL_NEON_REDUCE_OP_8(v_uint16x8, uint16x4, unsigned int, min, min, u16)
+OPENCV_HAL_IMPL_NEON_REDUCE_OP_8(v_int16x8, int16x4, int, max, max, s16)
+OPENCV_HAL_IMPL_NEON_REDUCE_OP_8(v_int16x8, int16x4, int, min, min, s16)
 
 #define OPENCV_HAL_IMPL_NEON_REDUCE_OP_4(_Tpvec, _Tpnvec, scalartype, func, vectorfunc, suffix) \
 inline scalartype v_reduce_##func(const _Tpvec& a) \
@@ -1328,7 +1278,7 @@ inline int64 v_reduce_sum(const v_int64x2& a)
 #if CV_SIMD128_64F
 inline double v_reduce_sum(const v_float64x2& a)
 {
-    return vaddvq_f64(a.val);
+    return vgetq_lane_f64(a.val, 0) + vgetq_lane_f64(a.val, 1);
 }
 #endif
 
@@ -1539,26 +1489,6 @@ OPENCV_HAL_IMPL_NEON_SELECT(v_float32x4, f32, u32)
 OPENCV_HAL_IMPL_NEON_SELECT(v_float64x2, f64, u64)
 #endif
 
-#if CV_NEON_AARCH64
-#define OPENCV_HAL_IMPL_NEON_EXPAND(_Tpvec, _Tpwvec, _Tp, suffix) \
-inline void v_expand(const _Tpvec& a, _Tpwvec& b0, _Tpwvec& b1) \
-{ \
-    b0.val = vmovl_##suffix(vget_low_##suffix(a.val)); \
-    b1.val = vmovl_high_##suffix(a.val); \
-} \
-inline _Tpwvec v_expand_low(const _Tpvec& a) \
-{ \
-    return _Tpwvec(vmovl_##suffix(vget_low_##suffix(a.val))); \
-} \
-inline _Tpwvec v_expand_high(const _Tpvec& a) \
-{ \
-    return _Tpwvec(vmovl_high_##suffix(a.val)); \
-} \
-inline _Tpwvec v_load_expand(const _Tp* ptr) \
-{ \
-    return _Tpwvec(vmovl_##suffix(vld1_##suffix(ptr))); \
-}
-#else
 #define OPENCV_HAL_IMPL_NEON_EXPAND(_Tpvec, _Tpwvec, _Tp, suffix) \
 inline void v_expand(const _Tpvec& a, _Tpwvec& b0, _Tpwvec& b1) \
 { \
@@ -1577,7 +1507,6 @@ inline _Tpwvec v_load_expand(const _Tp* ptr) \
 { \
     return _Tpwvec(vmovl_##suffix(vld1_##suffix(ptr))); \
 }
-#endif
 
 OPENCV_HAL_IMPL_NEON_EXPAND(v_uint8x16, v_uint16x8, uchar, u8)
 OPENCV_HAL_IMPL_NEON_EXPAND(v_int8x16, v_int16x8, schar, s8)
@@ -2200,12 +2129,10 @@ inline v_float32x4 v_lut(const float* tab, const int* idx)
 }
 inline v_float32x4 v_lut_pairs(const float* tab, const int* idx)
 {
-    typedef uint64 CV_DECL_ALIGNED(1) unaligned_uint64;
-
     uint64 CV_DECL_ALIGNED(32) elems[2] =
     {
-        *(unaligned_uint64*)(tab + idx[0]),
-        *(unaligned_uint64*)(tab + idx[1])
+        *(uint64*)(tab + idx[0]),
+        *(uint64*)(tab + idx[1])
     };
     return v_float32x4(vreinterpretq_f32_u64(vld1q_u64(elems)));
 }

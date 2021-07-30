@@ -33,6 +33,7 @@
 
 //! @cond IGNORED
 
+#include "general.h"
 #include "nn_index.h"
 #include "kdtree_index.h"
 #include "kmeans_index.h"

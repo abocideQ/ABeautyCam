@@ -21,7 +21,7 @@ void FaceCvTrack::onModelSource(char *face, char *eye, char *nose, char *mouth, 
     m_Alignment = makePtr<seeta::FaceAlignment>(alignment_model);
 }
 
-void FaceCvTrack::onFacesTrack(int format, int width, int height, uint8_t *data,
+void FaceCvTrack::onFacesTrack(int format, int width, int height, uint8_t *data, int cId,
                                std::vector<cv::Rect> &m_faces,
                                std::vector<cv::Rect> &m_eyes,
                                std::vector<cv::Rect> &m_noses,
@@ -42,6 +42,12 @@ void FaceCvTrack::onFacesTrack(int format, int width, int height, uint8_t *data,
     } else {
         return;
     }
+    if (cId == 1) {
+        rotate(gray, gray, cv::ROTATE_90_COUNTERCLOCKWISE); //前置摄像头  逆时针旋转90度
+    } else if (cId == 2) {
+        rotate(gray, gray, ROTATE_90_CLOCKWISE);
+        flip(gray, gray, 1);//水平镜像  1：水平翻转；0：垂直翻转
+    }
     cv::cvtColor(gray, gray, cv::COLOR_RGB2GRAY);//灰度图提高检测速度
     cv::equalizeHist(gray, gray);//直方图均衡化(二值化)
     //face check
@@ -49,17 +55,11 @@ void FaceCvTrack::onFacesTrack(int format, int width, int height, uint8_t *data,
     m_eyes.clear();
     m_noses.clear();
     m_mouths.clear();
-    //检测
-//    m_Tracker->process(gray);
-    //结果
     vector<Rect> faces;
-//    m_Tracker->getObjects(faces);
-    if (face_model != nullptr) {
-        faceCascade.load(face_model);
-        face_model = nullptr;
-    } else{
-        faceCascade.detectMultiScale(gray, faces, 1.1f, 3, 0, cv::Size(50, 50));
-    }
+    //检测
+    m_Tracker->process(gray);
+    //结果
+    m_Tracker->getObjects(faces);
     if (faces.empty()) {
         return;
     }
@@ -67,27 +67,45 @@ void FaceCvTrack::onFacesTrack(int format, int width, int height, uint8_t *data,
     seeta::FacialLandmark landmark[5];
     int i = 0;
     int size = (int) faces.size();
-    LOGCATE("============= faces %d", size);
     for (; i < size; i++) {
         cv::Rect face = faces[i];
-//        //faceinfo
-//        seeta::FaceInfo faceInfo;
-//        seeta::Rect bbox;
-//        bbox.x = face.x;
-//        bbox.y = face.y;
-//        bbox.width = face.width;
-//        bbox.height = face.height;
-//        faceInfo.bbox = bbox;
-//        //imagedata
-//        seeta::ImageData gray_im(gray.cols, gray.rows);
-//        gray_im.data = gray.data;
-//        //landmark
-//        m_Alignment->PointDetectLandmarks(gray_im, faceInfo, landmark);
-//        cv::Rect eyeL(landmark[0].x, landmark[0].y, 10.0f, 10.0f);
-//        cv::Rect eyeR(landmark[1].x, landmark[1].y, 10.0f, 10.0f);
-//        m_eyes.push_back(eyeL);
-//        m_eyes.push_back(eyeR);
-//        return;
+        //faceinfo
+        seeta::FaceInfo faceInfo;
+        seeta::Rect bbox;
+        bbox.x = face.x;
+        bbox.y = face.y;
+        bbox.width = face.width;
+        bbox.height = face.height;
+        faceInfo.bbox = bbox;
+        //imagedata
+        seeta::ImageData gray_im(gray.cols, gray.rows);
+        gray_im.data = gray.data;
+        //landmark
+        m_Alignment->PointDetectLandmarks(gray_im, faceInfo, landmark);
+        if (cId == 1) {
+            cv::Rect eyeL(width - landmark[0].y, landmark[0].x, 10.0f, 10.0f);
+            cv::Rect eyeR(width - landmark[1].y, landmark[1].x, 10.0f, 10.0f);
+            m_eyes.push_back(eyeL);
+            m_eyes.push_back(eyeR);
+            cv::Rect nose(width - landmark[2].y, landmark[2].x, 10.0f, 10.0f);
+            m_noses.push_back(nose);
+            cv::Rect mouthL(width - landmark[3].y, landmark[3].x, 10.0f, 10.0f);
+            cv::Rect mouthR(width - landmark[4].y, landmark[4].x, 10.0f, 10.0f);
+            m_mouths.push_back(mouthL);
+            m_mouths.push_back(mouthR);
+        } else if (cId == 2) {
+            cv::Rect eyeL(landmark[0].y, landmark[0].x, 10.0f, 10.0f);
+            cv::Rect eyeR(landmark[1].y, landmark[1].x, 10.0f, 10.0f);
+            m_eyes.push_back(eyeL);
+            m_eyes.push_back(eyeR);
+            cv::Rect nose(landmark[2].y, landmark[2].x, 10.0f, 10.0f);
+            m_noses.push_back(nose);
+            cv::Rect mouthL(landmark[3].y, landmark[3].x, 10.0f, 10.0f);
+            cv::Rect mouthR(landmark[4].y, landmark[4].x, 10.0f, 10.0f);
+            m_mouths.push_back(mouthL);
+            m_mouths.push_back(mouthR);
+        }
+        return;
     }
     gray.release();
 }

@@ -67,12 +67,14 @@ internal class CameraWrap(context: Context) {
     fun openCamera(facing: String, surface: Surface?) {
         initHandler()
         mPreviewReader = ImageReader.newInstance(
-            mPreviewSize?.width ?: 1, mPreviewSize?.height ?: 1, IMAGE_READER_FORMAT, 2
+            mPreviewSize?.width ?: 1, mPreviewSize?.height ?: 1, IMAGE_READER_FORMAT, 6
         )
         mPreviewReader?.setOnImageAvailableListener(
             {
-                val image: Image? = it.acquireLatestImage()
+                val image: Image? = it.acquireNextImage()
+//                val image: Image? = it.acquireLatestImage()
                 if (image != null) {
+//                    val startTime = System.currentTimeMillis() // 获取开始时间
                     if (IMAGE_READER_FORMAT == ImageFormat.YUV_420_888) {
                         when (IMAGE_FORMAT) {
                             ImageFormat.YUV_420_888 -> {
@@ -97,6 +99,8 @@ internal class CameraWrap(context: Context) {
                                 )
                             }
                         }
+//                        val endTime = System.currentTimeMillis() // 获取结束时间
+//                        Log.e("camera acc ", "时间： " + (endTime - startTime) + "ms")
                     }
                     image.close()
                 }
@@ -258,8 +262,8 @@ internal class CameraWrap(context: Context) {
     private var mCameraDevice: CameraDevice? = null
     private var mCameraRequest: CaptureRequest? = null
     private var mCameraSession: CameraCaptureSession? = null
-    private val mDefaultPreviewSize = Size(1280, 720)
-    private val mDefaultCaptureSize = Size(1280, 720)
+    private val mDefaultPreviewSize = Size(640, 480)
+    private val mDefaultCaptureSize = Size(640, 480)
     private var mPreviewSize: Size? = null
     private var mCaptureSize: Size? = null
 

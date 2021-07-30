@@ -57,18 +57,24 @@ void VideoRender::onBuffer(int format, int w, int h, int lineSize[3], uint8_t *d
     } else {
         pixel = PixImageUtils::pix_image_get(format, w, h, lineSize, &data);
     }
+    int cId = 0;
+    if (m_ModelRot == 0.0f) {
+        cId = 2;
+    } else {
+        cId = 1;
+    }
     std::vector<cv::Rect> faces;
     std::vector<cv::Rect> eyes;
     std::vector<cv::Rect> noses;
     std::vector<cv::Rect> mouths;
     if (m_Face == 1) {//opencv
-        m_FaceCvDetection->onFacesDetection(format, w, h, data, faces, eyes, noses, mouths);
+        m_FaceCvDetection->onFacesDetection(format, w, h, data, cId, faces, eyes, noses, mouths);
     } else if (m_Face == 2) {//facecnn
         mFaceCnnDetection->onFacesDetection(format, w, h, data, faces, eyes, noses, mouths);
     } else if (m_Face == 3) {//ncnn
         m_FaceNCNNDetection->onDetect(format, w, h, data, faces, eyes, noses, mouths);
     } else if (m_Face == 4) {//cvTrack
-        m_FaceTrack->onFacesTrack(format, w, h, data, faces, eyes, noses, mouths);
+        m_FaceTrack->onFacesTrack(format, w, h, data, cId, faces, eyes, noses, mouths);
     }
     VRender *render = new VRender();
     render->pixel = pixel;
@@ -280,14 +286,19 @@ void VideoRender::onDrawFrame() {
         glUniform1i(textureVU, 1);
         GLfloat size = glGetUniformLocation(m_Program_Fbo_NV21_Face, "fPixelSize");
         glUniform2f(size, width, height);
+        GLfloat scale = glGetUniformLocation(m_Program_Fbo_NV21_Face, "fEyeScale");
+        GLfloat radius = glGetUniformLocation(m_Program_Fbo_NV21_Face, "fEyeRadius");
+        GLfloat left = glGetUniformLocation(m_Program_Fbo_NV21_Face, "fEyeLeft");
+        GLfloat right = glGetUniformLocation(m_Program_Fbo_NV21_Face, "fEyeRight");
+        GLfloat nose = glGetUniformLocation(m_Program_Fbo_NV21_Face, "fNose");
+        GLfloat mouthL = glGetUniformLocation(m_Program_Fbo_NV21_Face, "fMouthL");
+        GLfloat mouthR = glGetUniformLocation(m_Program_Fbo_NV21_Face, "fMouthR");
+        glUniform2f(left, 0.0f, 0.0f);
+        glUniform2f(right, 0.0f, 0.0f);
+        glUniform2f(nose, 0.0f, 0.0f);
+        glUniform2f(mouthL, 0.0f, 0.0f);
+        glUniform2f(mouthR, 0.0f, 0.0f);
         if (!faces.empty()) {
-            GLfloat scale = glGetUniformLocation(m_Program_Fbo_NV21_Face, "fEyeScale");
-            GLfloat radius = glGetUniformLocation(m_Program_Fbo_NV21_Face, "fEyeRadius");
-            GLfloat left = glGetUniformLocation(m_Program_Fbo_NV21_Face, "fEyeLeft");
-            GLfloat right = glGetUniformLocation(m_Program_Fbo_NV21_Face, "fEyeRight");
-            GLfloat nose = glGetUniformLocation(m_Program_Fbo_NV21_Face, "fNose");
-            GLfloat mouthL = glGetUniformLocation(m_Program_Fbo_NV21_Face, "fMouthL");
-            GLfloat mouthR = glGetUniformLocation(m_Program_Fbo_NV21_Face, "fMouthR");
             if (!eyes.empty()) {
                 glUniform1f(scale, 2.0f);
                 glUniform1f(radius, 1.0f);

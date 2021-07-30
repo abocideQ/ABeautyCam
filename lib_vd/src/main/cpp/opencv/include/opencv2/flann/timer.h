@@ -60,7 +60,6 @@ public:
      * Constructor.
      */
     StartStopTimer()
-        : startTime(0)
     {
         reset();
     }

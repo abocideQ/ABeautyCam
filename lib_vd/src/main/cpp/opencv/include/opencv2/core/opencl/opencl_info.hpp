@@ -62,7 +62,7 @@ static String getDeviceTypeString(const cv::ocl::Device& device)
         }
     }
 
-    return "unknown";
+    return "unkown";
 }
 } // namespace
 

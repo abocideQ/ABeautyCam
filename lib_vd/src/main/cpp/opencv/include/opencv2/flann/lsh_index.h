@@ -38,10 +38,12 @@
 //! @cond IGNORED
 
 #include <algorithm>
+#include <cassert>
 #include <cstring>
 #include <map>
 #include <vector>
 
+#include "general.h"
 #include "nn_index.h"
 #include "matrix.h"
 #include "result_set.h"
@@ -51,19 +53,14 @@
 #include "random.h"
 #include "saving.h"
 
-#ifdef _MSC_VER
-#pragma warning(push)
-#pragma warning(disable: 4702) //disable unreachable code
-#endif
-
 namespace cvflann
 {
 
 struct LshIndexParams : public IndexParams
 {
-    LshIndexParams(int table_number = 12, int key_size = 20, int multi_probe_level = 2)
+    LshIndexParams(unsigned int table_number = 12, unsigned int key_size = 20, unsigned int multi_probe_level = 2)
     {
-        (*this)["algorithm"] = FLANN_INDEX_LSH;
+        (* this)["algorithm"] = FLANN_INDEX_LSH;
         // The number of hash tables to use
         (*this)["table_number"] = table_number;
         // The length of the key in the hash tables
@@ -74,9 +71,9 @@ struct LshIndexParams : public IndexParams
 };
 
 /**
- * Locality-sensitive hashing  index
+ * Randomized kd-tree index
  *
- * Contains the tables and other information for indexing a set of points
+ * Contains the k-d trees and other information for indexing a set of points
  * for nearest-neighbor matching.
  */
 template<typename Distance>
@@ -97,9 +94,9 @@ public:
     {
         // cv::flann::IndexParams sets integer params as 'int', so it is used with get_param
         // in place of 'unsigned int'
-        table_number_ = get_param(index_params_,"table_number",12);
-        key_size_ = get_param(index_params_,"key_size",20);
-        multi_probe_level_ = get_param(index_params_,"multi_probe_level",2);
+        table_number_ = (unsigned int)get_param<int>(index_params_,"table_number",12);
+        key_size_ = (unsigned int)get_param<int>(index_params_,"key_size",20);
+        multi_probe_level_ = (unsigned int)get_param<int>(index_params_,"multi_probe_level",2);
 
         feature_size_ = (unsigned)dataset_.cols;
         fill_xor_mask(0, key_size_, multi_probe_level_, xor_masks_);
@@ -115,7 +112,7 @@ public:
     void buildIndex() CV_OVERRIDE
     {
         tables_.resize(table_number_);
-        for (int i = 0; i < table_number_; ++i) {
+        for (unsigned int i = 0; i < table_number_; ++i) {
             lsh::LshTable<ElementType>& table = tables_[i];
             table = lsh::LshTable<ElementType>(feature_size_, key_size_);
 
@@ -194,11 +191,11 @@ public:
      */
     virtual void knnSearch(const Matrix<ElementType>& queries, Matrix<int>& indices, Matrix<DistanceType>& dists, int knn, const SearchParams& params) CV_OVERRIDE
     {
-        CV_Assert(queries.cols == veclen());
-        CV_Assert(indices.rows >= queries.rows);
-        CV_Assert(dists.rows >= queries.rows);
-        CV_Assert(int(indices.cols) >= knn);
-        CV_Assert(int(dists.cols) >= knn);
+        assert(queries.cols == veclen());
+        assert(indices.rows >= queries.rows);
+        assert(dists.rows >= queries.rows);
+        assert(int(indices.cols) >= knn);
+        assert(int(dists.cols) >= knn);
 
 
         KNNUniqueResultSet<DistanceType> resultSet(knn);
@@ -381,11 +378,11 @@ private:
     IndexParams index_params_;
 
     /** table number */
-    int table_number_;
+    unsigned int table_number_;
     /** key size */
-    int key_size_;
+    unsigned int key_size_;
     /** How far should we look for neighbors in multi-probe LSH */
-    int multi_probe_level_;
+    unsigned int multi_probe_level_;
 
     /** The XOR masks to apply to a key to get the neighboring buckets */
     std::vector<lsh::BucketKey> xor_masks_;
@@ -393,10 +390,6 @@ private:
     Distance distance_;
 };
 }
-
-#ifdef _MSC_VER
-#pragma warning(pop)
-#endif
 
 //! @endcond
 

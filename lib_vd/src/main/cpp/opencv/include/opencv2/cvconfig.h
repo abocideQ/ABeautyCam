@@ -13,6 +13,9 @@
 /* Compile for 'real' NVIDIA GPU architectures */
 #define CUDA_ARCH_BIN ""
 
+/* Create PTX or BIN for 1.0 compute capability */
+/* #undef CUDA_ARCH_BIN_OR_PTX_10 */
+
 /* NVIDIA GPU features are used */
 #define CUDA_ARCH_FEATURES ""
 
@@ -78,8 +81,7 @@
 #define HAVE_IPP_IW_LL
 
 /* JPEG-2000 codec */
-#define HAVE_OPENJPEG
-/* #undef HAVE_JASPER */
+#define HAVE_JASPER
 
 /* IJG JPEG codec */
 #define HAVE_JPEG
@@ -92,8 +94,6 @@
 
 /* NVIDIA Video Decoding API*/
 /* #undef HAVE_NVCUVID */
-/* #undef HAVE_NVCUVID_HEADER */
-/* #undef HAVE_DYNLINK_NVCUVID_HEADER */
 
 /* NVIDIA Video Encoding API*/
 /* #undef HAVE_NVCUVENC */
