@@ -1,6 +1,9 @@
-#### Android 视频录制/播放/滤镜/人脸 : Camera2 OpenGL OpenSl OpenCv FFmpeg
+#### Android 视频录制/播放/滤镜/人脸 : Camera2 OpenGL OpenSL OpenCV FFmpeg
+#### 奇怪的小知识?????????????
+####  Camera高宽数据：
 ```
-Camera2提供的高宽 与 实际相反 , 利用 fbo旋转(横竖 + 镜像) + 互换高宽 得到正常图像与数据
+Camera2 预览数据"高宽"与实际相反 
+利用"fbo(frameBufferObject)" -> 矩阵旋转(横竖翻转 + 镜像翻转) + 窗口高宽互换 -> 正常图像+数据
 
 矩阵旋转
 matrix = projection * view * model;
@@ -9,7 +12,6 @@ matrix = projection * view * model;
 glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, height, width, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
 glViewport(0, 0, height, width); 
 ```
-#### 奇怪的小知识?????????????
 #### 视频常用编码格式：
 ```
 JPEG
