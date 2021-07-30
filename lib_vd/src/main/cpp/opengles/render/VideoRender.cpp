@@ -301,17 +301,15 @@ void VideoRender::onDrawFrame() {
         if (!faces.empty()) {
             if (!eyes.empty()) {
                 glUniform1f(scale, 2.0f);
-                glUniform1f(radius, 1.0f);
-                //参考 586 410
-                if (m_Face == 1) {
-                    glUniform2f(left, eyes[0].x + eyes[0].width / 2,
-                                eyes[0].y + (eyes[0].height / 2));
-                    glUniform2f(right, eyes[1].x + (eyes[1].width / 2),
-                                eyes[1].y + (eyes[1].height / 2));
+                glUniform1f(radius, faces[0].width / 10.0f);
+                float offset = 0.0f;
+                if (m_ModelRot == 0.0f) {
+                    offset = -1.0f;
                 } else {
-                    glUniform2f(left, eyes[0].x, eyes[0].y);
-                    glUniform2f(right, eyes[1].x, eyes[1].y);
+                    offset = 1.0f;
                 }
+                glUniform2f(left, eyes[0].x + offset, eyes[0].y);
+                glUniform2f(right, eyes[1].x + offset, eyes[1].y);
             }
             if (!noses.empty()) {
                 glUniform2f(nose, noses[0].x, noses[0].y);

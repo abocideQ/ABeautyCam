@@ -143,31 +143,18 @@ const char *ShaderFragment_FBO_NV21_Face =
                 uniform vec2 fMouthR;
                 uniform float fEyeScale;
                 uniform float fEyeRadius;
-                vec2 eyeScale(vec2 texCoord, int eye) {
-                    vec2 result = texCoord;
-                    vec2 current = result * fPixelSize;
-                    if (eye == 1) { //左眼
-                        float distance = distance(current, fEyeLeft);
-                        if (distance < fEyeRadius) {
-                            float gamma = 1.0 - fEyeScale *
-                                                pow(smoothstep(0.0, 1.0, distance / fEyeRadius) -
-                                                    1.0,
-                                                    2.0);
-                            result = fEyeLeft + gamma * (current - fEyeLeft);
-                            result = result / fPixelSize;
-                        }
-                    } else {
-                        float distance = distance(current, fEyeRight);
-                        if (distance < fEyeRadius) {
-                            float gamma = 1.0 - fEyeScale *
-                                                pow(smoothstep(0.0, 1.0, distance / fEyeRadius) -
-                                                    1.0,
-                                                    2.0);
-                            result = fEyeRight + gamma * (current - fEyeRight);
-                            result = result / fPixelSize;
-                        }
+                vec2 eyeScale(vec2 texCoord, vec2 eyeTex) {
+                    vec2 resultTex = texCoord;
+                    vec2 pixelTex = resultTex * fPixelSize;
+                    float distance = distance(pixelTex, eyeTex);
+                    if (distance < fEyeRadius) {
+                        float gamma = pow(smoothstep(0.0, 1.0, distance / fEyeRadius) - 1.0, 2.0);
+                        gamma = fEyeScale * gamma;
+                        gamma = 1.0 - gamma;
+                        resultTex = eyeTex + gamma * (pixelTex - eyeTex);
+                        resultTex = resultTex / fPixelSize;
                     }
-                    return result;
+                    return resultTex;
                 }
                 void main() {
 //                    vec2 texture = fiTexCoord * fPixelSize;
@@ -184,8 +171,8 @@ const char *ShaderFragment_FBO_NV21_Face =
 //                    } else {
 //                        fragColor = NV21toRGB(fiTexCoord);
 //                    }
-                    vec2 newCoord = eyeScale(fiTexCoord, 1);
-                    newCoord = eyeScale(newCoord, 2);
+                    vec2 newCoord = eyeScale(fiTexCoord, fEyeLeft);
+                    newCoord = eyeScale(newCoord, fEyeRight);
                     fragColor = NV21toRGB(newCoord);
                 }
         );

@@ -1,13 +1,4 @@
-#### 视频常用编码格式：
-```
-JPEG
-MPEG
-H.263
-MPEG-4
-H.264/AVC
-H.265/HEVC
-```
-#### Android 视频录制 : Camera2 OpenGL FFmpeg
+#### Android 视频录制/播放/滤镜/人脸 : Camera2 OpenGL OpenSl OpenCv FFmpeg
 ```
 Camera2提供的高宽 与 实际相反 , 利用 fbo旋转(横竖 + 镜像) + 互换高宽 得到正常图像与数据
 
@@ -18,7 +9,16 @@ matrix = projection * view * model;
 glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, height, width, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
 glViewport(0, 0, height, width); 
 ```
-
+#### ?????????????
+#### 视频常用编码格式：
+```
+JPEG
+MPEG
+H.263
+MPEG-4
+H.264/AVC
+H.265/HEVC
+```
 #### 图像处理，卷积核的一些用法(大小必须为奇数：3x3/5x5 , 5x5的核 半径则为2)：
 ```
 空卷积核
@@ -77,4 +77,3 @@ double xxxClass::onGauss1D(int x) {
     return A * exp(B);
 }
 ```
-https://www.cnblogs.com/cpuimage/p/8995600.html
