@@ -96,6 +96,7 @@ void MediaRecord::onBufferAudio(AudioFrame *input) {
 
 void MediaRecord::onRelease() {
     if (m_Thread == nullptr) return;
+    LOGCATE("MediaRecorder::code loop join");
     m_Interrupt = true;
     m_Thread->join();
     delete m_Thread;
@@ -354,9 +355,12 @@ int MediaRecord::codeAFrame(AVOutputStream *stream) {
     AVPacket *packet = av_packet_alloc();
     AVFrame *frame = av_frame_alloc();
     frame = stream->m_TmpFrame;
+    if (m_AudioQueue.empty() && !m_VideoQueue.empty() && m_Interrupt) {
+        return -100;
+    }
     AudioFrame *aFrame = m_AudioQueue.front();
     m_AudioQueue.pop();
-    if (aFrame) {
+    if (aFrame && aFrame != 0) {
         frame->data[0] = aFrame->data;
         frame->nb_samples = aFrame->dataSize / 4;
         frame->pts = stream->m_NextPts;
@@ -426,9 +430,7 @@ int MediaRecord::codeAFrame(AVOutputStream *stream) {
         }
     }
     EXIT:
-    if (aFrame) {
-        delete aFrame;
-    }
+    if (aFrame && aFrame != 0) delete aFrame;
     return result;
 }
 
@@ -482,7 +484,11 @@ void MediaRecord::onRunAsy(MediaRecord *p) {
             }
             vStream->m_EncodeEnd = p->codeVFrame(vStream);
         } else {
-            aStream->m_EncodeEnd = p->codeAFrame(aStream);
+            if (aStream->m_EncodeEnd == -100) {//停止录制时，消耗剩余帧
+                vStream->m_EncodeEnd = p->codeVFrame(vStream);
+            } else {
+                aStream->m_EncodeEnd = p->codeAFrame(aStream);
+            }
         }
     }
 }
