@@ -63,7 +63,7 @@ void FaceCvTrack::onFacesTrack(int format, int width, int height, uint8_t *data,
     if (faces.empty()) {
         return;
     }
-    m_faces.insert(m_faces.end(), faces.begin(), faces.end());
+//    m_faces.insert(m_faces.end(), faces.begin(), faces.end());
     seeta::FacialLandmark landmark[5];
     int i = 0;
     int size = (int) faces.size();
@@ -83,6 +83,9 @@ void FaceCvTrack::onFacesTrack(int format, int width, int height, uint8_t *data,
         //landmark
         m_Alignment->PointDetectLandmarks(gray_im, faceInfo, landmark);
         if (cId == 1) {
+            cv::Rect fface(width - face.y - face.width, face.x , face.height,
+                           face.width);
+            m_faces.push_back(fface);
             cv::Rect eyeL(width - landmark[0].y, landmark[0].x, 10.0f, 10.0f);
             cv::Rect eyeR(width - landmark[1].y, landmark[1].x, 10.0f, 10.0f);
             m_eyes.push_back(eyeL);
@@ -94,6 +97,8 @@ void FaceCvTrack::onFacesTrack(int format, int width, int height, uint8_t *data,
             m_mouths.push_back(mouthL);
             m_mouths.push_back(mouthR);
         } else if (cId == 2) {
+            cv::Rect fface(face.y, face.x, face.height, face.width);
+            m_faces.push_back(fface);
             cv::Rect eyeL(landmark[0].y, landmark[0].x, 10.0f, 10.0f);
             cv::Rect eyeR(landmark[1].y, landmark[1].x, 10.0f, 10.0f);
             m_eyes.push_back(eyeL);
