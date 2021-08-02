@@ -139,7 +139,7 @@ const char *ShaderFragment_FBO_NV21_Face =
                 //脸
                 uniform vec2 fFacePoint;
                 uniform vec2 fFaceSize;
-                // 高斯算子左右偏移值，当偏移值为5时，高斯算子为 5 x 5
+                // 高斯算子左右偏移值，当偏移值为5时，高斯算子为 11 x 11
                 const int SHIFT_SIZE = 5;
                 out vec4 blurCoords[SHIFT_SIZE];
                 vec4 faceBeauty(vec2 texCoord, vec2 facePoint, vec2 faceSize) {
