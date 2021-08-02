@@ -140,19 +140,20 @@ const char *ShaderFragment_FBO_NV21_Face =
                 uniform vec2 fFacePoint;
                 uniform vec2 fFaceSize;
                 // 高斯算子左右偏移值，当偏移值为5时，高斯算子为 5 x 5
-                const int SHIFT_SIZE = 2;
+                const int SHIFT_SIZE = 5;
                 out vec4 blurCoords[SHIFT_SIZE];
                 vec4 faceBeauty(vec2 texCoord, vec2 facePoint, vec2 faceSize) {
                     vec2 texture = texCoord * fPixelSize;
                     if (texture.x < facePoint.x || texture.y < facePoint.y) {
                         return vec4(NV21toRGB(texCoord), 1.0f);
-                    }
-                    else if (texture.x > facePoint.x + faceSize.x ||
+                    } else if (texture.x > facePoint.x + faceSize.x ||
                                texture.y > facePoint.y + faceSize.y) {
                         return vec4(NV21toRGB(texCoord), 1.0f);
                     }
                     vec3 rgbSource = NV21toRGB(texCoord);
-                    vec3 rgb = NV21toRGB(texCoord);
+                    vec3 rgbBlur = NV21toRGB(texCoord);
+                    vec3 rgbPass = vec3(0.0f);
+                    vec3 rgb = vec3(0.0f);
                     //高斯模糊
                     {
                         // 偏移步距
@@ -161,21 +162,33 @@ const char *ShaderFragment_FBO_NV21_Face =
                         for (int i = 0; i < SHIFT_SIZE; i++) {
                             blurCoords[i] = vec4(texCoord.xy - float(i + 1) * stepOffset,
                                                  texCoord.xy + float(i + 1) * stepOffset);
-                            rgb += NV21toRGB(blurCoords[i].xy);
-                            rgb += NV21toRGB(blurCoords[i].zw);
+                            rgbBlur += NV21toRGB(blurCoords[i].xy);
+                            rgbBlur += NV21toRGB(blurCoords[i].zw);
                         }
-                        rgb = rgb * 1.0 / float(2 * SHIFT_SIZE + 1);
+                        rgbBlur = rgbBlur * 1.0 / float(2 * SHIFT_SIZE + 1);
                     }
                     //高通滤波->高反差保留
                     {
                         // 高通滤波之后的颜色
-                        vec3 highPass = rgbSource - rgb;
+                        rgbPass = rgbSource - rgbBlur;
                         // 强光程度
                         float intensity = 24.0;
                         // 对应混合模式中的强光模式(color = 2.0 * color1 * color2)，对于高反差的颜色来说，color1 和color2 是同一个
-                        rgb.r = clamp(2.0 * highPass.r * highPass.r * intensity, 0.0, 1.0);
-                        rgb.g = clamp(2.0 * highPass.g * highPass.g * intensity, 0.0, 1.0);
-                        rgb.b = clamp(2.0 * highPass.b * highPass.b * intensity, 0.0, 1.0);
+                        rgbPass.r = clamp(2.0 * rgbPass.r * rgbPass.r * intensity, 0.0, 1.0);
+                        rgbPass.g = clamp(2.0 * rgbPass.g * rgbPass.g * intensity, 0.0, 1.0);
+                        rgbPass.b = clamp(2.0 * rgbPass.b * rgbPass.b * intensity, 0.0, 1.0);
+                    }
+                    //磨皮
+                    {
+                        // 调节蓝色通道值
+                        float bVal = clamp((min(rgbSource.b, rgbBlur.b) - 0.2) * 5.0, 0.0, 1.0);
+                        // 找到高反差后RGB通道的最大值
+                        float maxCColor = max(max(rgbPass.r, rgbPass.g), rgbPass.b);
+                        // 计算当前的强度
+                        float beauty = 0.8f;
+                        float intensity = (1.0 - maxCColor / (maxCColor + 0.2)) * bVal * beauty;
+                        // 混合输出结果
+                        rgb = mix(rgbSource.rgb, rgbBlur.rgb, intensity);
                     }
                     return vec4(rgb, 1.0f);
                 }
