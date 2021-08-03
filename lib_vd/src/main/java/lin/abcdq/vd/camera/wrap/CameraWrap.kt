@@ -262,8 +262,8 @@ internal class CameraWrap(context: Context) {
     private var mCameraDevice: CameraDevice? = null
     private var mCameraRequest: CaptureRequest? = null
     private var mCameraSession: CameraCaptureSession? = null
-    private val mDefaultPreviewSize = Size(640, 480)
-    private val mDefaultCaptureSize = Size(640, 480)
+    private val mDefaultPreviewSize = Size(1280, 720)
+    private val mDefaultCaptureSize = Size(1280, 720)
     private var mPreviewSize: Size? = null
     private var mCaptureSize: Size? = null
 
