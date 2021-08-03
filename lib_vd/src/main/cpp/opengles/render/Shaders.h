@@ -233,10 +233,10 @@ const char *ShaderFragment_FBO_NV21_Face =
 
 /*
  * 亮眼
-   vec3 blurColor = ??? //高斯
-   vec3 colorEyeGreat = vec3(0.0, 0.0, 0.0);
-   colorEyeGreat = clamp((colorSource - blurColor) * 3.3, 0.0, 1.0);//RGB颜色差值放大,突出眼睛明亮部分
-   colorEyeGreat = max(colorSource, colorEyeGreat);
-   vec4 result = mix(sourceColor, vec4(sumColor, 1.0), brightEyeStrength * maskColor.r);
+   vec3 rgbBlur = ??? //高斯
+   vec3 rgbEyeGreat = vec3(0.0, 0.0, 0.0);
+   rgbEyeGreat = clamp((rgbSource - rgbBlur) * 3.3, 0.0, 1.0);//RGB颜色差值放大,突出眼睛明亮部分
+   rgbEyeGreat = max(rgbSource, rgbEyeGreat);
+   vec4 result = mix(rgbSource, vec4(rgbEyeGreat, 1.0), 1.0f * 0.01);
  */
 #endif //OPENGLESTEST_CAMERASHADER_H
