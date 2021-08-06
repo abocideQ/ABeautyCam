@@ -31,14 +31,11 @@ void VideoRender::onFace(char *s1, char *s2, char *s3, char *s4, char *s5, int f
     } else if (m_Face == 1) { //opencv
         m_FaceCvDetection = new FaceCvDetection();
         m_FaceCvDetection->onModelSource(s1, s2, s3, s4);
-    } else if (m_Face == 2) { //facecnn
-        mFaceCnnDetection = new FaceCnnDetection();
-    } else if (m_Face == 3) { //ncnn
-        m_FaceNCNNDetection = new FaceNCNNDetection();
-        m_FaceNCNNDetection->onModel(s1, s5, false);
-    } else if (m_Face == 4) { //ncnn
+    } else if (m_Face == 2) { //opencvTrack
         m_FaceTrack = new FaceCvTrack();
         m_FaceTrack->onModelSource(s1, s2, s3, s4, s5);
+    } else if (m_Face == 4) { //faceCnn
+        mFaceCnnDetection = new FaceCnnDetection();
     }
 }
 
@@ -69,12 +66,10 @@ void VideoRender::onBuffer(int format, int w, int h, int lineSize[3], uint8_t *d
     std::vector<cv::Rect> mouths;
     if (m_Face == 1) {//opencv
         m_FaceCvDetection->onFacesDetection(format, w, h, data, cId, faces, eyes, noses, mouths);
-    } else if (m_Face == 2) {//facecnn
-        mFaceCnnDetection->onFacesDetection(format, w, h, data, faces, eyes, noses, mouths);
-    } else if (m_Face == 3) {//ncnn
-        m_FaceNCNNDetection->onDetect(format, w, h, data, faces, eyes, noses, mouths);
-    } else if (m_Face == 4) {//cvTrack
+    } else if (m_Face == 2) {//opencvTrack
         m_FaceTrack->onFacesTrack(format, w, h, data, cId, faces, eyes, noses, mouths);
+    } else if (m_Face == 3) {//faceCnn
+        mFaceCnnDetection->onFacesDetection(format, w, h, data, cId, faces, eyes, noses, mouths);
     }
     VRender *render = new VRender();
     render->pixel = pixel;

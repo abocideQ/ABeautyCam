@@ -21,8 +21,9 @@ class VdCamera(context: Context) : GLSurfaceView.Renderer {
     private var mFormat = 2
     private var mCameraUse: CameraUse? = null
 
-    //人脸检测方式 :1.opencv(slow) 2.faceCNN(fucking slow) 3.NCNN(normal) 4.opencvTrack(fast but opencv face need rotation or cant find face,fuck)
-    private var mFacePosition = 4
+    //人脸检测方式 :1.opencvDetectMultiScale(go eat shit) 2.opencvTrack(fast but not great) 2.faceCNN(slow but great)
+    //注意相机返回图像方向(翻转+镜像)
+    private var mFacePosition = 2
 
     fun setSurface(surface: GLSurfaceView) {
         surface.setEGLContextClientVersion(3)
@@ -110,9 +111,8 @@ class VdCamera(context: Context) : GLSurfaceView.Renderer {
         System.loadLibrary("vd_make")
         when (mFacePosition) {
             1 -> onFaceCV(context)
-            2 -> onFaceCnn(context)
-            3 -> onFaceNCNN(context)
-            4 -> onFaceCVTrack(context)
+            2 -> onFaceCVTrack(context)
+            3 -> onFaceCnn(context)
         }
     }
 
@@ -150,34 +150,8 @@ class VdCamera(context: Context) : GLSurfaceView.Renderer {
             mEyesModel,
             mNoseModel,
             mMouthModel,
-            "mAlignmentModel",
+            "null",
             1
-        )
-    }
-
-    private fun onFaceCnn(context: Context) {
-        CAO.copyAssetsDirToSDCard(context, "image", context.obbDir.absolutePath)
-        native_vdCameraRender_onFace(
-            "mFaceModel",
-            "mEyesModel",
-            "mNoseModel",
-            "mMouthModel",
-            "mAlignmentModel",
-            2
-        )
-    }
-
-    private fun onFaceNCNN(context: Context) {
-        CAO.copyAssetsDirToSDCard(context, "ncnn", context.obbDir.absolutePath)
-        CAO.copyAssetsDirToSDCard(context, "alignment", context.obbDir.absolutePath)
-        val mAlignmentModel = context.obbDir.absolutePath + "/alignment/seeta_fa_v1.1.bin"
-        native_vdCameraRender_onFace(
-            context.obbDir.absolutePath + "/ncnn/",
-            " mEyesModel ",
-            " mNoseModel ",
-            " mMouthModel ",
-            mAlignmentModel,
-            3
         )
     }
 
@@ -195,7 +169,18 @@ class VdCamera(context: Context) : GLSurfaceView.Renderer {
             mNoseModel,
             mMouthModel,
             mAlignmentModel,
-            4
+            2
+        )
+    }
+
+    private fun onFaceCnn(context: Context) {
+        native_vdCameraRender_onFace(
+            "null",
+            "null",
+            "null",
+            "null",
+            "null",
+            3
         )
     }
 }

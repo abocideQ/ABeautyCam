@@ -74,18 +74,14 @@ native_vdCameraRender_onFace(JNIEnv *env, jobject *obj, jstring string1, jstring
         char *mouth = (char *) env->GetStringUTFChars(string4, 0);
         VdCameraRender::instance()->onFace(face, eyes, nose, mouth, nullptr, 1);
     } else if (faceI == 2) {
-        VdCameraRender::instance()->onFace(nullptr, nullptr, nullptr, nullptr, nullptr, 2);
-    } else if (faceI == 3) {
-        char *string = (char *) env->GetStringUTFChars(string1, 0);
-        char *aligment = (char *) env->GetStringUTFChars(string5, 0);
-        VdCameraRender::instance()->onFace(string, nullptr, nullptr, nullptr, aligment, 3);
-    } else if (faceI == 4) {
         char *face = (char *) env->GetStringUTFChars(string1, 0);
         char *eyes = (char *) env->GetStringUTFChars(string2, 0);
         char *nose = (char *) env->GetStringUTFChars(string3, 0);
         char *mouth = (char *) env->GetStringUTFChars(string4, 0);
-        char *aligment = (char *) env->GetStringUTFChars(string5, 0);
-        VdCameraRender::instance()->onFace(face, eyes, nose, mouth, aligment, 4);
+        char *alignment = (char *) env->GetStringUTFChars(string5, 0);
+        VdCameraRender::instance()->onFace(face, eyes, nose, mouth, alignment, 2);
+    } else if (faceI == 3) {
+        VdCameraRender::instance()->onFace(nullptr, nullptr, nullptr, nullptr, nullptr, 3);
     }
 }
 

@@ -8,7 +8,7 @@
 
 class FaceCnnDetection {
 public:
-    void onFacesDetection(int format, int width, int height, uint8_t *data,
+    void onFacesDetection(int format, int width, int height, uint8_t *data, int cId,
                           std::vector<cv::Rect> &m_faces,
                           std::vector<cv::Rect> &m_eyes,
                           std::vector<cv::Rect> &m_noses,

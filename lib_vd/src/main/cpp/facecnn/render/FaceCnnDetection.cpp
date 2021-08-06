@@ -1,13 +1,13 @@
 #include "FaceCnnDetection.h"
 
 #define DETECT_BUFFER_SIZE 0x20000
-#define DETECT_SCALE 6.0f
+#define DETECT_SCALE 10.0f
 extern "C" {
-void FaceCnnDetection::onFacesDetection(int format, int width, int height, uint8_t *data,
-                                        std::vector <cv::Rect> &m_faces,
-                                        std::vector <cv::Rect> &m_eyes,
-                                        std::vector <cv::Rect> &m_noses,
-                                        std::vector <cv::Rect> &m_mouths) {
+void FaceCnnDetection::onFacesDetection(int format, int width, int height, uint8_t *data, int cId,
+                                        std::vector<cv::Rect> &m_faces,
+                                        std::vector<cv::Rect> &m_eyes,
+                                        std::vector<cv::Rect> &m_noses,
+                                        std::vector<cv::Rect> &m_mouths) {
     cv::Mat bgr;
     if (format == 1) {
         cv::Mat src(height + height / 2, width, CV_8UC1, data);//yuv数据
@@ -25,6 +25,12 @@ void FaceCnnDetection::onFacesDetection(int format, int width, int height, uint8
         return;
     }
     cv::resize(bgr, bgr, cv::Size(width / DETECT_SCALE, height / DETECT_SCALE));
+    if (cId == 1) {
+        rotate(bgr, bgr, cv::ROTATE_90_COUNTERCLOCKWISE); //前置摄像头  逆时针旋转90度
+    } else if (cId == 2) {
+        rotate(bgr, bgr, cv::ROTATE_90_CLOCKWISE);
+        flip(bgr, bgr, 1);//水平镜像  1：水平翻转；0：垂直翻转
+    }
     m_faces.clear();
     m_eyes.clear();
     m_noses.clear();
@@ -38,6 +44,7 @@ void FaceCnnDetection::onFacesDetection(int format, int width, int height, uint8
     pResults = facedetect_cnn(pBuffer, (unsigned char *) (bgr.ptr(0)),
                               bgr.cols, bgr.rows, (int) bgr.step);
     int num = pResults ? *pResults : 0;
+    LOGCATE("faceCnn faces %d", num);
     int i = 0;
     for (; i < (pResults ? *pResults : 0); i++) {
         short *p = ((short *) (pResults + 1)) + 142 * i;

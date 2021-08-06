@@ -47,6 +47,7 @@ void FaceCvDetection::onFacesDetection(int format, int width, int height, uint8_
     if (faces.empty()) {
         return;
     }
+    LOGCATE("opencv detectMultiScale faces %d", faces.size());
     m_faces.insert(m_faces.end(), faces.begin(), faces.end());
     //features check
     int i = 0;
