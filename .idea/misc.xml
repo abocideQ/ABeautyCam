@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ProjectPlainTextFileTypeManager">
-    <file url="file://$PROJECT_DIR$/lib_vd/src/main/assets/opencv/haarcascade_eye.xml" />
+    <file url="file://$PROJECT_DIR$/lib_vd/src/main/assets/opencv/haarcascade_frontalface_alt2.xml" />
   </component>
   <component name="ProjectRootManager" version="2" languageLevel="JDK_11" default="true" project-jdk-name="1.8" project-jdk-type="JavaSDK">
     <output url="file://$PROJECT_DIR$/build/classes" />

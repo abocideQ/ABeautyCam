@@ -80,3 +80,6 @@ double xxxClass::onGauss1D(int x) {
     return A * exp(B);
 }
 ```
+```
+https://gl-transitions.com/
+```

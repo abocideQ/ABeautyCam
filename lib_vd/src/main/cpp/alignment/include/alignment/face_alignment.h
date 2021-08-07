@@ -58,7 +58,7 @@ class FaceAlignment{
   *  @param face_info The face bounding box
   *  @param[out] points The locations of detected facial points
   */
-  SEETA_API bool PointDetectLandmarks(ImageData gray_im, FaceInfo face_info, FacialLandmark *points);
+  SEETA_API bool PointDetectLandmarks(ImageData_Alignment gray_im, FaceInfo face_info, FacialLandmark *points);
 
  private:
   CCFAN *facial_detector;

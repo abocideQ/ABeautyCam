@@ -13,6 +13,9 @@ public:
                           std::vector<cv::Rect> &m_eyes,
                           std::vector<cv::Rect> &m_noses,
                           std::vector<cv::Rect> &m_mouths);
+
+protected:
+    int timer = 0;
 };
 
 #endif //VDMAKE_FACECNNDETECTION_H

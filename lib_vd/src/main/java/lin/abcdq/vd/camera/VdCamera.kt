@@ -21,9 +21,9 @@ class VdCamera(context: Context) : GLSurfaceView.Renderer {
     private var mFormat = 2
     private var mCameraUse: CameraUse? = null
 
-    //人脸检测方式 :1.opencvDetectMultiScale(go eat shit) 2.opencvTrack(fast but not great) 2.faceCNN(slow but great)
+    //人脸检测方式 :1.opencvDetectMultiScale(go eat shit) 2.opencvTrack(fast but not great) 3.faceCNN(slow but great)
     //注意相机返回图像方向(翻转+镜像)
-    private var mFacePosition = 2
+    private var mFacePosition = 3
 
     fun setSurface(surface: GLSurfaceView) {
         surface.setEGLContextClientVersion(3)
@@ -141,7 +141,7 @@ class VdCamera(context: Context) : GLSurfaceView.Renderer {
 
     private fun onFaceCV(context: Context) {
         CAO.copyAssetsDirToSDCard(context, "opencv", context.obbDir.absolutePath)
-        val mFaceModel = context.obbDir.absolutePath + "/opencv/haarcascade_frontalface_alt.xml"
+        val mFaceModel = context.obbDir.absolutePath + "/opencv/haar_facedetection.xml"
         val mEyesModel = context.obbDir.absolutePath + "/opencv/haarcascade_eye.xml"
         val mNoseModel = context.obbDir.absolutePath + "/opencv/haarcascade_mcs_nose.xml"
         val mMouthModel = context.obbDir.absolutePath + "/opencv/haarcascade_mcs_mouth.xml"
@@ -158,7 +158,7 @@ class VdCamera(context: Context) : GLSurfaceView.Renderer {
     private fun onFaceCVTrack(context: Context) {
         CAO.copyAssetsDirToSDCard(context, "opencv", context.obbDir.absolutePath)
         CAO.copyAssetsDirToSDCard(context, "alignment", context.obbDir.absolutePath)
-        val mFaceModel = context.obbDir.absolutePath + "/opencv/haarcascade_frontalface_alt.xml"
+        val mFaceModel = context.obbDir.absolutePath + "/opencv/haar_facedetection.xml"
         val mEyesModel = context.obbDir.absolutePath + "/opencv/haarcascade_eye.xml"
         val mNoseModel = context.obbDir.absolutePath + "/opencv/haarcascade_mcs_nose.xml"
         val mMouthModel = context.obbDir.absolutePath + "/opencv/haarcascade_mcs_mouth.xml"

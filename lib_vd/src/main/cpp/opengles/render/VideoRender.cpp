@@ -34,7 +34,7 @@ void VideoRender::onFace(char *s1, char *s2, char *s3, char *s4, char *s5, int f
     } else if (m_Face == 2) { //opencvTrack
         m_FaceTrack = new FaceCvTrack();
         m_FaceTrack->onModelSource(s1, s2, s3, s4, s5);
-    } else if (m_Face == 4) { //faceCnn
+    } else if (m_Face == 3) { //faceCnn
         mFaceCnnDetection = new FaceCnnDetection();
     }
 }

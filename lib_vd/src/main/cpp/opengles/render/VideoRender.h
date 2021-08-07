@@ -14,8 +14,8 @@
 #include <unistd.h>
 
 #include "FaceCvDetection.h"
-#include "FaceCnnDetection.h"
 #include "FaceCvTrack.h"
+#include "FaceCnnDetection.h"
 
 typedef struct _tag_render {
     PixImage *pixel;

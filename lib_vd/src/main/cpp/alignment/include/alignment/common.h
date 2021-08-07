@@ -57,15 +57,15 @@
 
 namespace seeta {
 
-  typedef struct ImageData {
-    ImageData() {
+  typedef struct ImageData_Alignment {
+      ImageData_Alignment() {
       data = nullptr;
       width = 0;
       height = 0;
       num_channels = 0;
     }
 
-    ImageData(int32_t img_width, int32_t img_height,
+      ImageData_Alignment(int32_t img_width, int32_t img_height,
       int32_t img_num_channels = 1) {
       data = nullptr;
       width = img_width;
@@ -77,17 +77,17 @@ namespace seeta {
     int32_t width;
     int32_t height;
     int32_t num_channels;
-  } ImageData;
+  } ImageData_Alignment;
 
-  typedef struct Rect {
+  typedef struct Rect_Alignment {
     int32_t x;
     int32_t y;
     int32_t width;
     int32_t height;
-  } Rect;
+  } Rect_Alignment;
 
   typedef struct FaceInfo {
-    seeta::Rect bbox;
+    seeta::Rect_Alignment bbox;
 
     double roll;
     double pitch;

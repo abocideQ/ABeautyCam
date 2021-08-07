@@ -55,7 +55,7 @@ namespace seeta {
    *  @param face_info The face bounding box
    *  @param[out] points The locations of detected facial points
    */
-  bool FaceAlignment::PointDetectLandmarks(ImageData gray_im, FaceInfo face_info, FacialLandmark *points)
+  bool FaceAlignment::PointDetectLandmarks(ImageData_Alignment gray_im, FaceInfo face_info, FacialLandmark *points)
   {
     if (gray_im.num_channels != 1) {
       return false;

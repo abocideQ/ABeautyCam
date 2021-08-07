@@ -43,7 +43,7 @@ the use of this software, even if advised of the possibility of such damage.
 //#define _ENABLE_AVX512 //Please enable it if X64 CPU
 //#define _ENABLE_AVX2 //Please enable it if X64 CPU
 #define _ENABLE_NEON //Please enable it if ARM CPU
-
+//#define _OPENMP  //Please enable it if ARM CPU
 
 //FACEDETECTION_EXPORT
 int *facedetect_cnn(

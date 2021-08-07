@@ -1,4 +1,5 @@
 #include "FaceCvTrack.h"
+#include <time.h>
 
 extern "C" {
 void FaceCvTrack::onModelSource(char *face, char *eye, char *nose, char *mouth, char *alignment) {
@@ -56,6 +57,9 @@ void FaceCvTrack::onFacesTrack(int format, int width, int height, uint8_t *data,
     m_noses.clear();
     m_mouths.clear();
     vector<Rect> faces;
+    clock_t start, finish;
+    double Total_time;
+    start = clock();
     //检测
     m_Tracker->process(gray);
     //结果
@@ -63,7 +67,9 @@ void FaceCvTrack::onFacesTrack(int format, int width, int height, uint8_t *data,
     if (faces.empty()) {
         return;
     }
-//    m_faces.insert(m_faces.end(), faces.begin(), faces.end());
+    finish = clock();
+    Total_time = (double) (finish - start) / CLOCKS_PER_SEC * 1000; //毫秒
+    LOGCATE("opencv track time %f", Total_time); //0.5~10ms
     seeta::FacialLandmark landmark[5];
     int i = 0;
     int size = (int) faces.size();
@@ -71,19 +77,19 @@ void FaceCvTrack::onFacesTrack(int format, int width, int height, uint8_t *data,
         cv::Rect face = faces[i];
         //faceinfo
         seeta::FaceInfo faceInfo;
-        seeta::Rect bbox;
+        seeta::Rect_Alignment bbox;
         bbox.x = face.x;
         bbox.y = face.y;
         bbox.width = face.width;
         bbox.height = face.height;
         faceInfo.bbox = bbox;
         //imagedata
-        seeta::ImageData gray_im(gray.cols, gray.rows);
+        seeta::ImageData_Alignment gray_im(gray.cols, gray.rows);
         gray_im.data = gray.data;
         //landmark
         m_Alignment->PointDetectLandmarks(gray_im, faceInfo, landmark);
         if (cId == 1) {
-            cv::Rect fface(width - face.y - face.width, face.x , face.height,
+            cv::Rect fface(width - face.y - face.width, face.x, face.height,
                            face.width);
             m_faces.push_back(fface);
             cv::Rect eyeL(width - landmark[0].y, landmark[0].x, 10.0f, 10.0f);

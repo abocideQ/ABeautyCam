@@ -1,13 +1,15 @@
 #include "FaceCnnDetection.h"
 
 #define DETECT_BUFFER_SIZE 0x20000
-#define DETECT_SCALE 10.0f
 extern "C" {
 void FaceCnnDetection::onFacesDetection(int format, int width, int height, uint8_t *data, int cId,
                                         std::vector<cv::Rect> &m_faces,
                                         std::vector<cv::Rect> &m_eyes,
                                         std::vector<cv::Rect> &m_noses,
                                         std::vector<cv::Rect> &m_mouths) {
+    timer++;
+    if (timer % 2 == 0) { return; }
+    if (timer > 1000) { timer = 0; }
     cv::Mat bgr;
     if (format == 1) {
         cv::Mat src(height + height / 2, width, CV_8UC1, data);//yuv数据
@@ -24,6 +26,7 @@ void FaceCnnDetection::onFacesDetection(int format, int width, int height, uint8
     } else {
         return;
     }
+    float DETECT_SCALE = (float) width / 128.0f;
     cv::resize(bgr, bgr, cv::Size(width / DETECT_SCALE, height / DETECT_SCALE));
     if (cId == 1) {
         rotate(bgr, bgr, cv::ROTATE_90_COUNTERCLOCKWISE); //前置摄像头  逆时针旋转90度
@@ -41,9 +44,15 @@ void FaceCnnDetection::onFacesDetection(int format, int width, int height, uint8
         LOGCATE("onFacesDetection DETECT_BUFFER_SIZE malloc error");
         return;
     }
+    clock_t start, finish;
+    double Total_time;
+    start = clock();
     pResults = facedetect_cnn(pBuffer, (unsigned char *) (bgr.ptr(0)),
                               bgr.cols, bgr.rows, (int) bgr.step);
     int num = pResults ? *pResults : 0;
+    finish = clock();
+    Total_time = (double) (finish - start) / CLOCKS_PER_SEC * 1000; //毫秒
+    LOGCATE("faceCnn time %f", Total_time); //0.5~10ms
     LOGCATE("faceCnn faces %d", num);
     int i = 0;
     for (; i < (pResults ? *pResults : 0); i++) {
@@ -64,18 +73,33 @@ void FaceCnnDetection::onFacesDetection(int format, int width, int height, uint8
         int eyeR_y = p[12] * DETECT_SCALE;
         int nose_x = p[13] * DETECT_SCALE;
         int nose_y = p[14] * DETECT_SCALE;
-        cv::Rect face(face_x, face_y, face_w, face_h);
-        m_faces.push_back(face);
-        cv::Rect eyeL(face_x, face_y, 10.0f, 10.0f);
-        cv::Rect eyeR(face_x + face_w, face_y, 10.0f, 10.0f);
-        m_eyes.push_back(eyeL);
-        m_eyes.push_back(eyeR);
-        cv::Rect mouthL(face_x, face_y + face_h, 10.0f, 10.0f);
-        cv::Rect mouthR(face_x + face_w, face_y + face_h, 10.0f, 10.0f);
-        m_mouths.push_back(mouthL);
-        m_mouths.push_back(mouthR);
-        cv::Rect nose(nose_x, nose_y, 10.0f, 10.0f);
-        m_noses.push_back(nose);
+        if (cId == 1) {
+            cv::Rect fface(width - face_y - face_w, face_x, face_h, face_w);
+            m_faces.push_back(fface);
+            cv::Rect eyeL(width - eyeL_y, eyeL_x, 10.0f, 10.0f);
+            cv::Rect eyeR(width - eyeR_y, eyeR_x, 10.0f, 10.0f);
+            m_eyes.push_back(eyeL);
+            m_eyes.push_back(eyeR);
+            cv::Rect nose(width - nose_y, nose_x, 10.0f, 10.0f);
+            m_noses.push_back(nose);
+            cv::Rect mouthL(width - mouthL_y, mouthL_x, 10.0f, 10.0f);
+            cv::Rect mouthR(width - mouthR_y, mouthR_x, 10.0f, 10.0f);
+            m_mouths.push_back(mouthL);
+            m_mouths.push_back(mouthR);
+        } else if (cId == 2) {
+            cv::Rect fface(face_y, face_x, face_h, face_w);
+            m_faces.push_back(fface);
+            cv::Rect eyeL(eyeL_y, eyeL_x, 10.0f, 10.0f);
+            cv::Rect eyeR(eyeR_y, eyeR_x, 10.0f, 10.0f);
+            m_eyes.push_back(eyeL);
+            m_eyes.push_back(eyeR);
+            cv::Rect nose(nose_y, nose_x, 10.0f, 10.0f);
+            m_noses.push_back(nose);
+            cv::Rect mouthL(mouthL_y, mouthL_x, 10.0f, 10.0f);
+            cv::Rect mouthR(mouthR_y, mouthR_x, 10.0f, 10.0f);
+            m_mouths.push_back(mouthL);
+            m_mouths.push_back(mouthR);
+        }
         return;
     }
     free(pBuffer);

@@ -24,7 +24,7 @@ import lin.abcdq.vdmake.view.recyclerview.manager.GridManager
 /*
 VideoDecodeMake
 cd C:\Android_Project\github_admin\VdMake\lib_vd\build\intermediates\cmake\debug\obj\arm64-v8a
-aarch64-linux-android-addr2line -C -f -e libvd_make.so 0000000000089980
+aarch64-linux-android-addr2line -C -f -e libvd_make.so 000000000031de70
 */
 class MainActivity : AppCompatActivity(), GridLayoutBinder {
 
