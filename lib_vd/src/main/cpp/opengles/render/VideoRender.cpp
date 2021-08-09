@@ -36,6 +36,7 @@ void VideoRender::onFace(char *s1, char *s2, char *s3, char *s4, char *s5, int f
         m_FaceTrack->onModelSource(s1, s2, s3, s4, s5);
     } else if (m_Face == 3) { //faceCnn
         mFaceCnnDetection = new FaceCnnDetection();
+        mFaceCnnDetection->onModelSource(s5);
     }
 }
 
@@ -301,9 +302,9 @@ void VideoRender::onDrawFrame() {
             glUniform2f(facePoint, faces[0].x, faces[0].y);
             glUniform2f(faceSize, faces[0].width, faces[0].height);
             if (!eyes.empty()) {
-                glUniform1f(eyeScale, 2.0f);
+                glUniform1f(eyeScale, 0.5f);
                 glUniform1f(eyeRadius, faces[0].width / 10.0f);
-                float offset = 0.0f;
+                float offset;
                 if (m_ModelRot == 0.0f) {
                     offset = -1.0f;
                 } else {

@@ -174,12 +174,14 @@ class VdCamera(context: Context) : GLSurfaceView.Renderer {
     }
 
     private fun onFaceCnn(context: Context) {
+        CAO.copyAssetsDirToSDCard(context, "alignment", context.obbDir.absolutePath)
+        val mAlignmentModel = context.obbDir.absolutePath + "/alignment/seeta_fa_v1.1.bin"
         native_vdCameraRender_onFace(
             "null",
             "null",
             "null",
             "null",
-            "null",
+            mAlignmentModel,
             3
         )
     }

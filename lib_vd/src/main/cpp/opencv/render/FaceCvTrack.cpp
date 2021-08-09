@@ -57,9 +57,9 @@ void FaceCvTrack::onFacesTrack(int format, int width, int height, uint8_t *data,
     m_noses.clear();
     m_mouths.clear();
     vector<Rect> faces;
-    clock_t start, finish;
-    double Total_time;
-    start = clock();
+//    clock_t start, finish;
+//    double Total_time;
+//    start = clock();
     //检测
     m_Tracker->process(gray);
     //结果
@@ -67,9 +67,9 @@ void FaceCvTrack::onFacesTrack(int format, int width, int height, uint8_t *data,
     if (faces.empty()) {
         return;
     }
-    finish = clock();
-    Total_time = (double) (finish - start) / CLOCKS_PER_SEC * 1000; //毫秒
-    LOGCATE("opencv track time %f", Total_time); //0.5~10ms
+//    finish = clock();
+//    Total_time = (double) (finish - start) / CLOCKS_PER_SEC * 1000; //毫秒
+//    LOGCATE("opencv track time %f", Total_time); //0.5~10ms
     seeta::FacialLandmark landmark[5];
     int i = 0;
     int size = (int) faces.size();

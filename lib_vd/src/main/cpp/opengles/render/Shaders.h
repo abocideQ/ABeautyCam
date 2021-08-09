@@ -150,19 +150,16 @@ const char *ShaderFragment_FBO_NV21_Face =
                 //大眼
                 vec2 eyeScale(vec2 texCoord, vec2 eyeTex) {
                     vec2 resultTex = texCoord;
-                    vec2 pixelTex = resultTex * fPixelSize;
-                    float distance = distance(pixelTex, eyeTex);
+                    resultTex = resultTex * fPixelSize;
+                    float distance = distance(resultTex, eyeTex);
                     if (distance < fEyeRadius) {
-                        float gamma = pow(smoothstep(0.0, 1.0, distance / fEyeRadius) - 1.0, 2.0);
-                        gamma = fEyeScale * gamma;
-                        gamma = 1.0 - gamma;
-//                        float gamma = distance / fEyeRadius;
-//                        gamma = 1.0 - fEyeScale * (1.0 - gamma * gamma);
-//                        gamma = clamp(gamma, 0.0, 1.0);
-                        resultTex = eyeTex + gamma * (pixelTex - eyeTex);
-                        resultTex = resultTex / fPixelSize;
+//                        resultTex = vec2(texCoord.x / 2.0f + 0.25f, texCoord.y / 2.0f + 0.25f);
+                        float gamma = distance / fEyeRadius;
+                        gamma = 1.0 - fEyeScale * (1.0 - pow(gamma, 2.0f));
+                        gamma = clamp(gamma, 0.0, 1.0);
+                        resultTex = eyeTex + (resultTex - eyeTex) * gamma;
                     }
-                    return resultTex;
+                    return resultTex / fPixelSize;
                 }
                 //磨皮
                 vec4 faceBeauty(vec2 texCoord, vec2 facePoint, vec2 faceSize) {

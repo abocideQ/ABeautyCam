@@ -1,10 +1,10 @@
 #ifndef VDMAKE_FACECVTRACK_H
 #define VDMAKE_FACECVTRACK_H
 
+#include <vector>
 #include "Log.h"
 #include "opencv2/opencv.hpp"
 #include "face_alignment.h"
-#include <vector>
 
 using namespace cv;
 using namespace std;
@@ -34,10 +34,10 @@ public:
     void onModelSource(char *face, char *eye, char *nose, char *mouth, char *alignment);
 
     void onFacesTrack(int format, int width, int height, uint8_t *data, int cId,
-                          std::vector<cv::Rect> &m_faces,
-                          std::vector<cv::Rect> &m_eyes,
-                          std::vector<cv::Rect> &m_noses,
-                          std::vector<cv::Rect> &m_mouths);
+                      std::vector<cv::Rect> &m_faces,
+                      std::vector<cv::Rect> &m_eyes,
+                      std::vector<cv::Rect> &m_noses,
+                      std::vector<cv::Rect> &m_mouths);
 
 private:
     Ptr<DetectionBasedTracker> m_Tracker;

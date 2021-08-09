@@ -82,4 +82,5 @@ double xxxClass::onGauss1D(int x) {
 ```
 ```
 https://gl-transitions.com/
+https://blog.csdn.net/zfgrinm/article/details/79291693?spm=1001.2014.3001.5501
 ```
