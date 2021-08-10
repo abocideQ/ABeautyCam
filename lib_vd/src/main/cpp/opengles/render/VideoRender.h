@@ -1,17 +1,17 @@
 #ifndef VDMAKE_VIDEORENDER_H
 #define VDMAKE_VIDEORENDER_H
 
+#include <thread>
+#include <mutex>
+#include <unistd.h>
+
 #include "../glm/glm.hpp"
 #include "../glm/gtc/matrix_transform.hpp"
 #include "../glm/gtc/type_ptr.hpp"
 
+#include "Log.h"
 #include "PixImage.h"
 #include "GLUtils.h"
-#include "Log.h"
-
-#include <thread>
-#include <mutex>
-#include <unistd.h>
 
 #include "FaceCvDetection.h"
 #include "FaceCvTrack.h"
@@ -49,7 +49,7 @@ public:
 
     void onCamera(bool camera);
 
-    void onRotate(float viewRot, int modelRot);
+    void onRotate(float viewRot, float modelRot);
 
     void onSurfaceCreated();
 
@@ -58,6 +58,8 @@ public:
     void onMatrix(const char *gl_name, float viewRot, float modelRot);
 
     void onDrawFrame();
+
+    GLuint onDrawFrameMix(int width, int height);
 
     void onResume();
 
@@ -89,29 +91,26 @@ protected:
     float m_ViewRot = 0.0f;
     float m_ModelRot = 0.0f;
     bool m_CameraData = false;
-    //framebuffer data for record
+    //framebuffer data 录制用数据
     uint8_t *m_FrameBuffer = nullptr;
     int m_FrameBufferSize = 0;
 
-    //VBO
-    GLuint m_VBO[4];
-    //显示部分
+    //展示部分
     GLuint m_Program;
-    GLuint m_Texture[3];
+    GLuint m_VBO[4];
     GLuint m_VAO[1];
-    //离屏部分
-    GLuint m_Program_Fbo_YUV420P;
-    GLuint m_Program_Fbo_NV21;
-    GLuint m_Program_Fbo_RGB;
-    GLuint m_Program_Fbo_NV21_Face;
-    GLuint m_Texture_Fbo[1];
-    GLuint m_VAO_Fbo[1];
+    GLuint m_Texture[3];
+    //离屏展示部分
     GLuint m_Fbo[1];
+    GLuint m_Program_Fbo[3];//display:yuv420 nv21/nv12 rgb
+    GLuint m_VAO_Fbo[1];
+    GLuint m_Texture_Fbo[2];
+    //离屏处理部分
+    GLuint m_Program_Fbo_Mix[10];
     //互斥锁
     static std::mutex m_Mutex;
     //===
     volatile bool m_Interrupt = false;
-
 private:
     //cv or faceCnn
     int m_Face = 0; //1 cv 2 cvTrack 3 faceCnn
@@ -122,6 +121,5 @@ private:
     //faceCnn
     FaceCnnDetection *mFaceCnnDetection = nullptr;
 };
-
 
 #endif //VDMAKE_VIDEORENDER_H

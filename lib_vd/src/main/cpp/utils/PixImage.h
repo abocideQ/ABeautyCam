@@ -1,15 +1,17 @@
 #ifndef VDMAKE_PIXIMAGE_H
 #define VDMAKE_PIXIMAGE_H
 
-#include "Log.h"
 #include "opencv2/opencv.hpp"
 #include <vector>
 
+#include "Log.h"
+
 extern "C" {
-#define IMAGE_FORMAT_RGBA     4
-#define IMAGE_FORMAT_NV12     3
-#define IMAGE_FORMAT_NV21     2
 #define IMAGE_FORMAT_YUV420P  1
+#define IMAGE_FORMAT_NV21     2
+#define IMAGE_FORMAT_NV12     3
+#define IMAGE_FORMAT_RGBA     4
+#define IMAGE_FORMAT_NV21_MIX 5
 typedef struct _tag_pixImage {
     int format;
     int width;

@@ -17,13 +17,13 @@ import javax.microedition.khronos.opengles.GL10
 @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
 class VdCamera(context: Context) : GLSurfaceView.Renderer {
 
-    //图像采样格式：1.YUV420 (5~8ms)  2.NV21/12 (1~3ms)
+    //图像采样格式：1.YUV420 (5~8ms)  2.NV21 (1~3ms)
     private var mFormat = 2
     private var mCameraUse: CameraUse? = null
 
-    //人脸检测方式 :1.opencvDetectMultiScale(go eat shit) 2.opencvTrack(fast but not great) 3.faceCNN(slow but great)
+    //人脸检测方式 :0. close 1.opencvDetectMultiScale(go eat shit) 2.opencvTrack(fast but not great) 3.faceCNN(slow but great)
     //注意相机返回图像方向(翻转+镜像)
-    private var mFacePosition = 3
+    private var mFacePosition = 2
 
     fun setSurface(surface: GLSurfaceView) {
         surface.setEGLContextClientVersion(3)
@@ -78,7 +78,10 @@ class VdCamera(context: Context) : GLSurfaceView.Renderer {
             2 -> {
                 CameraWrap.IMAGE_FORMAT = ImageFormat.NV21
             }
-            else -> {
+            3 -> {
+                CameraWrap.IMAGE_FORMAT = ImageFormat.NV21
+            }
+            4 -> {
                 CameraWrap.IMAGE_FORMAT = ImageFormat.JPEG
             }
         }

@@ -38,77 +38,168 @@ const char *ShaderVertex_FBO =
                     fiTexCoord = viTexCoord;
                 }
         );
-const char *ShaderFragment_FBO_YUV420p =
+const char *ShaderFragment_FBO_NV212RGB =
         GL_SHADER_VERSION
         GL_SHADER(
                 precision highp float;
                 in vec2 fiTexCoord;
-                uniform sampler2D s_textureY;
-                uniform sampler2D s_textureU;
-                uniform sampler2D s_textureV;
+                uniform sampler2D nv21Y;
+                uniform sampler2D nv21VU;
                 layout(location = 0) out vec4 fragColor;
-                vec4 YUV420PtoRGB(vec2 texCoord) {
+                vec3 NV21toRGB(vec2 texCoord) {
                     float y = 0.0f;
                     float u = 0.0f;
                     float v = 0.0f;
                     float r = 0.0f;
                     float g = 0.0f;
                     float b = 0.0f;
-                    y = texture(s_textureY, texCoord).r;
-                    u = texture(s_textureU, texCoord).r;
-                    v = texture(s_textureV, texCoord).r;
+                    y = texture(nv21Y, texCoord).r;
+                    u = texture(nv21VU, texCoord).a;
+                    v = texture(nv21VU, texCoord).r;
                     u = u - 0.5;
                     v = v - 0.5;
                     r = y + 1.403 * v;
                     g = y - 0.344 * u - 0.714 * v;
                     b = y + 1.770 * u;
-                    return vec4(r, g, b, 1.0f);
+                    return vec3(r, g, b);
                 }
                 void main() {
-                    fragColor = YUV420PtoRGB(fiTexCoord);
+                    fragColor = vec4(NV21toRGB(fiTexCoord), 1.0f);
                 }
         );
-const char *ShaderFragment_FBO_NV21 =
+const char *ShaderFragment_FBO_GaussBlur =
         GL_SHADER_VERSION
         GL_SHADER(
                 precision highp float;
                 in vec2 fiTexCoord;
-                uniform sampler2D s_textureY;
-                uniform sampler2D s_textureVU;
+                uniform sampler2D textureRGB;
                 layout(location = 0) out vec4 fragColor;
-                vec4 NV21toRGB(vec2 texCoord) {
-                    float y = 0.0f;
-                    float u = 0.0f;
-                    float v = 0.0f;
-                    float r = 0.0f;
-                    float g = 0.0f;
-                    float b = 0.0f;
-                    y = texture(s_textureY, texCoord).r;
-                    u = texture(s_textureVU, texCoord).a;
-                    v = texture(s_textureVU, texCoord).r;
-                    u = u - 0.5;
-                    v = v - 0.5;
-                    r = y + 1.403 * v;
-                    g = y - 0.344 * u - 0.714 * v;
-                    b = y + 1.770 * u;
-                    return vec4(r, g, b, 1.0f);
+                //纹理大小
+                uniform vec2 fPixelSize;
+                vec3 gaussBlur(vec2 texCoord) {
+                    vec3 rgbBlur = texture(textureRGB, texCoord).rgb;
+                    // 高斯算子左右偏移值，当偏移值为2时，高斯算子为 5 x 5
+                    const int SHIFT_SIZE = 5;
+                    vec4 blurCoords[SHIFT_SIZE];
+                    //高斯模糊，采样点周围4(SHIFT_SIZE*2)个点均进行一次采样，再求颜色平均值作为当前点的颜色
+                    {
+                        // 偏移步距
+                        vec2 stepOffset = vec2(1.0f / fPixelSize.x, 1.0f / fPixelSize.y);
+                        // 偏移坐标
+                        for (int i = 0; i < SHIFT_SIZE; i++) {
+                            //blurCoords[i] = vec4(coord.x - step, coord.y - step, coord.x + step, coord.y + step)
+                            blurCoords[i] = vec4(texCoord.xy - float(i) * stepOffset,
+                                                 texCoord.xy + float(i) * stepOffset);
+                            rgbBlur += texture(textureRGB, blurCoords[i].xy).rgb;
+                            rgbBlur += texture(textureRGB, blurCoords[i].zw).rgb;
+                        }
+                        rgbBlur = rgbBlur * 1.0 / float(2 * SHIFT_SIZE + 1);
+                    }
+                    return rgbBlur;
                 }
                 void main() {
-                    fragColor = NV21toRGB(fiTexCoord);
+                    fragColor = vec4(gaussBlur(fiTexCoord), 1.0f);
                 }
         );
-const char *ShaderFragment_FBO_RGB =
+const char *ShaderFragment_FBO_HighPass =
         GL_SHADER_VERSION
         GL_SHADER(
                 precision highp float;
                 in vec2 fiTexCoord;
-                uniform sampler2D s_textureRGB;
+                uniform sampler2D textureRGB;
+                uniform sampler2D textureGaussRGB;
                 layout(location = 0) out vec4 fragColor;
+                vec3 highPass(vec2 texCoord) {
+                    vec3 rgbSource = texture(textureRGB, texCoord).rgb;
+                    vec3 rgbBlur = texture(textureGaussRGB, texCoord).rgb;
+                    vec3 rgbPass = vec3(0.0f);
+                    //高通滤波->高反差保留
+                    {
+                        // 高通滤波之后的颜色
+                        rgbPass = rgbSource - rgbBlur;
+                        // 强光程度
+                        float intensity = 24.0;
+                        // 对应混合模式中的强光模式(color = 2.0 * color1 * color2)，对于高反差的颜色来说，color1 和color2 是同一个
+                        rgbPass.r = clamp(2.0 * rgbPass.r * rgbPass.r * intensity, 0.0, 1.0);
+                        rgbPass.g = clamp(2.0 * rgbPass.g * rgbPass.g * intensity, 0.0, 1.0);
+                        rgbPass.b = clamp(2.0 * rgbPass.b * rgbPass.b * intensity, 0.0, 1.0);
+                        // 需要对滤波后的颜色进行高斯模糊 ====> 1 个 fbo 无法完成 （不进行高斯模糊，最终成像会很突兀）
+                    }
+                    return rgbPass;
+                }
                 void main() {
-                    fragColor = texture(s_textureRGB, fiTexCoord);
+                    fragColor = vec4(highPass(fiTexCoord), 1.0f);
                 }
         );
-const char *ShaderFragment_FBO_NV21_Face =
+const char *ShaderFragment_FBO_Beauty =
+        GL_SHADER_VERSION
+        GL_SHADER(
+                precision highp float;
+                in vec2 fiTexCoord;
+                uniform sampler2D textureSource;
+                uniform sampler2D textureGauss;
+                uniform sampler2D texturePassGauss;
+                layout(location = 0) out vec4 fragColor;
+                vec3 beauty(vec2 texCoord) {
+                    vec3 rgbSource = texture(textureSource, texCoord).rgb;
+                    vec3 rgbBlur = texture(textureGauss, texCoord).rgb;
+                    vec3 rgbPassBlur = texture(texturePassGauss, texCoord).rgb;
+                    vec3 rgb = vec3(0.0f);
+                    //磨皮
+                    {
+                        // 调节蓝色通道值
+                        float bVal = clamp((min(rgbSource.b, rgbBlur.b) - 0.2) * 5.0, 0.0, 1.0);
+                        // 找到高反差后RGB通道的最大值
+                        float maxCColor = max(max(rgbPassBlur.r, rgbPassBlur.g), rgbPassBlur.b);
+                        // 计算当前的强度
+                        float beauty = 1.0f;//磨皮指数
+                        float intensity = (1.0 - maxCColor / (maxCColor + 0.2)) * bVal * beauty;
+                        // 混合输出结果
+                        rgb = mix(rgbSource.rgb, rgbBlur.rgb, intensity);
+                    }
+                    return rgb;
+                }
+                void main() {
+                    fragColor = vec4(beauty(fiTexCoord), 1.0f);
+                }
+        );
+const char *ShaderFragment_FBO_BigEye =
+        GL_SHADER_VERSION
+        GL_SHADER(
+                precision highp float;
+                in vec2 fiTexCoord;
+                uniform sampler2D textureRgb;
+                layout(location = 0) out vec4 fragColor;
+                //纹理大小
+                uniform vec2 fPixelSize;
+                //眼睛
+                uniform vec2 fEyeLeft;
+                uniform vec2 fEyeRight;
+                uniform vec2 fNose;
+                uniform vec2 fMouthL;
+                uniform vec2 fMouthR;
+                uniform float fEyeScale;
+                uniform float fEyeRadius;
+                vec2 eyeScale(vec2 texCoord, vec2 eyeTex) {
+                    vec2 resultTex = texCoord;
+                    resultTex = resultTex * fPixelSize;
+                    float distance = distance(resultTex, eyeTex);
+                    if (distance < fEyeRadius) {
+//                        resultTex = vec2(texCoord.x / 2.0f + 0.25f, texCoord.y / 2.0f + 0.25f);
+                        float gamma = distance / fEyeRadius;
+                        gamma = 1.0 - fEyeScale * (1.0 - pow(gamma, 2.0f));
+                        gamma = clamp(gamma, 0.0, 1.0);
+                        resultTex = eyeTex + (resultTex - eyeTex) * gamma;
+                    }
+                    return resultTex / fPixelSize;
+                }
+                void main() {
+                    vec2 newCoord = eyeScale(fiTexCoord, fEyeLeft);
+                    newCoord = eyeScale(newCoord, fEyeRight);
+                    fragColor = texture(textureRgb, newCoord);
+                }
+        );
+/*const char *ShaderFragment_FBO_NV21_Face =
         GL_SHADER_VERSION
         GL_SHADER(
                 precision highp float;
@@ -226,7 +317,7 @@ const char *ShaderFragment_FBO_NV21_Face =
                     newCoord = eyeScale(newCoord, fEyeRight);
                     fragColor = faceBeauty(newCoord, fFacePoint, fFaceSize);
                 }
-        );
+        );*/
 
 /*
  * 亮眼
@@ -236,4 +327,75 @@ const char *ShaderFragment_FBO_NV21_Face =
    rgbEyeGreat = max(rgbSource, rgbEyeGreat);
    vec4 result = mix(rgbSource, vec4(rgbEyeGreat, 1.0), 1.0f * 0.01);
  */
+
+const char *ShaderFragment_FBO_YUV420p_Display =
+        GL_SHADER_VERSION
+        GL_SHADER(
+                precision highp float;
+                in vec2 fiTexCoord;
+                uniform sampler2D s_textureY;
+                uniform sampler2D s_textureU;
+                uniform sampler2D s_textureV;
+                layout(location = 0) out vec4 fragColor;
+                vec4 YUV420PtoRGB(vec2 texCoord) {
+                    float y = 0.0f;
+                    float u = 0.0f;
+                    float v = 0.0f;
+                    float r = 0.0f;
+                    float g = 0.0f;
+                    float b = 0.0f;
+                    y = texture(s_textureY, texCoord).r;
+                    u = texture(s_textureU, texCoord).r;
+                    v = texture(s_textureV, texCoord).r;
+                    u = u - 0.5;
+                    v = v - 0.5;
+                    r = y + 1.403 * v;
+                    g = y - 0.344 * u - 0.714 * v;
+                    b = y + 1.770 * u;
+                    return vec4(r, g, b, 1.0f);
+                }
+                void main() {
+                    fragColor = YUV420PtoRGB(fiTexCoord);
+                }
+        );
+const char *ShaderFragment_FBO_NV21_Display =
+        GL_SHADER_VERSION
+        GL_SHADER(
+                precision highp float;
+                in vec2 fiTexCoord;
+                uniform sampler2D s_textureY;
+                uniform sampler2D s_textureVU;
+                layout(location = 0) out vec4 fragColor;
+                vec4 NV21toRGB(vec2 texCoord) {
+                    float y = 0.0f;
+                    float u = 0.0f;
+                    float v = 0.0f;
+                    float r = 0.0f;
+                    float g = 0.0f;
+                    float b = 0.0f;
+                    y = texture(s_textureY, texCoord).r;
+                    u = texture(s_textureVU, texCoord).a;
+                    v = texture(s_textureVU, texCoord).r;
+                    u = u - 0.5;
+                    v = v - 0.5;
+                    r = y + 1.403 * v;
+                    g = y - 0.344 * u - 0.714 * v;
+                    b = y + 1.770 * u;
+                    return vec4(r, g, b, 1.0f);
+                }
+                void main() {
+                    fragColor = NV21toRGB(fiTexCoord);
+                }
+        );
+const char *ShaderFragment_FBO_RGB_Display =
+        GL_SHADER_VERSION
+        GL_SHADER(
+                precision highp float;
+                in vec2 fiTexCoord;
+                uniform sampler2D s_textureRGB;
+                layout(location = 0) out vec4 fragColor;
+                void main() {
+                    fragColor = texture(s_textureRGB, fiTexCoord);
+                }
+        );
 #endif //OPENGLESTEST_CAMERASHADER_H

@@ -25,6 +25,7 @@ const int Location_Indices[] = {
         0, 1, 2, 1, 3, 2
 };
 
+//初始化人脸
 void VideoRender::onFace(char *s1, char *s2, char *s3, char *s4, char *s5, int faceI) {
     m_Face = faceI;
     if (m_Face == -1) {
@@ -40,13 +41,14 @@ void VideoRender::onFace(char *s1, char *s2, char *s3, char *s4, char *s5, int f
     }
 }
 
+//传入数据 方式1
 void VideoRender::onBuffer(int format, int w, int h, int lineSize[3], uint8_t *data) {
     if (data == nullptr || format == 0 || w == 0 | h == 0) return;
     if (format == 1) {
         format = IMAGE_FORMAT_YUV420P;
     } else if (format == 2 || format == 3) {
         format = IMAGE_FORMAT_NV21;
-    } else {
+    } else if (format == 4) {
         format = IMAGE_FORMAT_RGBA;
     }
     PixImage *pixel;
@@ -55,12 +57,10 @@ void VideoRender::onBuffer(int format, int w, int h, int lineSize[3], uint8_t *d
     } else {
         pixel = PixImageUtils::pix_image_get(format, w, h, lineSize, &data);
     }
-    int cId = 0;
-    if (m_ModelRot == 0.0f) {
-        cId = 2;
-    } else {
-        cId = 1;
-    }
+    if (format == IMAGE_FORMAT_NV21 && m_Face > 0) pixel->format = IMAGE_FORMAT_NV21_MIX;
+    int cId;
+    if (m_ModelRot == 0.0f) cId = 2;
+    else cId = 1;
     std::vector<cv::Rect> faces;
     std::vector<cv::Rect> eyes;
     std::vector<cv::Rect> noses;
@@ -72,7 +72,7 @@ void VideoRender::onBuffer(int format, int w, int h, int lineSize[3], uint8_t *d
     } else if (m_Face == 3) {//faceCnn
         mFaceCnnDetection->onFacesDetection(format, w, h, data, cId, faces, eyes, noses, mouths);
     }
-    VRender *render = new VRender();
+    auto *render = new VRender();
     render->pixel = pixel;
     render->faces = faces;
     render->eyes = eyes;
@@ -81,43 +81,57 @@ void VideoRender::onBuffer(int format, int w, int h, int lineSize[3], uint8_t *d
     m_VRenderQueue.push(render);
 }
 
+//传入数据 方式2
 void VideoRender::onBuffer(PixImage *pix) {
     if (pix == nullptr || pix->format == 0 || pix->width == 0 | pix->height == 0) return;
-    VRender *render = new VRender();
+    auto *render = new VRender();
     render->pixel = pix;
     m_VRenderQueue.push(render);
 }
 
+//录制用数据
 uint8_t *VideoRender::onFrameBuffer() {
     return m_FrameBuffer;
 }
 
+//录制用数据大小
 int VideoRender::onFrameBufferSize() {
     return m_FrameBufferSize;
 }
 
+//是否是摄像头数据
 void VideoRender::onCamera(bool camera) {
     m_CameraData = camera;
 }
 
-void VideoRender::onRotate(float viewRot, int modelRot) {
+//旋转 镜像
+void VideoRender::onRotate(float viewRot, float modelRot) {
     m_ViewRot = viewRot;
     m_ModelRot = modelRot;
     std::lock_guard<std::mutex> lock(m_Mutex);//加锁
     onReleaseRenders();
 }
 
+//gl初始化
 void VideoRender::onSurfaceCreated() {
     m_Program = GLUtils::glProgram(ShaderVertex, ShaderFragment);
-    m_Program_Fbo_YUV420P = GLUtils::glProgram(ShaderVertex_FBO, ShaderFragment_FBO_YUV420p);
-    m_Program_Fbo_NV21 = GLUtils::glProgram(ShaderVertex_FBO, ShaderFragment_FBO_NV21);
-    m_Program_Fbo_RGB = GLUtils::glProgram(ShaderVertex_FBO, ShaderFragment_FBO_RGB);
-    m_Program_Fbo_NV21_Face = GLUtils::glProgram(ShaderVertex_FBO, ShaderFragment_FBO_NV21_Face);
     if (m_Program == GL_NONE) return;
-    if (m_Program_Fbo_YUV420P == GL_NONE) return;
-    if (m_Program_Fbo_NV21 == GL_NONE) return;
-    if (m_Program_Fbo_RGB == GL_NONE) return;
-    if (m_Program_Fbo_NV21_Face == GL_NONE) return;
+    m_Program_Fbo[0] = GLUtils::glProgram(ShaderVertex_FBO, ShaderFragment_FBO_YUV420p_Display);
+    m_Program_Fbo[1] = GLUtils::glProgram(ShaderVertex_FBO, ShaderFragment_FBO_NV21_Display);
+    m_Program_Fbo[2] = GLUtils::glProgram(ShaderVertex_FBO, ShaderFragment_FBO_RGB_Display);
+    if (m_Program_Fbo[0] == GL_NONE) return;
+    if (m_Program_Fbo[1] == GL_NONE) return;
+    if (m_Program_Fbo[2] == GL_NONE) return;
+    m_Program_Fbo_Mix[0] = GLUtils::glProgram(ShaderVertex_FBO, ShaderFragment_FBO_NV212RGB);
+    m_Program_Fbo_Mix[1] = GLUtils::glProgram(ShaderVertex_FBO, ShaderFragment_FBO_GaussBlur);
+    m_Program_Fbo_Mix[2] = GLUtils::glProgram(ShaderVertex_FBO, ShaderFragment_FBO_HighPass);
+    m_Program_Fbo_Mix[3] = GLUtils::glProgram(ShaderVertex_FBO, ShaderFragment_FBO_Beauty);
+    m_Program_Fbo_Mix[4] = GLUtils::glProgram(ShaderVertex_FBO, ShaderFragment_FBO_BigEye);
+    if (m_Program_Fbo_Mix[0] == GL_NONE) return;
+    if (m_Program_Fbo_Mix[1] == GL_NONE) return;
+    if (m_Program_Fbo_Mix[2] == GL_NONE) return;
+    if (m_Program_Fbo_Mix[3] == GL_NONE) return;
+    if (m_Program_Fbo_Mix[4] == GL_NONE) return;
     //vbo
     glGenBuffers(4, m_VBO);
     glBindBuffer(GL_ARRAY_BUFFER, m_VBO[0]);
@@ -133,19 +147,24 @@ void VideoRender::onSurfaceCreated() {
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(Location_Indices), Location_Indices,
                  GL_STATIC_DRAW);
     GL_ERROR_CHECK();
-    //offscreen
+    //offscreen 展示部分 vao/texture/fbo初始化
     glGenVertexArrays(1, m_VAO_Fbo);
     glBindVertexArray(m_VAO_Fbo[0]);
     glBindBuffer(GL_ARRAY_BUFFER, m_VBO[0]);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (void *) 0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (void *) nullptr);
     glEnableVertexAttribArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, m_VBO[2]);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), (void *) 0);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), (void *) nullptr);
     glEnableVertexAttribArray(1);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_VBO[3]);
 
-    glGenTextures(1, m_Texture_Fbo);
+    glGenTextures(2, m_Texture_Fbo);
     glBindTexture(GL_TEXTURE_2D, m_Texture_Fbo[0]);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glBindTexture(GL_TEXTURE_2D, m_Texture_Fbo[1]);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -161,16 +180,24 @@ void VideoRender::onSurfaceCreated() {
         LOGCATE("gl_error::CreateFrameBufferObj status != GL_FRAMEBUFFER_COMPLETE");
     }
     glBindTexture(GL_TEXTURE_2D, GL_NONE);
+    glBindTexture(GL_TEXTURE_2D, m_Texture_Fbo[1]);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, m_Texture_Fbo[1],
+                           0);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+        LOGCATE("gl_error::CreateFrameBufferObj status != GL_FRAMEBUFFER_COMPLETE");
+    }
+    glBindTexture(GL_TEXTURE_2D, GL_NONE);
     glBindFramebuffer(GL_FRAMEBUFFER, GL_NONE);
     GL_ERROR_CHECK();
-    //normal
+    //normal 展示部分 vao/texture初始化
     glGenVertexArrays(1, m_VAO);
     glBindVertexArray(m_VAO[0]);
     glBindBuffer(GL_ARRAY_BUFFER, m_VBO[0]);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (void *) 0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (void *) nullptr);
     glEnableVertexAttribArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, m_VBO[1]);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), (void *) 0);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), (void *) nullptr);
     glEnableVertexAttribArray(1);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_VBO[3]);
 
@@ -193,11 +220,13 @@ void VideoRender::onSurfaceCreated() {
     GL_ERROR_CHECK();
 }
 
+//surface高宽
 void VideoRender::onSurfaceChanged(int width, int height) {
     m_Width_display = width;
     m_Height_display = height;
 }
 
+//摄像头
 void VideoRender::onMatrix(const char *gl_name, float viewRot, float modelRot) {
     glm::mat4 projection = glm::ortho(-1.0f, 1.0f, -1.0f, 1.0f, 0.0f, 1.0f);
     glm::mat4 view = glm::mat4(1.0f);
@@ -212,14 +241,14 @@ void VideoRender::onMatrix(const char *gl_name, float viewRot, float modelRot) {
     glUniformMatrix4fv(vMatrix, 1, GL_FALSE, glm::value_ptr(mat4Matrix));
 }
 
+//gl绘制
 void VideoRender::onDrawFrame() {
     if (m_Program == GL_NONE) return;
-    if (m_Program_Fbo_YUV420P == GL_NONE) return;
-    if (m_Program_Fbo_NV21 == GL_NONE) return;
-    if (m_Program_Fbo_RGB == GL_NONE) return;
-    if (m_Program_Fbo_NV21_Face == GL_NONE) return;
+    if (m_Program_Fbo[0] == GL_NONE) return;
+    if (m_Program_Fbo[1] == GL_NONE) return;
+    if (m_Program_Fbo[2] == GL_NONE) return;
+    //纹理初始化
     if (m_VRenderQueue.empty())return;
-    //textureImage2d
     std::unique_lock<std::mutex> lock(m_Mutex);
     VRender *render = m_VRenderQueue.front();
     int format = render->pixel->format;
@@ -247,16 +276,23 @@ void VideoRender::onDrawFrame() {
         glBindTexture(GL_TEXTURE_2D, m_Texture[1]);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE_ALPHA, width / 2, height / 2,
                      0, GL_LUMINANCE_ALPHA, GL_UNSIGNED_BYTE, image->plane[1]);
-    } else {
+    } else if (format == IMAGE_FORMAT_RGBA) {
         glBindTexture(GL_TEXTURE_2D, m_Texture[0]);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA,
                      GL_UNSIGNED_BYTE, image->plane[0]);
+    } else if (format == IMAGE_FORMAT_NV21_MIX) {
+        glBindTexture(GL_TEXTURE_2D, m_Texture[0]);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, width, height, 0,
+                     GL_LUMINANCE, GL_UNSIGNED_BYTE, image->plane[0]);
+        glBindTexture(GL_TEXTURE_2D, m_Texture[1]);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE_ALPHA, width / 2, height / 2,
+                     0, GL_LUMINANCE_ALPHA, GL_UNSIGNED_BYTE, image->plane[1]);
     }
     if (m_VRenderQueue.size() > 2) {
         m_VRenderQueue.pop();
         onReleaseRender(render);
     }
-    //offscreen
+    //offscreen 离屏纹理高宽
     if (m_CameraData) {
         glBindTexture(GL_TEXTURE_2D, m_Texture_Fbo[0]);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, height, width, 0, GL_RGBA,
@@ -268,62 +304,9 @@ void VideoRender::onDrawFrame() {
                      GL_UNSIGNED_BYTE, nullptr);
         glViewport(0, 0, width, height);
     }
-    if (m_Face > 0 && format == IMAGE_FORMAT_NV21) {
+    if (format == IMAGE_FORMAT_YUV420P) {
         glBindFramebuffer(GL_FRAMEBUFFER, m_Fbo[0]);
-        glUseProgram(m_Program_Fbo_NV21_Face);
-        glBindVertexArray(m_VAO_Fbo[0]);
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, m_Texture[0]);
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, m_Texture[1]);
-        GLint textureY = glGetUniformLocation(m_Program_Fbo_NV21_Face, "s_textureY");
-        GLint textureVU = glGetUniformLocation(m_Program_Fbo_NV21_Face, "s_textureVU");
-        glUniform1i(textureY, 0);
-        glUniform1i(textureVU, 1);
-        GLfloat size = glGetUniformLocation(m_Program_Fbo_NV21_Face, "fPixelSize");
-        glUniform2f(size, width, height);
-        GLfloat facePoint = glGetUniformLocation(m_Program_Fbo_NV21_Face, "fFacePoint");
-        GLfloat faceSize = glGetUniformLocation(m_Program_Fbo_NV21_Face, "fFaceSize");
-        glUniform2f(facePoint, 0.0f, 0.0f);
-        glUniform2f(faceSize, 0.0f, 0.0f);
-        GLfloat eyeScale = glGetUniformLocation(m_Program_Fbo_NV21_Face, "fEyeScale");
-        GLfloat eyeRadius = glGetUniformLocation(m_Program_Fbo_NV21_Face, "fEyeRadius");
-        GLfloat eyeLeft = glGetUniformLocation(m_Program_Fbo_NV21_Face, "fEyeLeft");
-        GLfloat eyeRight = glGetUniformLocation(m_Program_Fbo_NV21_Face, "fEyeRight");
-        GLfloat nose = glGetUniformLocation(m_Program_Fbo_NV21_Face, "fNose");
-        GLfloat mouthL = glGetUniformLocation(m_Program_Fbo_NV21_Face, "fMouthL");
-        GLfloat mouthR = glGetUniformLocation(m_Program_Fbo_NV21_Face, "fMouthR");
-        glUniform2f(eyeLeft, 0.0f, 0.0f);
-        glUniform2f(eyeRight, 0.0f, 0.0f);
-        glUniform2f(nose, 0.0f, 0.0f);
-        glUniform2f(mouthL, 0.0f, 0.0f);
-        glUniform2f(mouthR, 0.0f, 0.0f);
-        if (!faces.empty()) {
-            glUniform2f(facePoint, faces[0].x, faces[0].y);
-            glUniform2f(faceSize, faces[0].width, faces[0].height);
-            if (!eyes.empty()) {
-                glUniform1f(eyeScale, 0.5f);
-                glUniform1f(eyeRadius, faces[0].width / 10.0f);
-                float offset;
-                if (m_ModelRot == 0.0f) {
-                    offset = -1.0f;
-                } else {
-                    offset = 1.0f;
-                }
-                glUniform2f(eyeLeft, eyes[0].x + offset, eyes[0].y);
-                glUniform2f(eyeRight, eyes[1].x + offset, eyes[1].y);
-            }
-            if (!noses.empty()) {
-                glUniform2f(nose, noses[0].x, noses[0].y);
-            }
-            if (!mouths.empty()) {
-                glUniform2f(mouthL, mouths[0].x, mouths[0].y);
-                glUniform2f(mouthR, mouths[1].x, mouths[1].y);
-            }
-        }
-    } else if (format == IMAGE_FORMAT_YUV420P) {
-        glBindFramebuffer(GL_FRAMEBUFFER, m_Fbo[0]);
-        glUseProgram(m_Program_Fbo_YUV420P);
+        glUseProgram(m_Program_Fbo[0]);
         glBindVertexArray(m_VAO_Fbo[0]);
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, m_Texture[0]);
@@ -331,41 +314,67 @@ void VideoRender::onDrawFrame() {
         glBindTexture(GL_TEXTURE_2D, m_Texture[1]);
         glActiveTexture(GL_TEXTURE2);
         glBindTexture(GL_TEXTURE_2D, m_Texture[2]);
-        GLint textureY = glGetUniformLocation(m_Program_Fbo_YUV420P, "s_textureY");
-        GLint textureU = glGetUniformLocation(m_Program_Fbo_YUV420P, "s_textureU");
-        GLint textureV = glGetUniformLocation(m_Program_Fbo_YUV420P, "s_textureV");
+        GLint textureY = glGetUniformLocation(m_Program_Fbo[0], "s_textureY");
+        GLint textureU = glGetUniformLocation(m_Program_Fbo[0], "s_textureU");
+        GLint textureV = glGetUniformLocation(m_Program_Fbo[0], "s_textureV");
         glUniform1i(textureY, 0);
         glUniform1i(textureU, 1);
         glUniform1i(textureV, 2);
     } else if (format == IMAGE_FORMAT_NV21 || format == IMAGE_FORMAT_NV12) {
         glBindFramebuffer(GL_FRAMEBUFFER, m_Fbo[0]);
-        glUseProgram(m_Program_Fbo_NV21);
+        glUseProgram(m_Program_Fbo[1]);
         glBindVertexArray(m_VAO_Fbo[0]);
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, m_Texture[0]);
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, m_Texture[1]);
-        GLint textureY = glGetUniformLocation(m_Program_Fbo_NV21, "s_textureY");
-        GLint textureVU = glGetUniformLocation(m_Program_Fbo_NV21, "s_textureVU");
+        GLint textureY = glGetUniformLocation(m_Program_Fbo[1], "s_textureY");
+        GLint textureVU = glGetUniformLocation(m_Program_Fbo[1], "s_textureVU");
         glUniform1i(textureY, 0);
         glUniform1i(textureVU, 1);
-    } else {
+    } else if (format == IMAGE_FORMAT_RGBA) {
         glBindFramebuffer(GL_FRAMEBUFFER, m_Fbo[0]);
-        glUseProgram(m_Program_Fbo_RGB);
+        glUseProgram(m_Program_Fbo[2]);
         glBindVertexArray(m_VAO_Fbo[0]);
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, m_Texture[0]);
-        GLint textureRGB = glGetUniformLocation(m_Program_Fbo_RGB, "s_textureRGB");
+        GLint textureRGB = glGetUniformLocation(m_Program_Fbo[2], "s_textureRGB");
         glUniform1i(textureRGB, 0);
+    } else if (format == IMAGE_FORMAT_NV21_MIX) {
+        LOGCATE("============111");
+        //离屏纹理处理
+//        GLuint texture = onDrawFrameMix(width, height);
+
+//        if (m_CameraData) {
+//            glBindTexture(GL_TEXTURE_2D, m_Texture_Fbo[1]);
+//            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, height, width, 0, GL_RGBA,
+//                         GL_UNSIGNED_BYTE, nullptr);
+//            glViewport(0, 0, height, width);
+//        } else {
+//            glBindTexture(GL_TEXTURE_2D, m_Texture_Fbo[1]);
+//            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA,
+//                         GL_UNSIGNED_BYTE, nullptr);
+//            glViewport(0, 0, width, height);
+//        }
+//        //RGB
+//        glBindFramebuffer(GL_FRAMEBUFFER, m_Fbo[0]);
+//        glUseProgram(m_Program_Fbo[2]);
+//        glBindVertexArray(m_VAO_Fbo[0]);
+//        glActiveTexture(GL_TEXTURE0);
+//        glBindTexture(GL_TEXTURE_2D, m_Texture_Fbo[1]);
+//        GLint textureRGB = glGetUniformLocation(m_Program_Fbo[2], "s_textureRGB");
+//        glUniform1i(textureRGB, 0);
+    } else {
+        return;
     }
 //    onMatrix("vMatrix", 0.0f, 0.0f);
     onMatrix("vMatrix", m_ViewRot, m_ModelRot);
-    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (const void *) 0);
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (const void *) nullptr);
     onFrameBufferUpdate(width, height);
     glBindVertexArray(0);
     glBindTexture(GL_TEXTURE_2D, 0);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    //normal
+    //normal 绘制
     glViewport(0, 0, m_Width_display, m_Height_display);
     glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glClearColor(1.0, 1.0, 1.0, 1.0);
@@ -377,8 +386,88 @@ void VideoRender::onDrawFrame() {
     glUniform1i(textureMap, 0);
     onMatrix("vMatrix", 0.0f, 0.0f);
 //    onMatrix("vMatrix", m_ViewRot, m_ModelRot);
-    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (const void *) 0);
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (const void *) nullptr);
     lock.unlock();
+}
+
+//fbo 离屏处理
+GLuint VideoRender::onDrawFrameMix(int width, int height) {
+//        glBindFramebuffer(GL_FRAMEBUFFER, m_Fbo[0]);
+//        glUseProgram(m_Program_Fbo_NV21_Face);
+//        glBindVertexArray(m_VAO_Fbo[0]);
+//        glActiveTexture(GL_TEXTURE0);
+//        glBindTexture(GL_TEXTURE_2D, m_Texture[0]);
+//        glActiveTexture(GL_TEXTURE1);
+//        glBindTexture(GL_TEXTURE_2D, m_Texture[1]);
+//        GLint textureY = glGetUniformLocation(m_Program_Fbo_NV21_Face, "s_textureY");
+//        GLint textureVU = glGetUniformLocation(m_Program_Fbo_NV21_Face, "s_textureVU");
+//        glUniform1i(textureY, 0);
+//        glUniform1i(textureVU, 1);
+//        GLfloat size = glGetUniformLocation(m_Program_Fbo_NV21_Face, "fPixelSize");
+//        glUniform2f(size, width, height);
+//        GLfloat facePoint = glGetUniformLocation(m_Program_Fbo_NV21_Face, "fFacePoint");
+//        GLfloat faceSize = glGetUniformLocation(m_Program_Fbo_NV21_Face, "fFaceSize");
+//        glUniform2f(facePoint, 0.0f, 0.0f);
+//        glUniform2f(faceSize, 0.0f, 0.0f);
+//        GLfloat eyeScale = glGetUniformLocation(m_Program_Fbo_NV21_Face, "fEyeScale");
+//        GLfloat eyeRadius = glGetUniformLocation(m_Program_Fbo_NV21_Face, "fEyeRadius");
+//        GLfloat eyeLeft = glGetUniformLocation(m_Program_Fbo_NV21_Face, "fEyeLeft");
+//        GLfloat eyeRight = glGetUniformLocation(m_Program_Fbo_NV21_Face, "fEyeRight");
+//        GLfloat nose = glGetUniformLocation(m_Program_Fbo_NV21_Face, "fNose");
+//        GLfloat mouthL = glGetUniformLocation(m_Program_Fbo_NV21_Face, "fMouthL");
+//        GLfloat mouthR = glGetUniformLocation(m_Program_Fbo_NV21_Face, "fMouthR");
+//        glUniform2f(eyeLeft, 0.0f, 0.0f);
+//        glUniform2f(eyeRight, 0.0f, 0.0f);
+//        glUniform2f(nose, 0.0f, 0.0f);
+//        glUniform2f(mouthL, 0.0f, 0.0f);
+//        glUniform2f(mouthR, 0.0f, 0.0f);
+//        if (!faces.empty()) {
+//            glUniform2f(facePoint, faces[0].x, faces[0].y);
+//            glUniform2f(faceSize, faces[0].width, faces[0].height);
+//            if (!eyes.empty()) {
+//                glUniform1f(eyeScale, 0.1f);
+//                glUniform1f(eyeRadius, faces[0].width / 10.0f);
+//                float offset = 0.0f;
+//                if (m_ModelRot == 0.0f) offset = -1.0f;
+//                else offset = 1.0f;
+//                glUniform2f(eyeLeft, eyes[0].x + offset, eyes[0].y);
+//                glUniform2f(eyeRight, eyes[1].x + offset, eyes[1].y);
+//            }
+//            if (!noses.empty()) {
+//                glUniform2f(nose, noses[0].x, noses[0].y);
+//            }
+//            if (!mouths.empty()) {
+//                glUniform2f(mouthL, mouths[0].x, mouths[0].y);
+//                glUniform2f(mouthR, mouths[1].x, mouths[1].y);
+//            }
+//        }
+
+    //nv21 2 rgb
+//    glBindTexture(GL_TEXTURE_2D, m_Texture_Fbo_Mix[0]);
+//    if (m_CameraData) {
+//        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, height, width, 0, GL_RGBA,
+//                     GL_UNSIGNED_BYTE, nullptr);
+//    } else {
+//        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA,
+//                     GL_UNSIGNED_BYTE, nullptr);
+//    }
+//    glViewport(0, 0, width, height);
+//    glBindFramebuffer(GL_FRAMEBUFFER, m_Fbo_Mix[0]);
+//    glUseProgram(m_Program_Fbo_Mix[0]);
+//    glBindVertexArray(m_VAO_Fbo_Mix[0]);
+//    glActiveTexture(GL_TEXTURE0);
+//    glBindTexture(GL_TEXTURE_2D, m_Texture[0]);
+//    glActiveTexture(GL_TEXTURE1);
+//    glBindTexture(GL_TEXTURE_2D, m_Texture[1]);
+//    GLint textureY = glGetUniformLocation(m_Program_Fbo_Mix[0], "nv21Y");
+//    GLint textureVU = glGetUniformLocation(m_Program_Fbo_Mix[0], "nv21VU");
+//    glUniform1i(textureY, 0);
+//    glUniform1i(textureVU, 1);
+//    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (const void *) nullptr);
+//    glBindVertexArray(0);
+//    glBindTexture(GL_TEXTURE_2D, 0);
+//    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    return 0;
 }
 
 void VideoRender::onResume() {
@@ -394,6 +483,7 @@ void VideoRender::onRelease() {
     if (m_VBO[0]) {
         glDeleteBuffers(3, m_VBO);
     }
+    //fbo
     if (m_Texture_Fbo[0]) {
         glDeleteTextures(1, m_Texture_Fbo);
     }
@@ -403,22 +493,44 @@ void VideoRender::onRelease() {
     if (m_Fbo[0]) {
         glDeleteFramebuffers(1, m_Fbo);
     }
-    if (m_Program_Fbo_YUV420P) {
-        glDeleteProgram(m_Program_Fbo_YUV420P);
-        m_Program_Fbo_YUV420P = GL_NONE;
+    if (m_Program_Fbo[0]) {
+        glDeleteProgram(m_Program_Fbo[0]);
+        m_Program_Fbo[0] = GL_NONE;
     }
-    if (m_Program_Fbo_NV21) {
-        glDeleteProgram(m_Program_Fbo_NV21);
-        m_Program_Fbo_NV21 = GL_NONE;
+    if (m_Program_Fbo[1]) {
+        glDeleteProgram(m_Program_Fbo[1]);
+        m_Program_Fbo[1] = GL_NONE;
     }
-    if (m_Program_Fbo_RGB) {
-        glDeleteProgram(m_Program_Fbo_RGB);
-        m_Program_Fbo_RGB = GL_NONE;
+    if (m_Program_Fbo[2]) {
+        glDeleteProgram(m_Program_Fbo[2]);
+        m_Program_Fbo[2] = GL_NONE;
     }
-    if (m_Program_Fbo_NV21_Face) {
-        glDeleteProgram(m_Program_Fbo_NV21_Face);
-        m_Program_Fbo_NV21_Face = GL_NONE;
+    //fbo2
+    if (m_Program_Fbo_Mix[0]) {
+        glDeleteProgram(m_Program_Fbo_Mix[0]);
+        m_Program_Fbo_Mix[0] = GL_NONE;
     }
+    if (m_Program_Fbo_Mix[1]) {
+        glDeleteProgram(m_Program_Fbo_Mix[1]);
+        m_Program_Fbo_Mix[1] = GL_NONE;
+    }
+    if (m_Program_Fbo_Mix[2]) {
+        glDeleteProgram(m_Program_Fbo_Mix[2]);
+        m_Program_Fbo_Mix[2] = GL_NONE;
+    }
+    if (m_Program_Fbo_Mix[3]) {
+        glDeleteProgram(m_Program_Fbo_Mix[3]);
+        m_Program_Fbo_Mix[3] = GL_NONE;
+    }
+    if (m_Program_Fbo_Mix[4]) {
+        glDeleteProgram(m_Program_Fbo_Mix[4]);
+        m_Program_Fbo_Mix[4] = GL_NONE;
+    }
+    if (m_Program_Fbo_Mix[5]) {
+        glDeleteProgram(m_Program_Fbo_Mix[5]);
+        m_Program_Fbo_Mix[5] = GL_NONE;
+    }
+    //===
     if (m_Texture[0]) {
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, 0);
@@ -438,6 +550,7 @@ void VideoRender::onRelease() {
     m_Interrupt = true;
 }
 
+//更新录制用数据
 void VideoRender::onFrameBufferUpdate(int width, int height) {
     if (!m_FrameBuffer) m_FrameBuffer = new uint8_t[width * height * 4];
     m_FrameBufferSize = width * height * 4;
@@ -456,6 +569,7 @@ void VideoRender::onFrameBufferUpdate(int width, int height) {
     }
 }
 
+//释放所有数据
 void VideoRender::onReleaseRenders() {
     while (!m_VRenderQueue.empty()) {
         VRender *render = m_VRenderQueue.front();
@@ -464,6 +578,7 @@ void VideoRender::onReleaseRenders() {
     }
 }
 
+//释放指定数据
 void VideoRender::onReleaseRender(VRender *render) {
     PixImageUtils::pix_image_free(render->pixel);
     if (!render->faces.empty()) render->faces.clear();
@@ -473,5 +588,6 @@ void VideoRender::onReleaseRender(VRender *render) {
     delete render;
 }
 }
+
 
 
