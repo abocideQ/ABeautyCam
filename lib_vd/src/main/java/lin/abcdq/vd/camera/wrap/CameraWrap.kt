@@ -14,6 +14,7 @@ import android.os.Build
 import android.os.Handler
 import android.os.HandlerThread
 import android.util.Log
+import android.util.Range
 import android.util.Size
 import android.view.Surface
 import androidx.annotation.RequiresApi
@@ -65,9 +66,19 @@ internal class CameraWrap(context: Context) {
 
     @SuppressLint("MissingPermission")
     fun openCamera(facing: String, surface: Surface?) {
+        val characteristics = mCameras[facing] ?: return
+        val fps = characteristics.get(CameraCharacteristics.CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES)
+        if (fps != null) {
+            mFps = fps[0]
+            for (f in fps) {
+                val low = mFps?.lower ?: 0
+                val up = mFps?.upper ?: 0
+                if (f.lower <= low && f.upper >= up) mFps = f
+            }
+        }
         initHandler()
         mPreviewReader = ImageReader.newInstance(
-            mPreviewSize?.width ?: 1, mPreviewSize?.height ?: 1, IMAGE_READER_FORMAT, 6
+            mPreviewSize?.width ?: 1, mPreviewSize?.height ?: 1, IMAGE_READER_FORMAT, 2
         )
         mPreviewReader?.setOnImageAvailableListener(
             {
@@ -219,6 +230,12 @@ internal class CameraWrap(context: Context) {
             CaptureRequest.CONTROL_AE_MODE,
             CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH
         )
+        if (mFps != null) {
+            captureBuilder.set(
+                CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE,
+                mFps
+            )
+        }
         mCameraRequest = captureBuilder.build()
         val sessionCall = object : CameraCaptureSession.StateCallback() {
             override fun onConfigured(session: CameraCaptureSession) {
@@ -264,6 +281,7 @@ internal class CameraWrap(context: Context) {
     private var mCameraSession: CameraCaptureSession? = null
     private val mDefaultPreviewSize = Size(1280, 720)
     private val mDefaultCaptureSize = Size(1280, 720)
+    private var mFps: Range<Int>? = null
     private var mPreviewSize: Size? = null
     private var mCaptureSize: Size? = null
 

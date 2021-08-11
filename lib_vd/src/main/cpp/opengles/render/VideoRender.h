@@ -29,6 +29,14 @@ typedef struct _tag_render {
     }
 } VRender;
 
+typedef struct _tag_fbo {
+    const char *shader;
+    GLuint m_FboMix[1];
+    GLuint m_FboMix_Program[1];
+    GLuint m_FboMix_VAO[1];
+    GLuint m_FboMix_Texture[1];
+} FrameBufferObj;
+
 typedef void (*OnRenderFrameCallback)(void *, int, int, int, uint8_t *); // 回调函数 -> Record
 
 class VideoRender {
@@ -53,13 +61,19 @@ public:
 
     void onSurfaceCreated();
 
+    void onFrameMixCreated();
+
     void onSurfaceChanged(int w, int h);
 
-    void onMatrix(const char *gl_name, float viewRot, float modelRot);
+    void onMatrix(const char *gl_name, float viewRot, float modelRot) const;
 
     void onDrawFrame();
 
-    GLuint onDrawFrameMix(int width, int height);
+    GLuint onDrawFrameMix(int width, int height,
+                          std::vector<cv::Rect> faces,
+                          std::vector<cv::Rect> eyes,
+                          std::vector<cv::Rect> noses,
+                          std::vector<cv::Rect> mouths);
 
     void onResume();
 
@@ -95,28 +109,25 @@ protected:
     uint8_t *m_FrameBuffer = nullptr;
     int m_FrameBufferSize = 0;
 
-    //展示部分
+    //normal 展示用
     GLuint m_Program;
     GLuint m_VBO[4];
     GLuint m_VAO[1];
     GLuint m_Texture[3];
-    //离屏展示部分
+    //fbo 展示用
     GLuint m_Fbo[1];
     GLuint m_Fbo_Program[3];//display:yuv420 nv21/nv12 rgb
     GLuint m_Fbo_VAO[1];
-    GLuint m_Fbo_Texture[2];
-    //离屏处理部分
-    GLuint m_FboMix[1];
-    GLuint m_FboMix_Program[10];
-    GLuint m_FboMix_VAO[1];
-    GLuint m_FboMix_Texture[2];
+    GLuint m_Fbo_Texture[1];
+    //fbo 处理用
+    std::vector<FrameBufferObj> m_FboMixes;
     //互斥锁
     static std::mutex m_Mutex;
     //===
     volatile bool m_Interrupt = false;
 private:
     //cv or faceCnn
-    int m_Face = 0; //1 cv 2 cvTrack 3 faceCnn
+    int FACE_ON = 0; //1 cv 2 cvTrack 3 faceCnn
     //opencv
     FaceCvDetection *m_FaceCvDetection = nullptr;
     //cvTrack
