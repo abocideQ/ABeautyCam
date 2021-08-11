@@ -102,11 +102,14 @@ protected:
     GLuint m_Texture[3];
     //离屏展示部分
     GLuint m_Fbo[1];
-    GLuint m_Program_Fbo[3];//display:yuv420 nv21/nv12 rgb
-    GLuint m_VAO_Fbo[1];
-    GLuint m_Texture_Fbo[2];
+    GLuint m_Fbo_Program[3];//display:yuv420 nv21/nv12 rgb
+    GLuint m_Fbo_VAO[1];
+    GLuint m_Fbo_Texture[2];
     //离屏处理部分
-    GLuint m_Program_Fbo_Mix[10];
+    GLuint m_FboMix[1];
+    GLuint m_FboMix_Program[10];
+    GLuint m_FboMix_VAO[1];
+    GLuint m_FboMix_Texture[2];
     //互斥锁
     static std::mutex m_Mutex;
     //===
