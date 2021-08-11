@@ -403,55 +403,6 @@ GLuint VideoRender::onDrawFrameMix(int width, int height,
                                    std::vector<cv::Rect> eyes,
                                    std::vector<cv::Rect> noses,
                                    std::vector<cv::Rect> mouths) {
-//        glBindFramebuffer(GL_FRAMEBUFFER, m_Fbo[0]);
-//        glUseProgram(m_Fbo_Program_NV21_Face);
-//        glBindVertexArray(m_Fbo_VAO[0]);
-//        glActiveTexture(GL_TEXTURE0);
-//        glBindTexture(GL_TEXTURE_2D, m_Texture[0]);
-//        glActiveTexture(GL_TEXTURE1);
-//        glBindTexture(GL_TEXTURE_2D, m_Texture[1]);
-//        GLint textureY = glGetUniformLocation(m_Fbo_Program_NV21_Face, "s_textureY");
-//        GLint textureVU = glGetUniformLocation(m_Fbo_Program_NV21_Face, "s_textureVU");
-//        glUniform1i(textureY, 0);
-//        glUniform1i(textureVU, 1);
-//        GLfloat size = glGetUniformLocation(m_Fbo_Program_NV21_Face, "fPixelSize");
-//        glUniform2f(size, width, height);
-//        GLfloat facePoint = glGetUniformLocation(m_Fbo_Program_NV21_Face, "fFacePoint");
-//        GLfloat faceSize = glGetUniformLocation(m_Fbo_Program_NV21_Face, "fFaceSize");
-//        glUniform2f(facePoint, 0.0f, 0.0f);
-//        glUniform2f(faceSize, 0.0f, 0.0f);
-//        GLfloat eyeScale = glGetUniformLocation(m_Fbo_Program_NV21_Face, "fEyeScale");
-//        GLfloat eyeRadius = glGetUniformLocation(m_Fbo_Program_NV21_Face, "fEyeRadius");
-//        GLfloat eyeLeft = glGetUniformLocation(m_Fbo_Program_NV21_Face, "fEyeLeft");
-//        GLfloat eyeRight = glGetUniformLocation(m_Fbo_Program_NV21_Face, "fEyeRight");
-//        GLfloat nose = glGetUniformLocation(m_Fbo_Program_NV21_Face, "fNose");
-//        GLfloat mouthL = glGetUniformLocation(m_Fbo_Program_NV21_Face, "fMouthL");
-//        GLfloat mouthR = glGetUniformLocation(m_Fbo_Program_NV21_Face, "fMouthR");
-//        glUniform2f(eyeLeft, 0.0f, 0.0f);
-//        glUniform2f(eyeRight, 0.0f, 0.0f);
-//        glUniform2f(nose, 0.0f, 0.0f);
-//        glUniform2f(mouthL, 0.0f, 0.0f);
-//        glUniform2f(mouthR, 0.0f, 0.0f);
-//        if (!faces.empty()) {
-//            glUniform2f(facePoint, faces[0].x, faces[0].y);
-//            glUniform2f(faceSize, faces[0].width, faces[0].height);
-//            if (!eyes.empty()) {
-//                glUniform1f(eyeScale, 0.1f);
-//                glUniform1f(eyeRadius, faces[0].width / 10.0f);
-//                float offset = 0.0f;
-//                if (m_ModelRot == 0.0f) offset = -1.0f;
-//                else offset = 1.0f;
-//                glUniform2f(eyeLeft, eyes[0].x + offset, eyes[0].y);
-//                glUniform2f(eyeRight, eyes[1].x + offset, eyes[1].y);
-//            }
-//            if (!noses.empty()) {
-//                glUniform2f(nose, noses[0].x, noses[0].y);
-//            }
-//            if (!mouths.empty()) {
-//                glUniform2f(mouthL, mouths[0].x, mouths[0].y);
-//                glUniform2f(mouthR, mouths[1].x, mouths[1].y);
-//            }
-//        }
     //offscreen 离屏纹理高宽
     for (auto &fbo : m_FboMixes) {
         if (m_CameraData) {
