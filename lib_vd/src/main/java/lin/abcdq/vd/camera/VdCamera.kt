@@ -23,7 +23,7 @@ class VdCamera(context: Context) : GLSurfaceView.Renderer {
 
     //人脸检测方式 :0. close 1.opencvDetectMultiScale(go eat shit) 2.opencvTrack(fast but not great) 3.faceCNN(slow but great)
     //注意相机返回图像方向(翻转+镜像)
-    private var mFacePosition = 3
+    private var mFacePosition = 2
 
     fun setSurface(surface: GLSurfaceView) {
         surface.setEGLContextClientVersion(3)

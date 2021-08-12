@@ -200,12 +200,15 @@ void VideoRender::onSurfaceCreated() {
 
 //fbo 离屏处理 初始化
 void VideoRender::onFrameMixCreated() {
-    const char *shaders[6] = {
+    const char *shaders[9] = {
             ShaderFragment_FBO_NV212RGB,
-            ShaderFragment_FBO_GaussBlur,
+            ShaderFragment_FBO_GaussBlurAWay,
+            ShaderFragment_FBO_GaussBlurAWay,
             ShaderFragment_FBO_HighPassGauss,
-            ShaderFragment_FBO_GaussBlur,
+            ShaderFragment_FBO_GaussBlurAWay,
+            ShaderFragment_FBO_GaussBlurAWay,
             ShaderFragment_FBO_Beauty,
+            ShaderFragment_FBO_SharpenAWay,
             ShaderFragment_FBO_BigEye
     };
     for (auto &shader : shaders) {
@@ -433,7 +436,7 @@ GLuint VideoRender::onDrawFrameMix(int width, int height,
     glBindVertexArray(0);
     glBindTexture(GL_TEXTURE_2D, 0);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    //gauss
+    //gauss 横向
     obj = m_FboMixes[1];
     glBindFramebuffer(GL_FRAMEBUFFER, obj.m_FboMix[0]);
     glUseProgram(obj.m_FboMix_Program[0]);
@@ -441,22 +444,35 @@ GLuint VideoRender::onDrawFrameMix(int width, int height,
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, m_FboMixes[0].m_FboMix_Texture[0]);
     glUniform1i(glGetUniformLocation(obj.m_FboMix_Program[0], "textureRGB"), 0);
-    glUniform2f(glGetUniformLocation(obj.m_FboMix_Program[0], "fPixelSize"), width, height);
-    glUniform2f(glGetUniformLocation(obj.m_FboMix_Program[0], "shift"), 5, 1);
+    glUniform2f(glGetUniformLocation(obj.m_FboMix_Program[0], "fPixelSize"), width, 0.0f);
+    onMatrix("vMatrix", 0.0f, 0.0f);
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (const void *) nullptr);
+    glBindVertexArray(0);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    //gauss 竖向
+    obj = m_FboMixes[2];
+    glBindFramebuffer(GL_FRAMEBUFFER, obj.m_FboMix[0]);
+    glUseProgram(obj.m_FboMix_Program[0]);
+    glBindVertexArray(obj.m_FboMix_VAO[0]);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, m_FboMixes[1].m_FboMix_Texture[0]);
+    glUniform1i(glGetUniformLocation(obj.m_FboMix_Program[0], "textureRGB"), 0);
+    glUniform2f(glGetUniformLocation(obj.m_FboMix_Program[0], "fPixelSize"), 0.0f, height);
     onMatrix("vMatrix", 0.0f, 0.0f);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (const void *) nullptr);
     glBindVertexArray(0);
     glBindTexture(GL_TEXTURE_2D, 0);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     //highPass
-    obj = m_FboMixes[2];
+    obj = m_FboMixes[3];
     glBindFramebuffer(GL_FRAMEBUFFER, obj.m_FboMix[0]);
     glUseProgram(obj.m_FboMix_Program[0]);
     glBindVertexArray(obj.m_FboMix_VAO[0]);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, m_FboMixes[0].m_FboMix_Texture[0]);
     glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, m_FboMixes[1].m_FboMix_Texture[0]);
+    glBindTexture(GL_TEXTURE_2D, m_FboMixes[2].m_FboMix_Texture[0]);
     glUniform1i(glGetUniformLocation(obj.m_FboMix_Program[0], "textureRGB"), 0);
     glUniform1i(glGetUniformLocation(obj.m_FboMix_Program[0], "textureGaussRGB"), 1);
     glUniform2f(glGetUniformLocation(obj.m_FboMix_Program[0], "fPixelSize"), width, height);
@@ -465,32 +481,45 @@ GLuint VideoRender::onDrawFrameMix(int width, int height,
     glBindVertexArray(0);
     glBindTexture(GL_TEXTURE_2D, 0);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    //highPass -> Gauss
-    obj = m_FboMixes[3];
+    //highPass -> Gauss 横向
+    obj = m_FboMixes[4];
     glBindFramebuffer(GL_FRAMEBUFFER, obj.m_FboMix[0]);
     glUseProgram(obj.m_FboMix_Program[0]);
     glBindVertexArray(obj.m_FboMix_VAO[0]);
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, m_FboMixes[2].m_FboMix_Texture[0]);
+    glBindTexture(GL_TEXTURE_2D, m_FboMixes[3].m_FboMix_Texture[0]);
     glUniform1i(glGetUniformLocation(obj.m_FboMix_Program[0], "textureRGB"), 0);
-    glUniform2f(glGetUniformLocation(obj.m_FboMix_Program[0], "fPixelSize"), width, height);
-    glUniform2f(glGetUniformLocation(obj.m_FboMix_Program[0], "shift"), 2, 1);
+    glUniform2f(glGetUniformLocation(obj.m_FboMix_Program[0], "fPixelSize"), width, 0.0f);
+    onMatrix("vMatrix", 0.0f, 0.0f);
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (const void *) nullptr);
+    glBindVertexArray(0);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    //highPass -> Gauss 竖向
+    obj = m_FboMixes[5];
+    glBindFramebuffer(GL_FRAMEBUFFER, obj.m_FboMix[0]);
+    glUseProgram(obj.m_FboMix_Program[0]);
+    glBindVertexArray(obj.m_FboMix_VAO[0]);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, m_FboMixes[4].m_FboMix_Texture[0]);
+    glUniform1i(glGetUniformLocation(obj.m_FboMix_Program[0], "textureRGB"), 0);
+    glUniform2f(glGetUniformLocation(obj.m_FboMix_Program[0], "fPixelSize"), 0.0f, height);
     onMatrix("vMatrix", 0.0f, 0.0f);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (const void *) nullptr);
     glBindVertexArray(0);
     glBindTexture(GL_TEXTURE_2D, 0);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     //beauty face
-    obj = m_FboMixes[4];
+    obj = m_FboMixes[6];
     glBindFramebuffer(GL_FRAMEBUFFER, obj.m_FboMix[0]);
     glUseProgram(obj.m_FboMix_Program[0]);
     glBindVertexArray(obj.m_FboMix_VAO[0]);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, m_FboMixes[0].m_FboMix_Texture[0]);
     glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, m_FboMixes[1].m_FboMix_Texture[0]);
+    glBindTexture(GL_TEXTURE_2D, m_FboMixes[2].m_FboMix_Texture[0]);
     glActiveTexture(GL_TEXTURE2);
-    glBindTexture(GL_TEXTURE_2D, m_FboMixes[3].m_FboMix_Texture[0]);
+    glBindTexture(GL_TEXTURE_2D, m_FboMixes[5].m_FboMix_Texture[0]);
     glUniform1i(glGetUniformLocation(obj.m_FboMix_Program[0], "textureSource"), 0);
     glUniform1i(glGetUniformLocation(obj.m_FboMix_Program[0], "textureGauss"), 1);
     glUniform1i(glGetUniformLocation(obj.m_FboMix_Program[0], "texturePassGauss"), 2);
@@ -499,13 +528,27 @@ GLuint VideoRender::onDrawFrameMix(int width, int height,
     glBindVertexArray(0);
     glBindTexture(GL_TEXTURE_2D, 0);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    //big eye
-    obj = m_FboMixes[5];
+    //sharpen
+    obj = m_FboMixes[7];
     glBindFramebuffer(GL_FRAMEBUFFER, obj.m_FboMix[0]);
     glUseProgram(obj.m_FboMix_Program[0]);
     glBindVertexArray(obj.m_FboMix_VAO[0]);
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, m_FboMixes[4].m_FboMix_Texture[0]);
+    glBindTexture(GL_TEXTURE_2D, m_FboMixes[6].m_FboMix_Texture[0]);
+    glUniform1i(glGetUniformLocation(obj.m_FboMix_Program[0], "textureRGB"), 0);
+    glUniform2f(glGetUniformLocation(obj.m_FboMix_Program[0], "fPixelSize"), width, height);
+    onMatrix("vMatrix", 0.0f, 0.0f);
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (const void *) nullptr);
+    glBindVertexArray(0);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    //big eye
+    obj = m_FboMixes[8];
+    glBindFramebuffer(GL_FRAMEBUFFER, obj.m_FboMix[0]);
+    glUseProgram(obj.m_FboMix_Program[0]);
+    glBindVertexArray(obj.m_FboMix_VAO[0]);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, m_FboMixes[7].m_FboMix_Texture[0]);
     glUniform1i(glGetUniformLocation(obj.m_FboMix_Program[0], "textureRgb"), 0);
     glUniform2f(glGetUniformLocation(obj.m_FboMix_Program[0], "fPixelSize"), width, height);
     GLfloat eyeScale = glGetUniformLocation(obj.m_FboMix_Program[0], "fEyeScale");
@@ -547,7 +590,7 @@ GLuint VideoRender::onDrawFrameMix(int width, int height,
     glBindVertexArray(0);
     glBindTexture(GL_TEXTURE_2D, 0);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    return m_FboMixes[1].m_FboMix_Texture[0];
+    return m_FboMixes[8].m_FboMix_Texture[0];
 }
 
 void VideoRender::onResume() {

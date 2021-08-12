@@ -67,7 +67,7 @@ const char *ShaderFragment_FBO_NV212RGB =
                     fragColor = vec4(NV21toRGB(fiTexCoord), 1.0f);
                 }
         );
-const char *ShaderFragment_FBO_GaussBlur =
+const char *ShaderFragment_FBO_GaussBlurAWay =
         GL_SHADER_VERSION
         GL_SHADER(
                 precision highp float;
@@ -76,24 +76,30 @@ const char *ShaderFragment_FBO_GaussBlur =
                 layout(location = 0) out vec4 fragColor;
                 //纹理大小
                 uniform vec2 fPixelSize;
-                uniform vec2 shift;
                 vec3 gaussBlur(vec2 texCoord) {
                     vec3 rgbBlur = texture(textureRGB, texCoord).rgb;
                     {
-                        // 高斯算子左右偏移值，当偏移值为2时，高斯算子为 5x5
-                        const int SHIFT_SIZE = 2;
-                        vec4 blurCoords[SHIFT_SIZE];
                         //高斯模糊，采样点周围4(SHIFT_SIZE*2)个点均进行一次采样，再求颜色平均值作为当前点的颜色
-                        // 偏移步距
-                        vec2 stepOffset = vec2(1.0f / fPixelSize.x, 1.0f / fPixelSize.y);
-                        // 偏移坐标
+                        // 高斯算子左右偏移值，当偏移值为2时，高斯算子为 5x5
+                        const int SHIFT_SIZE = 11;
+                        vec4 blurCoords[SHIFT_SIZE];
+                        // 横向/竖向偏移步距
+                        vec2 stepOffset = vec2(0.0f);
+                        if (fPixelSize.x == 0.0f) {
+                            stepOffset = vec2(0.0f, 1.0f / fPixelSize.y);
+                        }
+                        if (fPixelSize.y == 0.0f) {
+                            stepOffset = vec2(1.0f / fPixelSize.x, 0.0f);
+                        }
                         for (int i = 0; i < SHIFT_SIZE; i++) {
-                            blurCoords[i] = vec4(texCoord.x + stepOffset.x * float(i + 1),
-                                                 texCoord.x - stepOffset.x * float(i + 1),
-                                                 texCoord.y + stepOffset.y * float(i + 1),
-                                                 texCoord.y - stepOffset.y * float(i + 1));
-                            rgbBlur += texture(textureRGB, blurCoords[i].yw).rgb;
-                            rgbBlur += texture(textureRGB, blurCoords[i].yz).rgb;
+//                            blurCoords[i] = vec4(texCoord.x - float(i + 1) * stepOffset.x,
+//                                                 texCoord.y,
+//                                                 texCoord.x + float(i + 1) * stepOffset.y,
+//                                                 texCoord.y);
+                            blurCoords[i] = vec4(texCoord.xy - float(i + 1) * stepOffset,
+                                                 texCoord.xy + float(i + 1) * stepOffset);
+                            rgbBlur += texture(textureRGB, blurCoords[i].xy).rgb;
+                            rgbBlur += texture(textureRGB, blurCoords[i].zw).rgb;
                         }
                         rgbBlur = rgbBlur * 1.0 / float(2 * SHIFT_SIZE + 1);
                     }
@@ -155,34 +161,61 @@ const char *ShaderFragment_FBO_Beauty =
                         // 找到高反差后RGB通道的最大值
                         float maxCColor = max(max(rgbPassBlur.r, rgbPassBlur.g), rgbPassBlur.b);
                         // 计算当前的强度
-                        float beauty = 1.0f;//磨皮指数
+                        float beauty = 0.6f;//磨皮指数
                         float intensity = (1.0 - maxCColor / (maxCColor + 0.2)) * bVal * beauty;
                         // 混合输出结果
                         rgb = mix(rgbSource.rgb, rgbBlur.rgb, intensity);
                     }
                     {
-                        //强光
-                        float white = 0.5f;
+                        //hardLight
+                        float white = 0.1f;
                         rgb += vec3(white * 0.15, white * 0.25, white * 0.25);
                         rgb.r = max(min(rgb.r, 1.0), 0.0);
                         rgb.g = max(min(rgb.g, 1.0), 0.0);
                         rgb.b = max(min(rgb.b, 1.0), 0.0);
                     }
-                    {
-                        //亮眼
-                        /*vec3
-                        rgbBlur = ??? //高斯
-                        vec3 rgbEyeGreat = vec3(0.0, 0.0, 0.0);
-                        //RGB颜色差值放大,突出眼睛明亮部分
-                        rgbEyeGreat = clamp((rgbSource - rgbBlur) * 3.3, 0.0, 1.0);
-                        rgbEyeGreat = max(rgbSource, rgbEyeGreat);
-                        vec4 result = mix(rgbSource, vec4(rgbEyeGreat, 1.0), 1.0f * 0.01);
-                         */
-                    }
                     return rgb;
                 }
                 void main() {
                     fragColor = vec4(beauty(fiTexCoord), 1.0f);
+                }
+        );
+const char *ShaderFragment_FBO_SharpenAWay =
+        GL_SHADER_VERSION
+        GL_SHADER(
+                precision highp float;
+                in vec2 fiTexCoord;
+                uniform sampler2D textureRGB;
+                layout(location = 0) out vec4 fragColor;
+                uniform vec2 fPixelSize;
+                vec3 sharpen(vec2 texCoord) {
+                    vec3 rgbSharpen = texture(textureRGB, texCoord).rgb;
+                    {
+                        //锐化
+                        const float sharpen = 30.0f;
+                        const int SHIFT_SIZE = 5;
+                        const int KERNEL_SIZE = 9;
+                        vec4 SharpenCoords[SHIFT_SIZE];
+                        vec2 stepOffset = vec2(1.0f / fPixelSize.x, 1.0f / fPixelSize.y);
+                        float kernel[KERNEL_SIZE];
+                        for (int i = 0; i < KERNEL_SIZE; i++) {
+                            if (i == SHIFT_SIZE - 1) kernel[i] = sharpen;
+                            else if (i % 2 == 0) kernel[i] = 0.0f;
+                            else kernel[i] = -1.0f;
+                        }
+                        for (int i = 0; i < SHIFT_SIZE; i++) {
+                            SharpenCoords[i] = vec4(texCoord.xy - float(i + 1) * stepOffset,
+                                                    texCoord.xy + float(i + 1) * stepOffset);
+                            rgbSharpen += texture(textureRGB, SharpenCoords[i].xy).rgb * kernel[i];
+                            rgbSharpen += texture(textureRGB, SharpenCoords[i].zw).rgb *
+                                          kernel[KERNEL_SIZE - i];
+                        }
+                        rgbSharpen = rgbSharpen * 0.04;
+                    }
+                    return rgbSharpen;
+                }
+                void main() {
+                    fragColor = vec4(sharpen(fiTexCoord), 1.0f);
                 }
         );
 const char *ShaderFragment_FBO_BigEye =
