@@ -81,7 +81,7 @@ const char *ShaderFragment_FBO_GaussBlurAWay =
                     {
                         //高斯模糊，采样点周围4(SHIFT_SIZE*2)个点均进行一次采样，再求颜色平均值作为当前点的颜色
                         // 高斯算子左右偏移值，当偏移值为2时，高斯算子为 5x5
-                        const int SHIFT_SIZE = 21;
+                        const int SHIFT_SIZE = 11;
                         vec4 blurCoords[SHIFT_SIZE];
                         // 横向/竖向偏移步距
                         vec2 stepOffset = vec2(0.0f);
@@ -156,12 +156,12 @@ const char *ShaderFragment_FBO_Beauty =
                     vec3 rgb = vec3(0.0f);
                     {
                         //磨皮
+                        float beauty = 0.6f;//磨皮指数
                         // 调节蓝色通道值
                         float bVal = clamp((min(rgbSource.b, rgbBlur.b) - 0.2) * 5.0, 0.0, 1.0);
                         // 找到高反差后RGB通道的最大值
                         float maxCColor = max(max(rgbPassBlur.r, rgbPassBlur.g), rgbPassBlur.b);
                         // 计算当前的强度
-                        float beauty = 0.6f;//磨皮指数
                         float intensity = (1.0 - maxCColor / (maxCColor + 0.2)) * bVal * beauty;
                         // 混合输出结果
                         rgb = mix(rgbSource.rgb, rgbBlur.rgb, intensity);
@@ -202,7 +202,7 @@ const char *ShaderFragment_FBO_Sharpen =
                     vec3 rgb = texture(textureRGB, texCoord).rgb;
                     {
                         //锐化  卷积：1 1 1 1 9 1 1 1 1
-                        float sharp = 1.0f;
+                        float sharp = 0.6f;
                         rgb = rgb * (1.0f + 4.0f * sharp);
                         vec2 stepOffset = vec2(1.0f / fPixelSize.x, 1.0f / fPixelSize.y);
                         rgb -= texture(textureRGB, texCoord - vec2(stepOffset.x, 0.)).rgb * sharp;
