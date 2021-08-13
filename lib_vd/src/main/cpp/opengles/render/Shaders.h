@@ -81,7 +81,7 @@ const char *ShaderFragment_FBO_GaussBlurAWay =
                     {
                         //高斯模糊，采样点周围4(SHIFT_SIZE*2)个点均进行一次采样，再求颜色平均值作为当前点的颜色
                         // 高斯算子左右偏移值，当偏移值为2时，高斯算子为 5x5
-                        const int SHIFT_SIZE = 11;
+                        const int SHIFT_SIZE = 21;
                         vec4 blurCoords[SHIFT_SIZE];
                         // 横向/竖向偏移步距
                         vec2 stepOffset = vec2(0.0f);
@@ -167,12 +167,22 @@ const char *ShaderFragment_FBO_Beauty =
                         rgb = mix(rgbSource.rgb, rgbBlur.rgb, intensity);
                     }
                     {
-                        //hardLight
+                        //亮度
                         float white = 0.1f;
                         rgb += vec3(white * 0.15, white * 0.25, white * 0.25);
                         rgb.r = max(min(rgb.r, 1.0), 0.0);
                         rgb.g = max(min(rgb.g, 1.0), 0.0);
                         rgb.b = max(min(rgb.b, 1.0), 0.0);
+                    }
+                    {
+                        //饱和度
+                        float lev = 1.1f;
+                        float luminance = dot(rgb, vec3(0.2125, 0.7154, 0.0721));
+                        vec3 grey = vec3(luminance);
+                        rgb = mix(grey, rgb, lev);
+                    }
+                    {
+                        //美白
                     }
                     return rgb;
                 }
@@ -180,7 +190,7 @@ const char *ShaderFragment_FBO_Beauty =
                     fragColor = vec4(beauty(fiTexCoord), 1.0f);
                 }
         );
-const char *ShaderFragment_FBO_SharpenAWay =
+const char *ShaderFragment_FBO_Sharpen =
         GL_SHADER_VERSION
         GL_SHADER(
                 precision highp float;
@@ -189,30 +199,43 @@ const char *ShaderFragment_FBO_SharpenAWay =
                 layout(location = 0) out vec4 fragColor;
                 uniform vec2 fPixelSize;
                 vec3 sharpen(vec2 texCoord) {
-                    vec3 rgbSharpen = texture(textureRGB, texCoord).rgb;
+                    vec3 rgb = texture(textureRGB, texCoord).rgb;
                     {
-                        //锐化
-                        const float sharpen = 30.0f;
-                        const int SHIFT_SIZE = 5;
-                        const int KERNEL_SIZE = 9;
-                        vec4 SharpenCoords[SHIFT_SIZE];
+                        //锐化  卷积：1 1 1 1 9 1 1 1 1
+                        float sharp = 1.0f;
+                        rgb = rgb * (1.0f + 4.0f * sharp);
                         vec2 stepOffset = vec2(1.0f / fPixelSize.x, 1.0f / fPixelSize.y);
-                        float kernel[KERNEL_SIZE];
-                        for (int i = 0; i < KERNEL_SIZE; i++) {
-                            if (i == SHIFT_SIZE - 1) kernel[i] = sharpen;
-                            else if (i % 2 == 0) kernel[i] = 0.0f;
-                            else kernel[i] = -1.0f;
-                        }
-                        for (int i = 0; i < SHIFT_SIZE; i++) {
-                            SharpenCoords[i] = vec4(texCoord.xy - float(i + 1) * stepOffset,
-                                                    texCoord.xy + float(i + 1) * stepOffset);
-                            rgbSharpen += texture(textureRGB, SharpenCoords[i].xy).rgb * kernel[i];
-                            rgbSharpen += texture(textureRGB, SharpenCoords[i].zw).rgb *
-                                          kernel[KERNEL_SIZE - i];
-                        }
-                        rgbSharpen = rgbSharpen * 0.04;
+                        rgb -= texture(textureRGB, texCoord - vec2(stepOffset.x, 0.)).rgb * sharp;
+                        rgb -= texture(textureRGB, texCoord + vec2(stepOffset.x, 0.)).rgb * sharp;
+                        rgb -= texture(textureRGB, texCoord - vec2(0., stepOffset.y)).rgb * sharp;
+                        rgb -= texture(textureRGB, texCoord + vec2(0., stepOffset.y)).rgb * sharp;
                     }
-                    return rgbSharpen;
+                    return rgb;
+                }
+                void main() {
+                    fragColor = vec4(sharpen(fiTexCoord), 1.0f);
+                }
+        );
+const char *ShaderFragment_FBO_Smooth =
+        GL_SHADER_VERSION
+        GL_SHADER(
+                precision highp float;
+                in vec2 fiTexCoord;
+                uniform sampler2D textureRGB;
+                layout(location = 0) out vec4 fragColor;
+                uniform vec2 fPixelSize;
+                vec3 sharpen(vec2 texCoord) {
+                    vec3 rgb = texture(textureRGB, texCoord).rgb;
+                    {
+                        //均值滤波
+                        float step = 0.0001;
+                        rgb += texture(textureRGB, vec2(texCoord.x - step, texCoord.y - step)).rgb;
+                        rgb += texture(textureRGB, vec2(texCoord.x + step, texCoord.y - step)).rgb;
+                        rgb += texture(textureRGB, vec2(texCoord.x + step, texCoord.y + step)).rgb;
+                        rgb += texture(textureRGB, vec2(texCoord.x - step, texCoord.y + step)).rgb;
+                        rgb = rgb / 5.0f;
+                    }
+                    return rgb;
                 }
                 void main() {
                     fragColor = vec4(sharpen(fiTexCoord), 1.0f);

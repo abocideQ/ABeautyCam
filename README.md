@@ -80,7 +80,8 @@ double xxxClass::onGauss1D(int x) {
     return A * exp(B);
 }
 ```
+均值滤波对高斯噪声（光线等问题造成）的效果较好
+中值滤波对椒盐噪声（信号脉冲强度引起的黑白像素）的效果较好
 ```
 https://gl-transitions.com/
-https://blog.csdn.net/zfgrinm/article/details/79291693?spm=1001.2014.3001.5501
 ```
