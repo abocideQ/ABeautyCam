@@ -17,13 +17,15 @@ import javax.microedition.khronos.opengles.GL10
 @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
 class VdCamera(context: Context) : GLSurfaceView.Renderer {
 
+    private val mContext = context
+
     //图像采样格式：1.YUV420 (5~8ms)  2.NV21 (1~3ms)
     private var mFormat = 2
     private var mCameraUse: CameraUse? = null
 
     //人脸检测方式 :0. close 1.opencvDetectMultiScale(go eat shit) 2.opencvTrack(fast but not great) 3.faceCNN(slow but great)
     //注意相机返回图像方向(翻转+镜像)
-    private var mFacePosition = 2
+    private var mFacePosition = 0
 
     fun setSurface(surface: GLSurfaceView) {
         surface.setEGLContextClientVersion(3)
@@ -69,6 +71,27 @@ class VdCamera(context: Context) : GLSurfaceView.Renderer {
         return mCameraUse?.getPreviewSizes()
     }
 
+    fun onFaceON() {
+        if (mFacePosition == 0) {
+            mFacePosition = 2
+            when (mFacePosition) {
+                1 -> onFaceCV(mContext)
+                2 -> onFaceCVTrack(mContext)
+                3 -> onFaceCnn(mContext)
+            }
+        } else {
+            mFacePosition = 0
+            native_vdCameraRender_onFace(
+                "null",
+                "null",
+                "null",
+                "null",
+                "null",
+                0
+            )
+        }
+    }
+
     override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
         native_vdCameraRender_onSurfaceCreated()
         when (mFormat) {
@@ -112,11 +135,6 @@ class VdCamera(context: Context) : GLSurfaceView.Renderer {
     init {
         mCameraUse = CameraUse(context)
         System.loadLibrary("vd_make")
-        when (mFacePosition) {
-            1 -> onFaceCV(context)
-            2 -> onFaceCVTrack(context)
-            3 -> onFaceCnn(context)
-        }
     }
 
     private external fun native_vdCameraRender_onFace(

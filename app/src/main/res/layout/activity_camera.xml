@@ -13,6 +13,14 @@
         android:layout_height="500dp"
         android:orientation="vertical" />
 
+    <Button
+        android:id="@+id/bt_beauty"
+        android:layout_width="wrap_content"
+        android:layout_height="50dp"
+        android:layout_alignParentEnd="true"
+        android:layout_alignBottom="@+id/ll_container"
+        android:text="美颜" />
+
     <TextView
         android:id="@+id/tv_ratio"
         android:layout_width="wrap_content"

@@ -27,18 +27,18 @@ const int Location_Indices[] = {
 
 //初始化人脸
 void VideoRender::onFace(char *s1, char *s2, char *s3, char *s4, char *s5, int faceI) {
-    FACE_ON = faceI;
-    if (FACE_ON == -1) {
-    } else if (FACE_ON == 1) { //opencv
+    if (faceI == -1) {
+    } else if (faceI == 1) { //opencv
         m_FaceCvDetection = new FaceCvDetection();
         m_FaceCvDetection->onModelSource(s1, s2, s3, s4);
-    } else if (FACE_ON == 2) { //opencvTrack
+    } else if (faceI == 2) { //opencvTrack
         m_FaceTrack = new FaceCvTrack();
         m_FaceTrack->onModelSource(s1, s2, s3, s4, s5);
-    } else if (FACE_ON == 3) { //faceCnn
+    } else if (faceI == 3) { //faceCnn
         mFaceCnnDetection = new FaceCnnDetection();
         mFaceCnnDetection->onModelSource(s5);
     }
+    FACE_ON = faceI;
 }
 
 //传入数据 方式1

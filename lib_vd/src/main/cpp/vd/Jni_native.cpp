@@ -65,8 +65,8 @@ void native_vdPlayer_onDrawFrame(JNIEnv *env, jobject *obj) {
 void
 native_vdCameraRender_onFace(JNIEnv *env, jobject *obj, jstring string1, jstring string2,
                              jstring string3, jstring string4, jstring string5, jint faceI) {
-    if (faceI == -1) {
-        VdCameraRender::instance()->onFace(nullptr, nullptr, nullptr, nullptr, nullptr, -1);
+    if (faceI == 0) {
+        VdCameraRender::instance()->onFace(nullptr, nullptr, nullptr, nullptr, nullptr, 0);
     } else if (faceI == 1) {
         char *face = (char *) env->GetStringUTFChars(string1, 0);
         char *eyes = (char *) env->GetStringUTFChars(string2, 0);

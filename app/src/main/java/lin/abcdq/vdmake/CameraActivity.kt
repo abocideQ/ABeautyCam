@@ -10,6 +10,7 @@ import android.opengl.GLSurfaceView
 import android.os.Bundle
 import android.view.MotionEvent
 import android.view.View
+import android.widget.Button
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -28,6 +29,8 @@ class CameraActivity : AppCompatActivity() {
             context.startActivity(intent)
         }
     }
+
+    private lateinit var mBeautyButton: Button
 
     private lateinit var mRatioView: TextView
     private lateinit var mSizeView: ImageView
@@ -72,6 +75,7 @@ class CameraActivity : AppCompatActivity() {
         mSizeView = findViewById(R.id.iv_size)
         mFaceView = findViewById(R.id.iv_face)
         mShotView = findViewById(R.id.iv_shot)
+        mBeautyButton = findViewById(R.id.bt_beauty)
         mSizeView.setOnClickListener {
             mCamera.onSize()
             if (mSizePosition == -1) {
@@ -123,6 +127,9 @@ class CameraActivity : AppCompatActivity() {
                 }
             }
             true
+        }
+        mBeautyButton.setOnClickListener {
+            mCamera.onFaceON()
         }
     }
 

@@ -156,7 +156,7 @@ const char *ShaderFragment_FBO_Beauty =
                     vec3 rgb = vec3(0.0f);
                     {
                         //磨皮
-                        float beauty = 0.6f;//磨皮指数
+                        float beauty = 0.8f;//磨皮指数
                         // 调节蓝色通道值
                         float bVal = clamp((min(rgbSource.b, rgbBlur.b) - 0.2) * 5.0, 0.0, 1.0);
                         // 找到高反差后RGB通道的最大值
@@ -167,22 +167,26 @@ const char *ShaderFragment_FBO_Beauty =
                         rgb = mix(rgbSource.rgb, rgbBlur.rgb, intensity);
                     }
                     {
-                        //亮度
-                        float white = 0.1f;
-                        rgb += vec3(white * 0.15, white * 0.25, white * 0.25);
-                        rgb.r = max(min(rgb.r, 1.0), 0.0);
-                        rgb.g = max(min(rgb.g, 1.0), 0.0);
-                        rgb.b = max(min(rgb.b, 1.0), 0.0);
+                        //亮度 0.0
+                        float brightness = -0.06;
+                        rgb = rgb + vec3(brightness);
                     }
                     {
-                        //饱和度
-                        float lev = 1.1f;
+                        //曝光 0.0
+                        float exposure = 0.3f;
+                        rgb = rgb * pow(2.0, exposure);
+                    }
+                    {
+                        //对比度 1.0
+                        float contrast = 0.9f;
+                        rgb = ((rgb - vec3(0.5f)) * contrast + vec3(0.5f));
+                    }
+                    {
+                        //饱和度 1.0 Luma算法求算灰度：Gray = R0.2125 + G0.7154 + B*0.0721
+                        float saturation = 0.96f;
                         float luminance = dot(rgb, vec3(0.2125, 0.7154, 0.0721));
                         vec3 grey = vec3(luminance);
-                        rgb = mix(grey, rgb, lev);
-                    }
-                    {
-                        //美白
+                        rgb = mix(grey, rgb, saturation);
                     }
                     return rgb;
                 }
