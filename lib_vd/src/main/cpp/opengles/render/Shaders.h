@@ -202,7 +202,7 @@ const char *ShaderFragment_FBO_Sharpen =
                     vec3 rgb = texture(textureRGB, texCoord).rgb;
                     {
                         //锐化  卷积：1 1 1 1 9 1 1 1 1
-                        float sharp = 0.6f;
+                        float sharp = 0.8f;
                         rgb = rgb * (1.0f + 4.0f * sharp);
                         vec2 stepOffset = vec2(1.0f / fPixelSize.x, 1.0f / fPixelSize.y);
                         rgb -= texture(textureRGB, texCoord - vec2(stepOffset.x, 0.)).rgb * sharp;
@@ -234,6 +234,12 @@ const char *ShaderFragment_FBO_Smooth =
                         rgb += texture(textureRGB, vec2(texCoord.x + step, texCoord.y + step)).rgb;
                         rgb += texture(textureRGB, vec2(texCoord.x - step, texCoord.y + step)).rgb;
                         rgb = rgb / 5.0f;
+                    }
+                    {
+                        //中值滤波
+                    }
+                    {
+                        //双边滤波
                     }
                     return rgb;
                 }
