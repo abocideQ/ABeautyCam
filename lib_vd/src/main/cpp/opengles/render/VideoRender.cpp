@@ -38,6 +38,7 @@ void VideoRender::onFace(char *s1, char *s2, char *s3, char *s4, char *s5, int f
         mFaceCnnDetection = new FaceCnnDetection();
         mFaceCnnDetection->onModelSource(s5);
     }
+    m_FboMixProcess = 0.0f;
     FACE_ON = faceI;
 }
 
@@ -200,7 +201,7 @@ void VideoRender::onSurfaceCreated() {
 
 //fbo 离屏处理 初始化
 void VideoRender::onFrameMixCreated() {
-    const char *shaders[10] = {
+    const char *shaders[11] = {
             ShaderFragment_FBO_NV212RGB,
             ShaderFragment_FBO_BigEye,
             ShaderFragment_FBO_GaussBlurAWay,
@@ -210,7 +211,8 @@ void VideoRender::onFrameMixCreated() {
             ShaderFragment_FBO_GaussBlurAWay,
             ShaderFragment_FBO_Beauty,
             ShaderFragment_FBO_Sharpen,
-            ShaderFragment_FBO_Smooth
+            ShaderFragment_FBO_Smooth,
+            ShaderFragment_FBO_Transition
     };
     for (auto &shader : shaders) {
         FrameBufferObj obj;
@@ -606,6 +608,26 @@ GLuint VideoRender::onDrawFrameMix(int width, int height,
     glBindTexture(GL_TEXTURE_2D, m_FboMixes[8].m_FboMix_Texture[0]);
     glUniform1i(glGetUniformLocation(obj.m_FboMix_Program[0], "textureRGB"), 0);
     glUniform2f(glGetUniformLocation(obj.m_FboMix_Program[0], "fPixelSize"), width, height);
+    onMatrix("vMatrix", 0.0f, 0.0f);
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (const void *) nullptr);
+    glBindVertexArray(0);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    //转场
+    obj = m_FboMixes[10];
+    glBindFramebuffer(GL_FRAMEBUFFER, obj.m_FboMix[0]);
+    glUseProgram(obj.m_FboMix_Program[0]);
+    glBindVertexArray(obj.m_FboMix_VAO[0]);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, inputTex);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, m_FboMixes[9].m_FboMix_Texture[0]);
+    glUniform1i(glGetUniformLocation(obj.m_FboMix_Program[0], "textureSource"), 0);
+    glUniform1i(glGetUniformLocation(obj.m_FboMix_Program[0], "textureNext"), 1);
+    if (m_FboMixProcess < 1.0f) {
+        m_FboMixProcess += 0.03;
+        glUniform1f(glGetUniformLocation(obj.m_FboMix_Program[0], "progress"), m_FboMixProcess);
+    }
     onMatrix("vMatrix", 0.0f, 0.0f);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (const void *) nullptr);
     glBindVertexArray(0);

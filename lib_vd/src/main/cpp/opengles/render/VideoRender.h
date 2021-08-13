@@ -121,6 +121,7 @@ protected:
     GLuint m_Fbo_Texture[1];
     //fbo 处理用
     std::vector<FrameBufferObj> m_FboMixes;
+    float m_FboMixProcess = 0.0f;
     //互斥锁
     static std::mutex m_Mutex;
     //===
