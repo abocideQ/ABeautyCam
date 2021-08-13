@@ -1,6 +1,6 @@
 #### Android 视频录制/播放/滤镜/人脸/美颜/磨皮/大眼/锐化/转场
-![Image text](https://github.com/ABCDQ123/VdMake/blob/main/lib_vd/image/image.gif)
 #### Camera2 OpenGL OpenSL OpenCV FFmpeg
+![Image text](https://github.com/ABCDQ123/VdMake/blob/main/lib_vd/image/image.gif)
 #### ?????????????奇怪的小知识?????????????
 #### Camera高宽数据：
 ```
