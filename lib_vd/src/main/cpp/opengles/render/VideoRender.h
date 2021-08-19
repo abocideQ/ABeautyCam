@@ -122,6 +122,12 @@ protected:
     //fbo 处理用
     std::vector<FrameBufferObj> m_FboMixes;
     float m_FboMixProcess = 0.0f;
+    //pbo
+    int m_PBO = 1;
+    GLuint m_PBO_In[6];
+    GLuint m_PBO_Out[2];
+    int m_PBO_Index = 0;
+
     //互斥锁
     static std::mutex m_Mutex;
     //===

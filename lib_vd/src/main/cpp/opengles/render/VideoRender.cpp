@@ -197,6 +197,10 @@ void VideoRender::onSurfaceCreated() {
     GL_ERROR_CHECK();
     //离屏处理 FBO 初始化
     onFrameMixCreated();
+    //pbo
+    glGenBuffers(6, m_PBO_In);
+    glGenBuffers(2, m_PBO_Out);
+    GL_ERROR_CHECK();
 }
 
 //fbo 离屏处理 初始化
@@ -281,7 +285,7 @@ void VideoRender::onDrawFrame() {
     if (m_Fbo_Program[0] == GL_NONE) return;
     if (m_Fbo_Program[1] == GL_NONE) return;
     if (m_Fbo_Program[2] == GL_NONE) return;
-    //纹理初始化
+    //数据
     if (m_VRenderQueue.empty())return;
     std::unique_lock<std::mutex> lock(m_Mutex);
     VRender *render = m_VRenderQueue.front();
@@ -293,7 +297,49 @@ void VideoRender::onDrawFrame() {
     std::vector<cv::Rect> eyes = render->eyes;
     std::vector<cv::Rect> noses = render->noses;
     std::vector<cv::Rect> mouths = render->mouths;
-    if (format == IMAGE_FORMAT_YUV420P) {
+    if (m_PBO && (format == IMAGE_FORMAT_NV21 || format == IMAGE_FORMAT_NV12)) {
+        //y
+        int oddIndex = m_PBO_Index % 2;
+        m_PBO_Index++;
+        int index = oddIndex;
+        int nextIndex = (index + 1) % 2;
+        int size = width * height;
+        glBindTexture(GL_TEXTURE_2D, m_Texture[0]);
+        glBindBuffer(GL_PIXEL_UNPACK_BUFFER, m_PBO_In[index]);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, width, height, 0, GL_LUMINANCE,
+                     GL_UNSIGNED_BYTE, 0);
+        glBindBuffer(GL_PIXEL_UNPACK_BUFFER, m_PBO_In[nextIndex]);
+        glBufferData(GL_PIXEL_UNPACK_BUFFER, size, nullptr, GL_STREAM_DRAW);
+        GLubyte *ptr1 = (GLubyte *) glMapBufferRange(GL_PIXEL_UNPACK_BUFFER, 0,
+                                                     size,
+                                                     GL_MAP_WRITE_BIT |
+                                                     GL_MAP_INVALIDATE_BUFFER_BIT);
+        if (ptr1) {
+            memcpy(ptr1, image->plane[0], static_cast<size_t>(size));
+            glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER);
+        }
+        glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+        //uv
+        size = width * height / 2;
+        index = oddIndex + 2;
+        nextIndex = (index + 1) % 2 + 2;
+        glBindTexture(GL_TEXTURE_2D, m_Texture[1]);
+        glBindBuffer(GL_PIXEL_UNPACK_BUFFER, m_PBO_In[index]);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE_ALPHA, width / 2, height / 2, 0,
+                     GL_LUMINANCE_ALPHA, GL_UNSIGNED_BYTE, 0);
+        glBindBuffer(GL_PIXEL_UNPACK_BUFFER, m_PBO_In[nextIndex]);
+        glBufferData(GL_PIXEL_UNPACK_BUFFER, size, nullptr, GL_STREAM_DRAW);
+        GLubyte *ptr2 = (GLubyte *) glMapBufferRange(GL_PIXEL_UNPACK_BUFFER, 0,
+                                                     size,
+                                                     GL_MAP_WRITE_BIT |
+                                                     GL_MAP_INVALIDATE_BUFFER_BIT);
+        if (ptr2) {
+            memcpy(ptr2, image->plane[1], static_cast<size_t>(size));
+            glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER);
+        }
+        glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+        if (m_PBO_Index < 2) return; //防绿屏
+    } else if (format == IMAGE_FORMAT_YUV420P) {
         glBindTexture(GL_TEXTURE_2D, m_Texture[0]);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, width, height, 0,
                      GL_LUMINANCE, GL_UNSIGNED_BYTE, image->plane[0]);
@@ -691,22 +737,47 @@ void VideoRender::onRelease() {
     onReleaseRenders();
     m_Interrupt = true;
 }
-
 //更新录制用数据
 void VideoRender::onFrameBufferUpdate(int width, int height) {
+    if (!m_RenderFrameCallback || !m_CallbackContext) return;
     if (!m_FrameBuffer) m_FrameBuffer = new uint8_t[width * height * 4];
-    m_FrameBufferSize = width * height * 4;
-    if (m_CameraData) {
-        glReadPixels(0, 0, height, width, GL_RGBA, GL_UNSIGNED_BYTE, m_FrameBuffer);
+    if (m_PBO && m_CameraData) {
+        int oddIndex = (m_PBO_Index - 1) % 2;
+        int size = width * height * 4;
+        int index = oddIndex;
+        int nextIndex = (index + 1) % 2;
+        glBindBuffer(GL_PIXEL_PACK_BUFFER, m_PBO_Out[index]);
+        glBufferData(GL_PIXEL_PACK_BUFFER, size, 0, GL_STREAM_READ);
+        glReadPixels(0, 0, height, width, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+        glBindBuffer(GL_PIXEL_PACK_BUFFER, m_PBO_Out[nextIndex]);
+        glBufferData(GL_PIXEL_PACK_BUFFER, size, 0, GL_STREAM_READ);
+        GLubyte *ptrOut = (GLubyte *) glMapBufferRange(GL_PIXEL_PACK_BUFFER, 0,
+                                                       size,
+                                                       GL_MAP_READ_BIT);
+        if (ptrOut) {
+            m_FrameBuffer = ptrOut;
+            m_FrameBufferSize = size;
+            glUnmapBuffer(GL_PIXEL_PACK_BUFFER);
+        }
+        glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
         if (m_RenderFrameCallback && m_CallbackContext) {
             m_RenderFrameCallback(m_CallbackContext, IMAGE_FORMAT_RGBA, height, width,
                                   m_FrameBuffer);
         }
     } else {
-        glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, m_FrameBuffer);
-        if (m_RenderFrameCallback && m_CallbackContext) {
-            m_RenderFrameCallback(m_CallbackContext, IMAGE_FORMAT_RGBA, width, height,
-                                  m_FrameBuffer);
+        m_FrameBufferSize = width * height * 4;
+        if (m_CameraData) {
+            glReadPixels(0, 0, height, width, GL_RGBA, GL_UNSIGNED_BYTE, m_FrameBuffer);
+            if (m_RenderFrameCallback && m_CallbackContext) {
+                m_RenderFrameCallback(m_CallbackContext, IMAGE_FORMAT_RGBA, height, width,
+                                      m_FrameBuffer);
+            }
+        } else {
+            glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, m_FrameBuffer);
+            if (m_RenderFrameCallback && m_CallbackContext) {
+                m_RenderFrameCallback(m_CallbackContext, IMAGE_FORMAT_RGBA, width, height,
+                                      m_FrameBuffer);
+            }
         }
     }
 }
