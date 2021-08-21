@@ -89,9 +89,10 @@ native_vdCameraRender_onFace(JNIEnv *env, jobject *obj, jstring string1, jstring
 void native_vdCameraRender_onBuffer(JNIEnv *env, jobject *obj, jint format, jint width, jint height,
                                     jbyteArray data) {
     int length = env->GetArrayLength(data);
-    uint8_t *buffer = new uint8_t[length];
+    auto *buffer = new uint8_t[length];
     env->GetByteArrayRegion(data, 0, length, reinterpret_cast<jbyte *>(buffer));
     VdCameraRender::instance()->onBuffer(format, width, height, buffer);
+    env->ReleaseByteArrayElements(data, reinterpret_cast<jbyte *>(buffer), JNI_FALSE);
 }
 
 jbyteArray native_vdCameraRender_onBufferCapture(JNIEnv *env, jobject obj) {

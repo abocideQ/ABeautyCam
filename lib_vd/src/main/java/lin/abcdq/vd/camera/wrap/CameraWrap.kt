@@ -85,7 +85,7 @@ internal class CameraWrap(context: Context) {
                 val image: Image? = it.acquireNextImage()
 //                val image: Image? = it.acquireLatestImage()
                 if (image != null) {
-//                    val startTime = System.currentTimeMillis() // 获取开始时间
+                    val startTime = System.currentTimeMillis() // 获取开始时间
                     if (IMAGE_READER_FORMAT == ImageFormat.YUV_420_888) {
                         when (IMAGE_FORMAT) {
                             ImageFormat.YUV_420_888 -> {
@@ -110,8 +110,8 @@ internal class CameraWrap(context: Context) {
                                 )
                             }
                         }
-//                        val endTime = System.currentTimeMillis() // 获取结束时间
-//                        Log.e("camera acc ", "时间： " + (endTime - startTime) + "ms")
+                        val endTime = System.currentTimeMillis() // 获取结束时间
+                        Log.e("camera acc ", "时间： " + (endTime - startTime) + "ms")
                     }
                     image.close()
                 }

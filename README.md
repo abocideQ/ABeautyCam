@@ -86,4 +86,5 @@ double xxxClass::onGauss1D(int x) {
 双边滤波对低频噪声（光线等问题造成）的效果较好
 ```
 https://gl-transitions.com/
+https://github.com/luohenyueji/OpenCV-Practical-Exercise
 ```
