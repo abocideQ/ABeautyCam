@@ -109,7 +109,7 @@ class CameraActivity : AppCompatActivity() {
                     if (!File(out).exists()) File(out).mkdirs()
                     out = "$out/teTing.mp4"
                     val size = mCamera.onSize() ?: return@setOnTouchListener false
-                    val fps = 60
+                    val fps = 30
                     val rate = (size.width * size.height * fps * 0.3).toLong()
                     mRecord = VdRecord()
                     mRecord.onSource(out, size.width, size.height, rate, fps)
@@ -155,17 +155,17 @@ class CameraActivity : AppCompatActivity() {
     }
 
     private fun capturePicture() {
-        val buf = ByteBuffer.wrap(mCamera.onBuffer() ?: return)
-        val bitmap = Bitmap.createBitmap(
-            mCamera.onSize()?.height ?: 1,
-            mCamera.onSize()?.width ?: 1,
-            Bitmap.Config.ARGB_8888
-        )
-        bitmap.copyPixelsFromBuffer(buf)
-        runOnUiThread {
-            val imageView: ImageView = findViewById(R.id.iv_capture)
-            imageView.visibility = View.VISIBLE
-            imageView.setImageBitmap(bitmap)
-        }
+//        val buf = ByteBuffer.wrap(mCamera.onBuffer() ?: return)
+//        val bitmap = Bitmap.createBitmap(
+//            mCamera.onSize()?.height ?: 1,
+//            mCamera.onSize()?.width ?: 1,
+//            Bitmap.Config.ARGB_8888
+//        )
+//        bitmap.copyPixelsFromBuffer(buf)
+//        runOnUiThread {
+//            val imageView: ImageView = findViewById(R.id.iv_capture)
+//            imageView.visibility = View.VISIBLE
+//            imageView.setImageBitmap(bitmap)
+//        }
     }
 }

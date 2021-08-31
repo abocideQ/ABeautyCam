@@ -319,6 +319,32 @@ const char *ShaderFragment_FBO_Transition =
                     fragColor = transition(fiTexCoord);
                 }
         );
+const char *ShaderFragment_FBO_RGB2NV21 =
+        GL_SHADER_VERSION
+        GL_SHADER(
+                precision highp float;
+                in vec2 fiTexCoord;
+                uniform sampler2D s_textureRGB;
+                uniform float u_Offset;//采样偏移
+                layout(location = 0) out vec4 fragColor;
+                const vec3 COEF_Y = vec3(0.299, 0.587, 0.114);
+                const vec3 COEF_U = vec3(-0.147, -0.289, 0.436);
+                const vec3 COEF_V = vec3(0.615, -0.515, -0.100);
+                vec4 RGB2NV21(vec2 texCoord) {
+                    vec2 texelOffset = vec2(u_Offset, 0.0);
+                    vec4 color0 = texture(s_textureRGB, texCoord);
+                    vec4 color1 = texture(s_textureRGB, texCoord + texelOffset);//偏移 offset 采样
+                    float y0 = dot(color0.rgb, COEF_Y);
+                    float u0 = dot(color0.rgb, COEF_U) + 0.5;
+                    float v0 = dot(color0.rgb, COEF_V) + 0.5;
+                    float y1 = dot(color1.rgb, COEF_Y);
+                    return vec4(y0, u0, y1, v0);
+                }
+                void main() {
+                    fragColor = RGB2NV21(fiTexCoord);
+//                    fragColor = texture(s_textureRGB, fiTexCoord);
+                }
+        );
 const char *ShaderFragment_FBO_YUV420p_Display =
         GL_SHADER_VERSION
         GL_SHADER(

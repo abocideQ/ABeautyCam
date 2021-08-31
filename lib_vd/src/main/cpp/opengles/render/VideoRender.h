@@ -63,6 +63,8 @@ public:
 
     void onFrameMixCreated();
 
+    void onFrameOutCreated();
+
     void onSurfaceChanged(int w, int h);
 
     void onMatrix(const char *gl_name, float viewRot, float modelRot) const;
@@ -122,6 +124,12 @@ protected:
     //fbo 处理用
     std::vector<FrameBufferObj> m_FboMixes;
     float m_FboMixProcess = 0.0f;
+    //fbo 输出用 rgb->yuv 优化输出速度
+    int m_FboOutYUV = 0;
+    GLuint m_FboOut[1];
+    GLuint m_FboOut_Program[1];
+    GLuint m_FboOut_VAO[1];
+    GLuint m_FboOut_Texture[1];
     //pbo
     int m_PBO = 1;
     GLuint m_PBO_In[6];
