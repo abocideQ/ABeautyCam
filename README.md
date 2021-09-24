@@ -92,4 +92,5 @@ double xxxClass::onGauss1D(int x) {
 ```
 https://gl-transitions.com/
 https://github.com/luohenyueji/OpenCV-Practical-Exercise
+https://www.msra.cn/zh-cn/news/features/book-recommendation-computer-graphics
 ```
