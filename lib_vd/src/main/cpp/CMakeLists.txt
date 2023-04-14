@@ -36,7 +36,11 @@ set(lib_opencv
 # facecnn(libfacedetection)
 # vd
 include_directories(
+        ${CMAKE_SOURCE_DIR}
+
         ${CMAKE_SOURCE_DIR}/utils
+
+        ${CMAKE_SOURCE_DIR}/src
 
         ${CMAKE_SOURCE_DIR}/ffmpeg/include
         ${CMAKE_SOURCE_DIR}/ffmpeg/utils
@@ -71,6 +75,8 @@ include_directories(
 file(GLOB lib_mine
         ${CMAKE_SOURCE_DIR}/*.cpp
         ${CMAKE_SOURCE_DIR}/utils/*.cpp
+
+        ${CMAKE_SOURCE_DIR}/src/*.cpp
 
         ${CMAKE_SOURCE_DIR}/ffmpeg/*.cpp
         ${CMAKE_SOURCE_DIR}/ffmpeg/utils/*.cpp

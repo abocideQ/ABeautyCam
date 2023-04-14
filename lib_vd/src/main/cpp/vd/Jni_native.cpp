@@ -62,6 +62,18 @@ void native_vdPlayer_onDrawFrame(JNIEnv *env, jobject *obj) {
     VdPlayer::instance()->onDrawFrame();
 }
 //============CameraRender
+void native_vdCameraRender_what(JNIEnv *env, jobject *obj, jstring inUrl, jstring outUrl) {
+    jboolean jCopy = false;
+    std::string inUrl_str = std::string((char *) env->GetStringUTFChars(inUrl, &jCopy));
+    std::string outUrl_str = std::string((char *) env->GetStringUTFChars(outUrl, &jCopy));
+    {
+        LOGCATE("_______________start recode_______________");
+//        auto *p_recode = new recode();
+//        int err = p_recode->recode_codec(inUrl_str, outUrl_str, AVConfig());
+        LOGCATE("_______________end recode_______________%d");
+    }
+}
+
 void
 native_vdCameraRender_onFace(JNIEnv *env, jobject *obj, jstring string1, jstring string2,
                              jstring string3, jstring string4, jstring string5, jint faceI) {
@@ -179,6 +191,7 @@ JNINativeMethod JNI_Methods_Player[] = {
         {"native_vdPlayer_onDrawFrame",      "()V",                   (void *) native_vdPlayer_onDrawFrame},
 };
 JNINativeMethod JNI_Methods_Camera[] = {
+        {"native_vdCameraRender_what",             "(Ljava/lang/String;Ljava/lang/String;)V",                                                        (void *) native_vdCameraRender_what},
         {"native_vdCameraRender_onFace",           "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;I)V", (void *) native_vdCameraRender_onFace},
         {"native_vdCameraRender_onBuffer",         "(III[B)V",                                                                                       (void *) native_vdCameraRender_onBuffer},
         {"native_vdCameraRender_onBufferCapture",  "()[B",                                                                                           (void *) native_vdCameraRender_onBufferCapture},

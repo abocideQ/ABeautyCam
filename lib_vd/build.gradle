@@ -10,7 +10,7 @@ android {
         minSdkVersion 19
         externalNativeBuild {
             cmake {
-                arguments "-DANDROID_ARM_NEON=TRUE", "-DANDROID_TOOLCHAIN=clang"
+                arguments "-DANDROID_ARM_NEON=TRUE", "-DANDROID_TOOLCHAIN=clang", "-DANDROID_STL=c++_shared"
                 cppFlags "-std=c++11 -frtti -fexceptions"
                 cFlags "-D__STDC_FORMAT_MACROS"
                 abiFilters 'arm64-v8a'
@@ -36,6 +36,7 @@ android {
             }
         }
     }
+    namespace 'lin.abcdq.vd'
 }
 
 dependencies {

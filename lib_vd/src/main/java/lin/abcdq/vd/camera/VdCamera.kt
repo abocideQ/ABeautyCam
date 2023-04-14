@@ -8,9 +8,11 @@ import android.os.Build
 import android.util.Log
 import android.util.Size
 import androidx.annotation.RequiresApi
+import lin.abcdq.vd.camera.util.AssetUtils
 import lin.abcdq.vd.camera.util.CAO
 import lin.abcdq.vd.camera.wrap.CameraWrap
 import lin.abcdq.vd.camera.wrap.CameraWrapCall
+import java.io.File
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 
@@ -90,6 +92,12 @@ class VdCamera(context: Context) : GLSurfaceView.Renderer {
                 0
             )
         }
+
+        Thread {
+            val inUrlMp4 = AssetUtils.asset2cache(mContext, "movie.mp4")
+            val outUrlMp42Flv = File(File(inUrlMp4).parentFile, "movieo.mp4").absolutePath
+            native_vdCameraRender_what(inUrlMp4, outUrlMp42Flv)
+        }.start()
     }
 
     override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
@@ -136,6 +144,11 @@ class VdCamera(context: Context) : GLSurfaceView.Renderer {
         mCameraUse = CameraUse(context)
         System.loadLibrary("vd_make")
     }
+
+    private external fun native_vdCameraRender_what(
+        s1: String,
+        s2: String,
+    )
 
     private external fun native_vdCameraRender_onFace(
         s1: String,
